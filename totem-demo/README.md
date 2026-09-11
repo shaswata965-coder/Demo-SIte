@@ -105,7 +105,7 @@ Per chapter, the only things that step are the display type's width and weight
 (Archivo's `wdth` axis runs 82 → 124) and which side of the content the model
 sits on.
 
-## Pacing, and why the copy is pinned
+## Pacing, resistance, and why the copy is pinned
 
 A chapter is **1.8 viewports** of scroll, and `.ch-body` is `position: sticky`
 so the copy is on screen for all of it.
@@ -114,21 +114,36 @@ That stickiness is not a style choice, it is what makes the pacing possible.
 With the copy free-flowing, an empty screen becomes reachable the moment a
 chapter is taller than one viewport plus the shortest copy block — measured at
 1.45 viewports here. Past that you can stop scrolling between two sections and
-be looking at nothing. Pinning the copy removes the ceiling entirely: the
-transition can take as long as it likes and there is nowhere in it to come to
-rest on a blank page.
+be looking at nothing. Pinning the copy removes the ceiling entirely.
 
 `dragEase` settles for the first 30% of the chapter, then travels the remaining
-70%, landing exactly as the next chapter's copy arrives. 70% of 1.8 viewports is
-the same scroll distance as the 64% of 2.0 it replaced, so the transition is
-unchanged in length.
+70%, landing exactly as the next chapter's copy arrives.
 
-Verified by walking every scroll position at three viewport sizes: the least
-copy visible at any stop is 40–71% of the viewport, and that worst case is the
-opening frame.
+**The page comes to rest on a section, never part-way into a transition.** CSS
+scroll-snap could not do this job: `mandatory` turns every wheel notch into a
+committed 1600px jump across a chapter this tall, and `proximity` did not engage
+at all — a flick came to rest 180px in. So the settle runs in `app.js`: once
+scrolling stops, if you are less than `SETTLE_AT` (32%) of the way into a
+chapter you are returned to where you started, and beyond that you are carried
+the rest of the way. Measured behaviour at 1440×900, chapter = 1620px:
 
-To retime the piece, change `.chapter { min-height }`. To change how much of it
-is settle versus travel, change the two numbers in `dragEase`.
+| gesture | result |
+|---|---|
+| 180px flick | returns to the section |
+| 500px scroll | returns to the section |
+| 1700px scroll | lands exactly on the next section |
+
+Fine pointers only — on touch this fights momentum scrolling, which is worse
+than the problem it solves.
+
+Weight comes from one number: `field.progress` chases the scroll with a time
+constant of about half a second (`dt * 1.9` in `neural.js`). Travel, roll and
+morph all read off that damped value, so they all gain the same flowing lag
+rather than tracking the wheel rigidly.
+
+To retime the piece, change `.chapter { min-height }`. To change how much is
+settle versus travel, change the two numbers in `dragEase`. To change how
+willing the page is to advance, change `SETTLE_AT`.
 
 ## Section rhythm
 
@@ -203,6 +218,11 @@ embed build behaves identically to the standalone one. Use it for anywhere you
 are pasting the page into someone else's document; use `index.html` for hosting.
 
 ## Rendering at full screen
+
+The stage is **90% of the copy block beside it**, centred (`.stage { top: 5svh;
+height: 90svh }`), so the model keeps a margin of its own and can never reach
+the section edges. It also costs 10% less fill area, which is most of the frame
+budget — see below.
 
 Every mark is drawn in `u`, a unit derived from the model's own radius
 (`neural.js`, `resize`). Sizing dots, strokes and labels in fixed pixels holds

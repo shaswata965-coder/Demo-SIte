@@ -921,7 +921,7 @@
       if (dt > 0.028) self.slowFrames++; else self.slowFrames = Math.max(0, self.slowFrames - 1);
       if (self.slowFrames > 90 && self.cfg.notes) { self.cfg.notes = false; self.slowFrames = 0; }
 
-      self.progress += (self.targetProgress - self.progress) * Math.min(1, dt * 4.6);
+      self.progress += (self.targetProgress - self.progress) * Math.min(1, dt * 1.9);
       if (self.reduced) self.t = 0;
       if (!self.reduced) {
         self.spinBase += self.yawVel + self.cfg.autoRotate * dt;

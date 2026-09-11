@@ -3,7 +3,10 @@
    =========================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
@@ -35,8 +38,10 @@ img, canvas { max-width: 100%; }
 
 /* --- the model stage: on one side of the content, never behind it --------- */
 .stage {
-  position: fixed; top: 0; left: 0; z-index: 2;
-  width: var(--stage-w); height: 100svh;
+  /* 90% of the copy block beside it, centred — so the model has a margin of
+     its own and can never reach the section edges. */
+  position: fixed; top: 5svh; left: 0; z-index: 2;
+  width: var(--stage-w); height: 90svh;
   display: grid; place-items: stretch;
   will-change: transform;
 }

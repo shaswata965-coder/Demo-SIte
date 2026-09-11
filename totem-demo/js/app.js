@@ -250,6 +250,52 @@
       sections[0].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     });
 
+    /* ---- settle ----------------------------------------------------------
+       The page comes to rest on a section, never part-way into a transition.
+       CSS scroll-snap could not do this: `mandatory` turns every wheel notch
+       into a committed 1600px jump across a 1.8-viewport chapter, and
+       `proximity` simply did not engage — a flick came to rest 180px in.
+
+       So: once scrolling stops, if you are less than a third of the way into
+       a chapter you are returned to where you started, and beyond that you
+       are carried the rest of the way. Small gestures are resisted, committed
+       ones complete. Fine pointers only — on touch this fights momentum
+       scrolling, which is worse than the problem it solves. */
+    var SETTLE_AT = 0.32;
+    var settleTimer, releaseTimer, settling = false;
+
+    function settleTarget() {
+      var y = window.scrollY;
+      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + y; });
+      var i = 0;
+      for (var k = 0; k < tops.length; k++) if (y >= tops[k] - 2) i = k;
+      if (i + 1 >= tops.length) return null;
+      var span = tops[i + 1] - tops[i];
+      if (span < 1) return null;
+      var frac = (y - tops[i]) / span;
+      if (frac < 0.015 || frac > 0.985) return null;      /* already at rest */
+      var want = frac < SETTLE_AT ? tops[i] : tops[i + 1];
+      var maxY = document.documentElement.scrollHeight - innerHeight;
+      return Math.max(0, Math.min(maxY, Math.round(want)));
+    }
+
+    function onScrollRest() {
+      if (settling || reduced) return;
+      var target = settleTarget();
+      if (target === null || Math.abs(target - window.scrollY) < 3) return;
+      settling = true;
+      window.scrollTo({ top: target, behavior: 'smooth' });
+      clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(function () { settling = false; }, 1000);
+    }
+
+    if (!matchMedia('(pointer: coarse)').matches) {
+      addEventListener('scroll', function () {
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(onScrollRest, 170);
+      }, { passive: true });
+    }
+
     addEventListener('resize', function () { field.resize(); paint(true); }, { passive: true });
 
     paint(true);
