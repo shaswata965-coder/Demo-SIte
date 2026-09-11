@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-chapter="0" data-side="right">
+<html lang="en" data-chapter="0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,20 +19,22 @@
 <!-- the model, on one side of the content -->
 <div class="stage">
   <canvas id="field" aria-label="Neural model. Scroll to turn and reconfigure it; drag to rotate."></canvas>
+  <!-- The model travels through every corner of the page, so its readout
+       travels with it: one block in the stage's own bottom-right. -->
   <div class="hud" aria-hidden="true">
     <span class="corner c1"></span><span class="corner c2"></span>
     <span class="corner c3"></span><span class="corner c4"></span>
-    <div class="hud-row hud-top">
-      <span id="hudCount">0 units</span>
-    </div>
     <div></div>
-    <div class="hud-row hud-bot">
-      <span>model &middot; <b id="hudState">seed</b><br>yaw <b id="hudYaw">000°</b><br>arrangement <b id="hudProg">0.00</b></span>
+    <div class="hud-bot">
       <svg class="gizmo" viewBox="-20 -20 40 40" id="gizmo">
         <line id="axX" x1="0" y1="0" x2="14" y2="0" stroke="currentColor"></line>
         <line id="axY" x1="0" y1="0" x2="0" y2="-14" stroke="currentColor"></line>
         <line id="axZ" x1="0" y1="0" x2="0" y2="0" stroke="currentColor"></line>
       </svg>
+      <span>
+        <b id="hudState">seed</b> &middot; <span id="hudCount">0 units</span><br>
+        yaw <b id="hudYaw">000°</b> &middot; arrangement <b id="hudProg">0.00</b>
+      </span>
     </div>
   </div>
 </div>

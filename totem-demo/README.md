@@ -30,8 +30,23 @@ tools/make-embed.mjs  build an embed copy — see "Embedding" below
 
 **One number drives the page.** Scroll position becomes `progress`, a float in
 `[0, 6]`. Its whole part picks the arrangement, its fraction blends into the
-next. The same number also turns the model, so it reads as one object being
-rotated and inspected rather than a sequence of poses.
+next. The same number also moves the model across the page and turns it, so it
+reads as one object being dragged and inspected rather than a sequence of poses.
+
+**The model is dragged between chapters.** It alternates sides every chapter and
+the copy alternates with it. Crossing is not a CSS transition fired after the
+chapter changed — the stage's `transform` is written every frame from
+`progress`, so the model is physically pulled across the page while you scroll.
+Travel, roll and morph all run off one easing curve, `dragEase`: *hold, move,
+hold*. The model sits still through the top and tail of a chapter and does all
+of its travelling, turning and reconfiguring in the middle. It rolls in the
+direction it is being pulled — a move left turns it left — and dips slightly in
+scale mid-crossing, which reads as weight.
+
+**It never turns on its own.** Ambient yaw drift is off. The model moves because
+you scrolled it or dragged it; the signal pulses keep it alive while it stands
+still. This also keeps each arrangement's viewing pose reliable, which ambient
+drift would decay within a minute.
 
 **Seven arrangements**, each with its own geometry, edge families and viewing
 pose:
@@ -60,7 +75,8 @@ annotations on leader lines (`σ activation`, `corridor 41`, `sha-256`).
 layered stack was being viewed straight down its own axis. Each arrangement
 carries a yaw, pitch and scale offset (`POSE_*` in `neural.js`), lerped with
 the morph, so the model turns continuously but always arrives showing its best
-face and fitting its frame.
+face and fitting its frame. These are tuned against the page's spin table
+(`SPIN_AT` in `app.js`) — change one and retune the other.
 
 ## The aesthetic transforms with the view
 
@@ -110,19 +126,22 @@ the page stays fully legible and navigable.
 
 ## Embedding
 
-`index.html` is a complete document — doctype, `<html lang>`, `<head>`, `<body>`
-— which is what you want when hosting it. Some embedding hosts supply their own
-document skeleton and drop your file inside their `<body>`, which leaves a
-second document nested in the first and the attributes on `<html>` discarded.
+`index.html` is a complete document split across `css/` and `js/`, which is what
+you want when hosting it and what ports cleanly to React. Embedding is a
+different problem: a host that supplies its own document skeleton drops your
+file inside its `<body>`, leaving a second document nested in the first with the
+attributes on `<html>` discarded — and relative subpath requests for `css/` and
+`js/` may not resolve the way they do on your own server.
 
 ```sh
 node tools/make-embed.mjs   # writes dist/index.html
 ```
 
-That emits only what belongs inside a body. `css/` and `js/` are referenced by
-the same relative paths, so publish them alongside it unchanged. `app.js` sets
-`lang`, `data-chapter` and `data-side` on the root itself, so the embed build
-behaves identically.
+That emits **one self-contained file**: no doctype, no `<html>`, no `<head>`, no
+`<body>`, every stylesheet and script inlined, nothing left to fetch but the
+webfont. `app.js` sets `lang` and `data-chapter` on the root itself, so the
+embed build behaves identically to the standalone one. Use it for anywhere you
+are pasting the page into someone else's document; use `index.html` for hosting.
 
 ## Nothing may leave the copy invisible
 
@@ -148,7 +167,7 @@ The split is deliberate:
 | This file | Becomes |
 |---|---|
 | `js/neural.js` | A React Three Fiber scene. `STATES`, the arrangement generators, `VIS` and `POSE_*` carry over unchanged; the hand projection is replaced by instanced meshes and a vertex shader. |
-| `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. |
+| `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. The stage travel becomes a scrubbed timeline; `dragEase` becomes its ease. |
 | `css/tokens.css` | Unchanged. Tailwind v4 reads CSS custom properties directly. |
 | `css/main.css` | Component styles; the `[data-chapter]` block stays as-is. |
 | `index.html` | `page.tsx` plus a `Chapter` component, with the copy coming from the CMS. |

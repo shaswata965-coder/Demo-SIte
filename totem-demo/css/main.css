@@ -42,23 +42,21 @@ img, canvas { max-width: 100%; }
 
 /* --- the model stage: on one side of the content, never behind it --------- */
 .stage {
-  position: fixed; top: 0; z-index: 2;
+  position: fixed; top: 0; left: 0; z-index: 2;
   width: var(--stage-w); height: 100svh;
   display: grid; place-items: stretch;
-  transition: left var(--d-theme) var(--e-inout), width var(--d-theme) var(--e-inout);
+  will-change: transform;
 }
 .stage canvas { display: block; width: 100%; height: 100%; }
 
-.doc {
-  position: relative; z-index: 3;
-  transition: padding var(--d-theme) var(--e-inout);
-}
+.doc { position: relative; z-index: 3; }
 
+/* The copy alternates sides with the model: odd chapters keep the copy left
+   and the model right, even chapters swap. Each section carries its own
+   layout, so nothing here animates — the travel is the model's alone. */
 @media (min-width: 900px) {
-  [data-side="right"] .stage { left: 51vw; }
-  [data-side="left"]  .stage { left: 3vw; }
-  [data-side="right"] .doc  { padding-left: 4vw;  padding-right: 52vw; }
-  [data-side="left"]  .doc  { padding-left: 52vw; padding-right: 4vw; }
+  .chapter:nth-of-type(odd)  { padding-left: 4vw;  padding-right: 52vw; }
+  .chapter:nth-of-type(even) { padding-left: 52vw; padding-right: 4vw; }
 }
 
 
@@ -68,11 +66,10 @@ img, canvas { max-width: 100%; }
   font-family: var(--f-mono); font-size: .625rem;
   letter-spacing: .16em; text-transform: uppercase; color: var(--faint);
   padding: clamp(.9rem, 2vw, 1.6rem);
-  display: grid; grid-template-rows: auto 1fr auto; gap: .5rem;
+  display: grid; grid-template-rows: 1fr auto; gap: .5rem;
 }
-.hud-row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
-.hud-top { justify-content: flex-end; }
-.hud-bot { align-items: flex-end; }
+.hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; gap: .8rem;
+  text-align: right; line-height: 1.8; }
 .hud b { color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; }
 .hud .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--rule-hi); }
 .hud .c1 { top: .7rem; left: .7rem; border-right: 0; border-bottom: 0; }
@@ -96,7 +93,7 @@ img, canvas { max-width: 100%; }
   font-variation-settings: 'wdth' 112, 'wght' 800;
 }
 .brand span { display: none; }
-@media (min-width: 700px) { .brand span { display: inline; } }
+@media (min-width: 1200px) { .brand span { display: inline; } }
 
 .controls { display: flex; gap: .4rem; align-items: center; }
 .btn {
@@ -111,16 +108,13 @@ img, canvas { max-width: 100%; }
 .btn svg { width: 13px; height: 13px; }
 
 /* --- chapter rail --------------------------------------------------------- */
+/* Top centre — the one strip of the page the travelling model never crosses. */
 .rail {
-  position: fixed; z-index: 6; bottom: var(--gutter); left: var(--gutter);
-  display: flex; gap: .28rem; align-items: center; flex-wrap: wrap;
-  transition: left var(--d-theme) var(--e-inout), right var(--d-theme) var(--e-inout);
+  position: fixed; z-index: 6; top: calc(var(--gutter) * 0.7);
+  left: 50%; transform: translateX(-50%);
+  display: flex; gap: .3rem; align-items: flex-start; flex-wrap: nowrap;
 }
-/* The rail stays on the content's side, so it never lands on top of the
-   stage's own readout when the model swaps sides. */
-@media (min-width: 900px) {
-  [data-side="left"] .rail { left: auto; right: var(--gutter); justify-content: flex-end; }
-}
+.rail button { padding: .45rem .2rem; justify-items: center; }
 .rail button {
   appearance: none; border: 0; background: none; cursor: pointer; padding: .5rem .2rem;
   display: grid; gap: .35rem; justify-items: start;
@@ -229,8 +223,9 @@ html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
 
   /* There is no room for a full inspection readout over a 42svh stage, and it
      lands on the brand. Keep one line of it and drop the rest. */
-  .hud { grid-template-rows: 1fr auto; padding: .8rem; }
-  .hud .corner, .hud .gizmo, .hud-top { display: none; }
+  .hud { padding: .8rem; }
+  .hud .corner, .hud .gizmo { display: none; }
+  .hud-bot { text-align: left; justify-content: flex-start; }
 
   /* The rail is a convenience on a pointer device; on a phone it sits on top
      of the copy and scrolling is the navigation anyway. */

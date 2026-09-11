@@ -24,15 +24,31 @@
   /* Hue walks the spectrum in one direction across the chapters, so a change
      never sweeps backwards through colours you have already passed. The last
      is negative so the wrap to magenta is a short move, not a long one. */
+  /* The model alternates sides every chapter and the copy alternates with it.
+     `side` is which side the MODEL sits on; the copy takes the other one. */
   var CHAPTERS = [
     { id: 'seed',   label: 'Dormant',    h: 250, s: 70, side: 'right' },
-    { id: 'bloom',  label: 'Ingest',     h: 200, s: 82, side: 'right' },
+    { id: 'bloom',  label: 'Ingest',     h: 200, s: 82, side: 'left'  },
     { id: 'infer',  label: 'Inference',  h: 168, s: 72, side: 'right' },
     { id: 'settle', label: 'Settlement', h: 130, s: 60, side: 'left'  },
-    { id: 'vault',  label: 'Assurance',  h:  42, s: 88, side: 'left'  },
-    { id: 'ledger', label: 'Proof',      h:  12, s: 78, side: 'right' },
+    { id: 'vault',  label: 'Assurance',  h:  42, s: 88, side: 'right' },
+    { id: 'ledger', label: 'Proof',      h:  12, s: 78, side: 'left'  },
     { id: 'core',   label: 'Begin',      h: -32, s: 76, side: 'right' }
   ];
+
+  /* How far the model rolls while crossing from one side to the other. It
+     rolls in the direction it is being pulled, so a move left turns it left. */
+  var SPIN_PER_CROSSING = 0.78;
+
+  /* Cumulative spin at each chapter, signed by the direction of travel. */
+  var SPIN_AT = (function () {
+    var out = [0];
+    for (var i = 1; i < CHAPTERS.length; i++) {
+      var dir = CHAPTERS[i].side === 'right' ? 1 : -1;
+      out.push(out[i - 1] + dir * SPIN_PER_CROSSING);
+    }
+    return out;
+  }());
 
   var sections = [], revealed = false;
 
@@ -48,16 +64,23 @@
     for (var i = 0; i < rv.length; i++) rv[i].classList.add('in');
   }
 
+  /* Where the stage sits, in px from the left edge of the viewport, for a
+     given side. Mirrors the widths in css/main.css. */
+  function anchorX(side) {
+    var vw = innerWidth;
+    return side === 'right' ? vw * 0.51 : vw * 0.03;
+  }
+
   function boot() {
     /* The artifact host wraps this file in its own document, so attributes
        written on <html> in the markup may not survive. Set them here too —
        they are what the per-chapter aesthetic hangs off. */
     if (!root.getAttribute('lang')) root.setAttribute('lang', 'en');
     if (!root.hasAttribute('data-chapter')) root.setAttribute('data-chapter', '0');
-    if (!root.hasAttribute('data-side')) root.setAttribute('data-side', 'right');
 
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas = $('field');
+    var stage = document.querySelector('.stage');
 
     /* ---- theme ----------------------------------------------------------- */
     var systemDark = matchMedia('(prefers-color-scheme: dark)');
@@ -120,8 +143,13 @@
     }
 
     /* ---- the model -------------------------------------------------------- */
+    /* No ambient yaw drift: the model turns because you scrolled it or
+       dragged it, never on its own. That is the whole feel being asked for,
+       and it also keeps each arrangement's viewing pose reliable. The signal
+       pulses keep it alive while it is standing still. */
     var field = new NeuralField(canvas, {
       interactive: true,
+      autoRotate: 0,
       mode: isDark() ? 'glow' : 'ink',
       colors: palette(CHAPTERS[0].h, CHAPTERS[0].s, isDark())
     });
@@ -167,7 +195,7 @@
     var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
-    var paintedHue = NaN, paintedSat = NaN, lastChapter = -1, lastSide = '';
+    var paintedHue = NaN, paintedSat = NaN, lastChapter = -1;
 
     function paint(force) {
       var p = field.progress;
@@ -189,12 +217,25 @@
       var dark = isDark();
       field.setTheme(dark ? 'glow' : 'ink', palette(hue, sat, dark));
 
+      /* Travel, roll and morph all run off the same eased fraction, so the
+         model crosses the page, turns and reconfigures as one movement. */
+      var e = NeuralField.dragEase(t);
+      field.scrollSpin = SPIN_AT[lo] + (SPIN_AT[hi] - SPIN_AT[lo]) * e;
+
+      if (wide()) {
+        var x = anchorX(CHAPTERS[lo].side)
+              + (anchorX(CHAPTERS[hi].side) - anchorX(CHAPTERS[lo].side)) * e;
+        /* A shallow dip in scale mid-crossing reads as weight being pulled. */
+        var dip = 1 - 0.06 * Math.sin(e * Math.PI) * (lo === hi ? 0 : 1);
+        stage.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0) scale(' + dip.toFixed(4) + ')';
+      } else if (stage.style.transform) {
+        stage.style.transform = '';
+      }
+
       var idx = Math.min(CHAPTERS.length - 1, Math.floor(p + 0.3));
       if (idx !== lastChapter || force) {
         lastChapter = idx;
         root.setAttribute('data-chapter', String(idx));
-        var side = CHAPTERS[idx].side;
-        if (side !== lastSide) { lastSide = side; root.setAttribute('data-side', side); }
         for (var i = 0; i < buttons.length; i++) {
           buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
         }
@@ -229,9 +270,13 @@
       sections[0].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     });
 
+    addEventListener('resize', function () { field.resize(); paint(true); }, { passive: true });
+
     paint(true);
     requestAnimationFrame(frame);
   }
+
+  function wide() { return innerWidth >= 900; }
 
   /* ---- reveals ------------------------------------------------------------ */
   /* Copy is visible in the stylesheet. It is hidden only once this runs, and

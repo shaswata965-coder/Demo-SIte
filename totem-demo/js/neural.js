@@ -43,6 +43,15 @@
   function smoothstep(t) { return t * t * (3 - 2 * t); }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
+  /* Hold, move, hold. The model sits still in its arrangement through the top
+     and tail of a chapter and does all of its travelling, turning and morphing
+     in the middle — which is what makes the change read as one deliberate drag
+     across the page instead of a constant drift. The page uses the identical
+     curve to move the stage, so every part of the transition is in step. */
+  function dragEase(t) {
+    return smoothstep(clamp((t - 0.18) / 0.64, 0, 1));
+  }
+
   /* --------------------------------------------------------------------------
      Edge families. Each is generated once against the arrangement it belongs
      to, and carries a visibility weight in every state. Edges are never
@@ -65,7 +74,7 @@
   var CURVE = { arc: 0.30, ring: 0.07, spoke: 0.04 };
 
   /*        seed  bloom  infer  settle  vault  ledger  core  */
-  var POSE_YAW   = [0, 0.00, -1.60, 0.00, -0.85, -0.30, 0.00];
+  var POSE_YAW   = [0, 0.00, -0.35, 0.00,  0.12, -0.10, 0.00];
   var POSE_PITCH = [0, 0.00,  0.05, -0.10, 0.10,  0.50, 0.00];
   var POSE_SCALE = [1, 1.00,  0.80,  0.96, 0.92,  0.84, 1.10];
 
@@ -120,7 +129,7 @@
       dprCap: opts.dprCap || t.dpr,
       notes: opts.notes !== undefined ? opts.notes : t.notes,
       interactive: opts.interactive !== false,
-      autoRotate: opts.autoRotate !== undefined ? opts.autoRotate : 0.035,
+      autoRotate: opts.autoRotate !== undefined ? opts.autoRotate : 0,
       spinPerChapter: opts.spinPerChapter !== undefined ? opts.spinPerChapter : 0.62,
       fov: opts.fov || 3.9,
       scale: opts.scale || 0.33,
@@ -135,7 +144,8 @@
     this.reduced = reducedMotion();
     this.progress = opts.progress || 0;
     this.targetProgress = this.progress;
-    this.spinBase = 0.5;      /* auto-rotation + drag accumulate here */
+    this.spinBase = 0.5;      /* auto-rotation + pointer drag accumulate here */
+    this.scrollSpin = 0;      /* set by the page; the roll across the layout   */
     this.pitch = -0.16;
     this.yawVel = 0; this.pitchVel = 0;
     this.energy = 0;
@@ -153,6 +163,7 @@
 
   NeuralField.STATES = STATES;
   NeuralField.detectTier = detectTier;
+  NeuralField.dragEase = dragEase;
 
   /* --------------------------------------------------------------------------
      Arrangements
@@ -518,12 +529,12 @@
   NeuralField.prototype._project = function () {
     var n = this.cfg.nodes;
     var lo = Math.floor(this.progress), hi = Math.min(NS - 1, lo + 1);
-    var t = smoothstep(this.progress - lo);
+    var t = dragEase(this.progress - lo);
     var A = this.shapes[lo], B = this.shapes[hi];
 
     /* Scroll drives the spin as well as the morph — one number, so the model
        reads as being turned over rather than cutting between poses. */
-    var yaw = this.spinBase + this.progress * this.cfg.spinPerChapter
+    var yaw = this.spinBase + (this.scrollSpin || 0)
             + lerp(POSE_YAW[lo], POSE_YAW[hi], t);
     var pitch = clamp(this.pitch + lerp(POSE_PITCH[lo], POSE_PITCH[hi], t), -1.1, 1.1);
     this.viewYaw = yaw;
