@@ -1,0 +1,538 @@
+<title>AXON Field Blueprint</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* AXON blueprint — single dark world by design; see design/tokens.css */
+:root{
+  --ink:#06070A; --ink-raised:#0E1017; --ink-edge:#171A24;
+  --bone:#EAE6DC; --bone-dim:#B4B2AC; --grey:#7C8091; --grey-deep:#4A4E5C;
+  --amber:#FFAE1A; --indigo:#4C5BD4; --ok:#46C08A;
+  --rule:rgba(234,230,220,.10); --rule-bright:rgba(234,230,220,.22);
+  --f-display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --gutter:clamp(1.25rem,4vw,3.5rem);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--bone-dim);
+  font-family:var(--f-body);font-size:.9375rem;line-height:1.62}
+::selection{background:var(--amber);color:var(--ink)}
+a{color:var(--amber);text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{color:#FFC14F}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
+
+.wrap{max-width:76rem;margin:0 auto;padding-inline:var(--gutter);padding-block:0}
+
+/* --- masthead ------------------------------------------------------------ */
+.top{border-bottom:1px solid var(--rule);padding-block:clamp(2rem,6vw,3.5rem) clamp(2rem,5vw,3rem)}
+.eyebrow{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--grey);margin:0 0 1.4rem;display:flex;flex-wrap:wrap;align-items:center;gap:.7rem}
+.eyebrow i{display:block;width:2rem;height:1px;background:var(--amber);flex:none}
+h1{font-family:var(--f-display);font-variation-settings:'wdth' 118,'wght' 800;
+  font-size:clamp(2.1rem,6vw,4rem);line-height:.96;letter-spacing:-.025em;text-transform:uppercase;
+  color:var(--bone);margin:0 0 1.2rem;max-width:16ch;text-wrap:balance}
+.standfirst{font-size:clamp(1rem,1.4vw,1.125rem);max-width:56ch;margin:0}
+.links{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.9rem}
+.links a{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--f-mono);font-size:.6875rem;
+  letter-spacing:.16em;text-transform:uppercase;text-decoration:none;padding:.8rem 1.15rem;
+  border:1px solid var(--rule-bright);color:var(--bone)}
+.links a.key{background:var(--amber);border-color:var(--amber);color:var(--ink)}
+.links a:hover{border-color:var(--amber)}
+.links a.key:hover{background:#FFC14F}
+
+/* --- section spine ------------------------------------------------------- */
+section{border-bottom:1px solid var(--rule);padding-block:clamp(2.5rem,6vw,4.5rem)}
+section:last-of-type{border-bottom:0}
+.sheet{display:grid;gap:clamp(1.5rem,3vw,2.5rem);grid-template-columns:minmax(0,1fr)}
+.sheet>*{min-width:0}
+@media(min-width:860px){.sheet{grid-template-columns:7.5rem minmax(0,1fr)}}
+.spine{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--grey-deep);line-height:1.7}
+.spine b{display:block;color:var(--amber);font-weight:400;font-size:1.5rem;letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;margin-bottom:.3rem}
+@media(min-width:860px){.spine{position:sticky;top:2rem;align-self:start}}
+h2{font-family:var(--f-display);font-variation-settings:'wdth' 110,'wght' 700;
+  font-size:clamp(1.35rem,2.4vw,1.95rem);line-height:1.06;letter-spacing:-.015em;
+  text-transform:uppercase;color:var(--bone);margin:0 0 .9rem;text-wrap:balance}
+h3{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--grey);margin:2.4rem 0 1rem;font-weight:500}
+p{margin:0 0 1rem;max-width:64ch}
+p:last-child{margin-bottom:0}
+ul{margin:0 0 1rem;padding-left:1.1rem;max-width:64ch}
+li{margin-bottom:.45rem}
+strong{color:var(--bone);font-weight:500}
+code{font-family:var(--f-mono);font-size:.85em;color:var(--amber);background:var(--ink-edge);
+  padding:.12em .4em;border-radius:2px}
+
+/* --- live field ---------------------------------------------------------- */
+.stage{position:relative;border:1px solid var(--rule);background:var(--ink-raised);
+  margin-bottom:1.6rem}
+.stage canvas{display:block;width:100%;height:clamp(220px,38vw,360px)}
+.stage figcaption{position:absolute;left:0;bottom:0;right:0;display:flex;flex-wrap:wrap;
+  justify-content:space-between;gap:.5rem 1rem;padding:.8rem 1rem;
+  font-family:var(--f-mono);font-size:.625rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--grey);background:linear-gradient(to top,rgba(6,7,10,.92),transparent)}
+.stage figcaption b{color:var(--amber);font-weight:400}
+
+/* --- tables -------------------------------------------------------------- */
+.scroller{overflow-x:auto;margin-bottom:1rem}
+table{border-collapse:collapse;width:100%;min-width:34rem;font-size:.875rem}
+th,td{text-align:left;padding:.75rem .9rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--grey);font-weight:500;white-space:nowrap}
+td:first-child{color:var(--bone)}
+tbody tr:last-child td{border-bottom:0}
+td b{color:var(--bone);font-weight:500}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* --- palette ------------------------------------------------------------- */
+.palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin-bottom:1.4rem}
+.swatch{background:var(--ink-raised);padding:0}
+.swatch .chip{height:4.2rem;display:block}
+.swatch .meta{padding:.75rem .85rem;font-family:var(--f-mono);font-size:.625rem;line-height:1.7;
+  letter-spacing:.1em;text-transform:uppercase}
+.swatch .meta b{display:block;color:var(--bone);letter-spacing:.14em}
+.swatch .meta span{color:var(--grey-deep)}
+
+/* --- type specimen ------------------------------------------------------- */
+.specimen{border:1px solid var(--rule);background:var(--ink-raised);padding:clamp(1.1rem,2.5vw,1.8rem);
+  display:grid;gap:1.6rem;margin-bottom:1.4rem}
+.specimen > div{display:grid;gap:.55rem}
+.specimen .sample-display{font-family:var(--f-display);font-variation-settings:'wdth' 118,'wght' 800;
+  font-size:clamp(1.6rem,5vw,2.9rem);line-height:.96;letter-spacing:-.025em;text-transform:uppercase;
+  color:var(--bone);margin:0}
+.specimen .sample-body{font-size:1.0625rem;color:var(--bone-dim);margin:0;max-width:48ch}
+.specimen .sample-mono{font-family:var(--f-mono);font-size:1.0625rem;color:var(--bone);margin:0;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.specimen .spec{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--grey-deep)}
+
+/* --- storyboard ---------------------------------------------------------- */
+.shot{display:grid;gap:1rem 1.5rem;padding-block:1.4rem;border-top:1px solid var(--rule);
+  align-items:start}
+.shot:first-of-type{border-top:0;padding-top:0}
+@media(min-width:660px){.shot{grid-template-columns:11rem minmax(0,1fr)}}
+@media(min-width:1080px){.shot{grid-template-columns:11rem minmax(0,1fr) 13rem}}
+.shot canvas{display:block;width:100%;aspect-ratio:4/3;border:1px solid var(--rule);
+  background:var(--ink-raised);max-width:100%}
+.shot .mark{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--grey);margin:0 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.shot .mark i{display:block;width:1.4rem;height:1px;background:var(--amber);flex:none}
+.shot h4{font-family:var(--f-display);font-variation-settings:'wdth' 108,'wght' 700;
+  font-size:1.1rem;line-height:1.14;letter-spacing:-.01em;text-transform:uppercase;
+  color:var(--bone);margin:0 0 .5rem}
+.shot p{font-size:.875rem;margin:0;max-width:52ch}
+.shot dl{margin:0;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.12em;
+  text-transform:uppercase;display:grid;gap:.5rem}
+.shot dl div{display:flex;justify-content:space-between;gap:.8rem;
+  border-bottom:1px solid var(--rule);padding-bottom:.4rem}
+.shot dt{color:var(--grey-deep)}
+.shot dd{margin:0;color:var(--bone);text-align:right}
+
+/* --- roadmap chart ------------------------------------------------------- */
+.gantt{border:1px solid var(--rule);background:var(--ink-raised);padding:clamp(1rem,2.5vw,1.6rem);
+  margin-bottom:1.2rem;overflow-x:auto}
+.gantt-inner{min-width:32rem}
+.gantt-row{display:grid;grid-template-columns:9.5rem 1fr;align-items:center;gap:1rem;
+  padding-block:.42rem}
+.gantt-row .name{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-dim)}
+.track{display:grid;grid-template-columns:repeat(20,1fr);height:1.4rem;align-items:center;
+  background:linear-gradient(to right,var(--rule) 1px,transparent 1px) 0 0/10% 100%}
+.bar{height:.55rem;background:var(--indigo);border-radius:1px;position:relative}
+.bar.crit{background:var(--amber)}
+.bar.ship{background:var(--ok)}
+.axis{display:grid;grid-template-columns:repeat(20,1fr);margin-top:.5rem;border-top:1px solid var(--rule);
+  padding-top:.45rem;font-family:var(--f-mono);font-size:.5625rem;letter-spacing:.12em;
+  color:var(--grey-deep);font-variant-numeric:tabular-nums}
+.axis span{grid-column:span 4}
+.legend{display:flex;flex-wrap:wrap;gap:1.2rem;font-family:var(--f-mono);font-size:.625rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--grey-deep);margin-top:1rem}
+.legend span{display:inline-flex;align-items:center;gap:.5rem}
+.legend i{width:.9rem;height:.5rem;border-radius:1px;display:block}
+
+/* --- questions ----------------------------------------------------------- */
+.q{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.q > div{background:var(--ink-raised);padding:1.1rem 1.2rem;display:grid;gap:.4rem}
+.q b{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--amber);font-weight:400}
+.q p{margin:0;font-size:.875rem}
+
+footer{padding-block:clamp(2rem,5vw,3rem);font-family:var(--f-mono);font-size:.625rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--grey-deep);
+  display:flex;flex-wrap:wrap;gap:.7rem 2rem;border-top:1px solid var(--rule)}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow"><i></i> Demo blueprint &middot; v0.1 &middot; 11 Sep 2026</p>
+  <h1>A neural field for a fintech front page</h1>
+  <p class="standfirst">A first position for the client demo, built in the spirit of
+  <a href="https://totem.itsoffbrand.com/">totem.itsoffbrand.com</a> — one object owns the centre
+  of the screen and transforms as you scroll — with the totem replaced by a network that rewires
+  itself through seven states. <strong>AXON is a fictional company;</strong> every figure in the
+  prototype is invented.</p>
+  <div class="links">
+    <a class="key" href="https://claude.ai/code/artifact/3dab865f-928d-4b39-8780-09fbf346a7f0">Open the live prototype &rarr;</a>
+    <a href="https://totem.itsoffbrand.com/">The reference</a>
+  </div>
+</header>
+
+<!-- 01 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>01</b>The idea</div>
+    <div>
+      <h2>The network is the company</h2>
+      <figure class="stage">
+        <canvas id="hero" aria-label="Interactive neural field. Drag to rotate."></canvas>
+        <figcaption><span>Live &middot; <b>drag to rotate</b></span><span id="heroState">state — bloom</span></figcaption>
+      </figure>
+      <p>A fintech whose product is inference should have a homepage where you watch inference
+      happen. The field above is not decoration sitting behind the copy — on the real page the
+      copy narrates what the field is currently doing, and both are locked to the same scroll
+      position. Scroll is the only input; there is no timeline running on its own.</p>
+
+      <h3>What transfers from the reference, and what doesn't</h3>
+      <div class="scroller"><table>
+        <thead><tr><th>The reference does</th><th>We do</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>One 3D object owns the centre for the whole page</td><td>One neural field owns the centre</td><td>The core idea. The page has a single protagonist and the copy orbits it.</td></tr>
+          <tr><td>Scroll transforms the object rather than scrolling past it</td><td>Scroll rewires the network between seven states</td><td>A network reconfiguring carries meaning; a totem rotating is only motion.</td></tr>
+          <tr><td>Drag to rotate</td><td>Drag to rotate</td><td>Cheap, and it's the moment a visitor realises the thing is real.</td></tr>
+          <tr><td>Heavy black space, one vertical light source</td><td>Same, with an amber / indigo signal pair</td><td>See section 02 — the pair encodes data rather than decorating.</td></tr>
+          <tr><td>Ritual full-screen preloader</td><td>A boot readout, no blocking curtain</td><td>A loading wall costs real bounce rate. Keep the ceremony, drop the wall.</td></tr>
+          <tr><td>Volumetric smoke and fog</td><td><b>Not in v1</b></td><td>The most expensive effect on the reference and the first thing that breaks mid-tier GPUs. Revisit once the budget is measured.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>02</b>Design system</div>
+    <div>
+      <h2>Palette, taken from the subject</h2>
+      <p>Neural weights are conventionally drawn with a diverging scale: excitatory weights warm,
+      inhibitory weights cool. Every edge in the field is coloured by the sign of its weight, so
+      the accent pair is carrying information rather than decorating the page. The neutral is a
+      blue-black, not a true black, so the indigo never reads as a stain on it.</p>
+      <div class="palette">
+        <div class="swatch"><span class="chip" style="background:#06070A;box-shadow:inset 0 0 0 1px rgba(234,230,220,.14)"></span><span class="meta"><b>Ink</b><span>#06070A<br>ground</span></span></div>
+        <div class="swatch"><span class="chip" style="background:#0E1017"></span><span class="meta"><b>Ink raised</b><span>#0E1017<br>panels</span></span></div>
+        <div class="swatch"><span class="chip" style="background:#FFAE1A"></span><span class="meta"><b>Amber</b><span>#FFAE1A<br>excitatory</span></span></div>
+        <div class="swatch"><span class="chip" style="background:#4C5BD4"></span><span class="meta"><b>Indigo</b><span>#4C5BD4<br>inhibitory</span></span></div>
+        <div class="swatch"><span class="chip" style="background:#EAE6DC"></span><span class="meta"><b>Bone</b><span>#EAE6DC<br>type</span></span></div>
+        <div class="swatch"><span class="chip" style="background:#7C8091"></span><span class="meta"><b>Grey</b><span>#7C8091<br>labels</span></span></div>
+      </div>
+
+      <h3>Type</h3>
+      <div class="specimen">
+        <div>
+          <p class="sample-display">Capital that routes itself</p>
+          <span class="spec">Archivo &middot; wdth 118 &middot; wght 800 &middot; tracking &minus;0.025em &middot; leading 0.96 &middot; display</span>
+        </div>
+        <div>
+          <p class="sample-body">Treasury moves along the cheapest legal path across 74 corridors, rebalancing overnight against tomorrow's forecast liquidity.</p>
+          <span class="spec">IBM Plex Sans &middot; 400 &middot; leading 1.55 &middot; measure 44ch &middot; body</span>
+        </div>
+        <div>
+          <p class="sample-mono">38ms p99 &nbsp;/&nbsp; 0.04% FPR &nbsp;/&nbsp; 2.41B edges</p>
+          <span class="spec">IBM Plex Mono &middot; 500 &middot; tabular figures &middot; data, labels, chapter markers</span>
+        </div>
+      </div>
+      <p>Archivo is set <strong>expanded and heavy</strong> so headlines read as monument rather
+      than poster — it's the typographic equivalent of the vertical column the reference opens on.
+      The mono is doing real work rather than adding flavour: this is a fintech site, and figures
+      have to line up in a column.</p>
+
+      <h3>Motion vocabulary</h3>
+      <div class="scroller"><table>
+        <thead><tr><th>Token</th><th>Value</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td><code>--e-out</code></td><td class="num">cubic-bezier(.16, 1, .3, 1)</td><td>Reveals and entrances</td></tr>
+          <tr><td><code>--e-inout</code></td><td class="num">cubic-bezier(.76, 0, .24, 1)</td><td>State changes, morphs, route transitions</td></tr>
+          <tr><td><code>--e-snap</code></td><td class="num">cubic-bezier(.34, 1.56, .64, 1)</td><td>Small UI only, sparingly</td></tr>
+          <tr><td><code>--d-base</code> / <code>--d-slow</code></td><td class="num">420ms / 900ms</td><td>Interface / copy reveals</td></tr>
+          <tr><td><code>--d-scene</code></td><td class="num">1600ms</td><td>One full morph between chapters</td></tr>
+          <tr><td>Scroll lerp</td><td class="num">0.085</td><td>Lenis, pointer-fine devices only</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>03</b>Storyboard</div>
+    <div>
+      <h2>Seven states, one object, no cuts</h2>
+      <p>Scroll position maps onto a single number from 0 to 6. Its whole part picks the state,
+      its fraction blends into the next. Each frame below is the field rendered at that exact
+      value by the same code that drives the live prototype — these are not illustrations.</p>
+      <p><strong>Edges fade, they never cut.</strong> Every edge carries a visibility weight per
+      state, so a connection that belongs to the layered stack dims away as the globe forms
+      instead of vanishing. That is the whole trick behind the object appearing to rewire itself.</p>
+      <div id="board"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>04</b>Stack</div>
+    <div>
+      <h2>What to build it in</h2>
+      <p>The brief has four constraints that pull against each other: an award-grade WebGL scroll
+      experience, full responsiveness, a CMS a non-developer can run, and smooth playback on
+      mid-tier hardware. <strong>The last one is the binding constraint</strong> — almost any
+      stack satisfies the first three.</p>
+      <div class="scroller"><table>
+        <thead><tr><th>Layer</th><th>Choice</th><th>Why this one, for this brief</th></tr></thead>
+        <tbody>
+          <tr><td>Framework</td><td><b>Next.js 15</b> App Router, TS</td><td>Route-level splitting keeps the ~190 KB 3D bundle off pages that don't render the field. Marketing pages ship as CDN HTML, not a client-rendered shell.</td></tr>
+          <tr><td>3D</td><td><b>React Three Fiber</b> + drei</td><td>Declarative Three.js that reads React state, so scroll chapter and scene state are one source of truth. Instancing and LOD are ~30 lines, not a rewrite.</td></tr>
+          <tr><td>Choreography</td><td><b>GSAP</b> + ScrollTrigger</td><td>Scrubs a timeline against scroll position — exactly the reference's model. Framer Motion is better at component transitions, worse at long scrubbed timelines.</td></tr>
+          <tr><td>Scroll</td><td><b>Lenis</b></td><td>The inertial feel is much of what the client responded to. Smooths pointer-fine devices and correctly leaves native scroll alone on touch.</td></tr>
+          <tr><td>Styling</td><td><b>Tailwind v4</b></td><td>Reads CSS custom properties directly, so one token file feeds both utilities and the canvas code.</td></tr>
+          <tr><td>CMS</td><td><b>Sanity</b></td><td>Studio embedded at <code>/studio</code> in the same repo and deploy — and motion parameters become content. See below.</td></tr>
+          <tr><td>Hosting</td><td><b>Vercel</b></td><td>Edge CDN, image optimisation, a preview URL per branch for client review.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Why Sanity specifically</h3>
+      <p>Beyond the usual — Portable Text, real-time collaboration, an embedded Studio — one thing
+      matters here: <strong>motion parameters can be content.</strong> Scroll length per chapter,
+      which morph state a chapter resolves to, accent hue, pulse density: all of it lives in the
+      same document as the copy. On a site where the motion <em>is</em> the product, that's the
+      difference between a site the client can run and a site they have to call us about.</p>
+
+      <h3>Alternatives, and when each wins</h3>
+      <div class="scroller"><table>
+        <thead><tr><th>If the priority becomes…</th><th>Use</th><th>What it costs</th></tr></thead>
+        <tbody>
+          <tr><td>Lightest possible JS baseline; motion confined to a few sections</td><td><b>Astro</b> + islands</td><td>A canvas persisting across route changes has to be hand-wired. Loses the seamless transition.</td></tr>
+          <tr><td>The client must own and self-host their data</td><td><b>Payload CMS v3</b>, inside the Next app</td><td>No SaaS bill. You now operate Postgres, backups and upgrades.</td></tr>
+          <tr><td>A marketing team wants true visual page building</td><td><b>Storyblok</b></td><td>Excellent editor, more lock-in, higher seat cost, slower schema changes.</td></tr>
+          <tr><td>Pitch speed over everything, thrown away afterwards</td><td><b>Webflow</b> + GSAP</td><td>Fast to a demo; the WebGL ceiling arrives quickly and nothing lifts into production.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>05</b>Mid-end devices</div>
+    <div>
+      <h2>Three tiers, and a fallback that isn't embarrassing</h2>
+      <p>Sites in this genre routinely ship 4 MB of JavaScript and hold 22 fps on a mid-range
+      Android. That's the failure mode to design against. Budgets below are written against a
+      <strong>Pixel 6a / Galaxy A54 class</strong> phone on throttled 4G.</p>
+      <div class="scroller"><table>
+        <thead><tr><th></th><th>Tier A</th><th>Tier B</th><th>Tier C</th></tr></thead>
+        <tbody>
+          <tr><td>Typical device</td><td>Discrete GPU, recent flagship</td><td>Mid-range phone, integrated laptop GPU</td><td>Low-end, save-data, reduced-motion, no WebGL2</td></tr>
+          <tr><td>Nodes</td><td class="num">4,500 instanced</td><td class="num">1,800 instanced</td><td>—</td></tr>
+          <tr><td>Post-processing</td><td>Bloom + film grain</td><td>None; CSS grain overlay</td><td>—</td></tr>
+          <tr><td>Device pixel ratio</td><td class="num">up to 2.0</td><td class="num">1.25</td><td class="num">1.0</td></tr>
+          <tr><td>Signal pulses</td><td class="num">16</td><td class="num">10</td><td>—</td></tr>
+          <tr><td>The field</td><td>Live WebGL</td><td>Live WebGL</td><td><b>Scroll-scrubbed AVIF sequence</b></td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Tier C is a design, not an error state.</strong> Same copy, same seven chapters,
+      same scroll length, same layout — the field becomes about 60 pre-rendered frames, roughly
+      400&nbsp;KB total. Most visitors wouldn't identify it as a fallback. It is also what
+      <code>prefers-reduced-motion</code> gets.</p>
+      <p>Tier is chosen once at boot from <code>deviceMemory</code>,
+      <code>hardwareConcurrency</code>, the WebGL renderer string and <code>saveData</code>, then
+      a frame-time governor <strong>demotes it and never promotes it</strong> — a tier that
+      oscillates looks worse than one that is simply lower, and people notice the oscillation more
+      than the resolution. The live prototype runs that same governor in miniature.</p>
+
+      <h3>Budget</h3>
+      <div class="scroller"><table>
+        <thead><tr><th>Metric</th><th>Budget</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>LCP</td><td class="num">&lt; 2.0 s</td><td>Hero copy is server-rendered HTML; it never waits on the canvas.</td></tr>
+          <tr><td>First-load JS, non-3D routes</td><td class="num">&lt; 140 KB gz</td><td>Legal, insights, careers.</td></tr>
+          <tr><td>3D chunk, lazy</td><td class="num">&lt; 190 KB gz</td><td>Loaded only on routes that render the field.</td></tr>
+          <tr><td>Frame rate</td><td class="num">60 / ≥ 45 fps</td><td>Desktop / target phone.</td></tr>
+          <tr><td>Lighthouse performance</td><td class="num">≥ 92</td><td>Mobile. CI fails the build on regression.</td></tr>
+          <tr><td>Lighthouse accessibility</td><td class="num">100</td><td>Non-negotiable, not a target.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>06</b>Content model</div>
+    <div>
+      <h2>What an editor actually sees</h2>
+      <p>A page is its list of section blocks. <code>fieldState</code> appears on three of them as
+      a plain dropdown of the seven states — so an editor adding a chapter chooses which state the
+      network resolves to, and the choreography follows with no developer involved.</p>
+      <div class="scroller"><table>
+        <thead><tr><th>Block</th><th>Fields</th><th>Renders as</th></tr></thead>
+        <tbody>
+          <tr><td><code>heroScene</code></td><td>eyebrow, headline, lede, primaryCta, <b>fieldState</b></td><td>Chapter 00, the opener</td></tr>
+          <tr><td><code>scrollChapter</code></td><td>marker, title, body, <b>fieldState</b>, scrollLength, figures[]</td><td>Chapters 01–05</td></tr>
+          <tr><td><code>metricsBand</code></td><td>metrics[], footnote</td><td>The proof row</td></tr>
+          <tr><td><code>featureSplit</code></td><td>title, body, media, mediaSide, bullets[]</td><td>Platform sub-pages</td></tr>
+          <tr><td><code>logoWall</code></td><td>heading, customers[]</td><td>Customer strip</td></tr>
+          <tr><td><code>specTable</code></td><td>caption, rows[]</td><td>Developer-facing specs</td></tr>
+          <tr><td><code>faq</code></td><td>items[]</td><td>Accordion + FAQPage JSON-LD</td></tr>
+          <tr><td><code>ctaBand</code></td><td>headline, body, cta, <b>fieldState</b></td><td>Chapter 06, the collapse</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Constraints worth enforcing in the Studio, not in a style guide</h3>
+      <ul>
+        <li><code>scrollChapter.body</code> capped at <b>320 characters</b> — the copy sits over a live canvas and stops being readable beyond that.</li>
+        <li><code>heroScene.headline</code> capped at <b>60 characters</b> — past that it wraps to more than four lines at 390&nbsp;px wide.</li>
+        <li>Two consecutive chapters may not share a <code>fieldState</code>; the morph would be a no-op and the chapter change would read as broken.</li>
+        <li>Every media field requires <code>alt</code>. Enforced at schema level, no exceptions.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 07 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>07</b>Schedule</div>
+    <div>
+      <h2>Nine weeks to production</h2>
+      <p>One designer, one front-end developer, excluding client review time. A sharper version of
+      the demo alone — enough to show with the client's own brand on it — is <strong>five to seven
+      days</strong> from sign-off on direction.</p>
+      <div class="gantt"><div class="gantt-inner">
+        <div class="gantt-row"><span class="name">01 Art direction</span><span class="track"><span class="bar" style="grid-column:1/5"></span></span></div>
+        <div class="gantt-row"><span class="name">02 Scene R&amp;D</span><span class="track"><span class="bar crit" style="grid-column:5/8"></span></span></div>
+        <div class="gantt-row"><span class="name">03 Build + CMS</span><span class="track"><span class="bar" style="grid-column:8/14"></span></span></div>
+        <div class="gantt-row"><span class="name">04 Content load</span><span class="track"><span class="bar" style="grid-column:14/16"></span></span></div>
+        <div class="gantt-row"><span class="name">05 Perf + QA + a11y</span><span class="track"><span class="bar" style="grid-column:16/18"></span></span></div>
+        <div class="gantt-row"><span class="name">06 Launch</span><span class="track"><span class="bar ship" style="grid-column:18/19"></span></span></div>
+        <div class="gantt-row"><span class="name"></span><span class="axis"><span>Wk 0</span><span>Wk 2</span><span>Wk 4</span><span>Wk 6</span><span>Wk 8</span></span></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#4C5BD4"></i> Standard</span>
+        <span><i style="background:#FFAE1A"></i> Critical path — do not compress</span>
+        <span><i style="background:#46C08A"></i> Ship</span>
+      </div></div>
+      <p><strong>Phase 02 is the one that must not be compressed.</strong> If the field can't hold
+      frame rate on the target device, the design changes — and it is far cheaper to learn that in
+      week four than in week eight.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 08 ------------------------------------------------------------------- -->
+<section>
+  <div class="sheet">
+    <div class="spine"><b>08</b>Open</div>
+    <div>
+      <h2>Four things I need from you</h2>
+      <div class="q">
+        <div><b>Whose brand</b><p>Is the demo dressed as the fictional AXON, as your own brand, or as a named prospect of yours? This changes phase 01 substantially.</p></div>
+        <div><b>The device floor</b><p>"Mid-end" needs a specific handset. Everything in section 05 is written against a Pixel 6a / Galaxy A54. If the real floor is lower, tier C becomes the default rather than the fallback — a decision to make deliberately, not discover at QA.</p></div>
+        <div><b>Who edits after launch</b><p>A marketer or an engineer? The CMS recommendation holds either way, but how much of the motion we expose as editable content depends on the answer.</p></div>
+        <div><b>Audio</b><p>The reference has an audio layer and it's a signature part of the genre. It also carries real autoplay-policy and accessibility cost. In or out?</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>AXON — fictional demo brand</span>
+  <span>Blueprint v0.1</span>
+  <span>All figures invented</span>
+</footer>
+
+</div>
+
+<script src="neural.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var SHOTS = [
+    ['00', 'Dormant',    'The neural layer for global capital', 'seed',   'proximity @ 0.55', 'At rest. Slow auto-rotation only.'],
+    ['01', 'Ingest',     'Every payment is a signal',            'bloom',  'proximity @ 1.00', 'The graph comes online. Pulse density peaks.'],
+    ['02', 'Inference',  'Six layers between fraud and settlement','infer','layer @ 1.00',     'Proximity drops to 0.06 so the layering reads.'],
+    ['03', 'Settlement', 'Capital that routes itself',           'settle', 'proximity @ 0.85', 'Auto-rotation ×1.4 here only.'],
+    ['04', 'Assurance',  'Auditable by construction',            'vault',  'lattice @ 1.00',   'Reads as an eroded vault wall.'],
+    ['05', 'Proof',      'What the network returns',             'ledger', 'proximity @ 0.45', 'Camera pitch drifts to near-level.'],
+    ['06', 'Begin',      'Start with one corridor',              'core',   'proximity @ 0.90', 'Everything converges. The CTA lands on the collapse.']
+  ];
+
+  /* Storyboard frames are single renders of the same field used live — cheaper
+     than seven animation loops, and a storyboard should hold still anyway. */
+  var board = document.getElementById('board');
+  var frames = [];
+
+  SHOTS.forEach(function (s, i) {
+    var row = document.createElement('article');
+    row.className = 'shot';
+    row.innerHTML =
+      '<canvas aria-label="Field state: ' + s[3] + '"></canvas>' +
+      '<div>' +
+        '<p class="mark"><i></i> ' + s[0] + ' &mdash; ' + s[1] + '</p>' +
+        '<h4>' + s[2] + '</h4>' +
+        '<p>' + s[5] + '</p>' +
+      '</div>' +
+      '<dl>' +
+        '<div><dt>State</dt><dd>' + s[3] + '</dd></div>' +
+        '<div><dt>Edges</dt><dd>' + s[4] + '</dd></div>' +
+        '<div><dt>Progress</dt><dd>' + i + '.0</dd></div>' +
+      '</dl>';
+    board.appendChild(row);
+
+    var f = new NeuralField(row.querySelector('canvas'), {
+      forceTier: 'low', progress: i, autoRotate: 0, interactive: false,
+      yaw: 0.55 + i * 0.12, pitch: -0.16, scale: 0.33, grain: false
+    });
+    f.setProgress(i, true);
+    f.render();
+    frames.push(f);
+  });
+
+  /* Canvases are laid out by CSS, so their real pixel size isn't known until
+     after layout and webfonts settle. Re-render once each is stable. */
+  function refresh() { frames.forEach(function (f) { f.resize(); }); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+  requestAnimationFrame(refresh);
+
+  /* The one live field, at the top. */
+  var hero = new NeuralField(document.getElementById('hero'), {
+    interactive: true, autoRotate: 0.06, progress: 1
+  });
+  hero.setProgress(1, true);
+  hero.start();
+
+  /* Cycle it slowly through the states so the page shows what it is about
+     without anyone having to scroll the prototype first. */
+  var label = document.getElementById('heroState');
+  var at = 1;
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setInterval(function () {
+      at = (at + 1) % NeuralField.STATES.length;
+      hero.setProgress(at);
+      hero.pulse(0.7);
+      label.textContent = 'state — ' + NeuralField.STATES[at];
+    }, 4200);
+  }
+}());
+</script>

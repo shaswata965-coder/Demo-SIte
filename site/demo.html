@@ -1,0 +1,389 @@
+<title>AXON Signal Field</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* ===========================================================================
+   AXON — scroll prototype
+   Single dark world by design; see design/tokens.css for the rationale.
+   =========================================================================== */
+:root{
+  --ink:#06070A; --ink-raised:#0E1017; --ink-edge:#171A24;
+  --bone:#EAE6DC; --bone-dim:#B4B2AC; --grey:#7C8091; --grey-deep:#4A4E5C;
+  --amber:#FFAE1A; --indigo:#4C5BD4;
+  --rule:rgba(234,230,220,.10); --rule-bright:rgba(234,230,220,.24);
+  --f-display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --e-out:cubic-bezier(.16,1,.3,1);
+  --gutter:clamp(1.25rem,4vw,4.5rem);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--ink); color:var(--bone);
+  font-family:var(--f-body); font-size:.9375rem; line-height:1.55;
+  overflow-x:hidden;
+}
+::selection{background:var(--amber);color:var(--ink)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
+
+/* --- the field sits behind everything, fixed ----------------------------- */
+#field{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0}
+#veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(120% 80% at 50% 50%, transparent 38%, rgba(6,7,10,.62) 100%),
+    linear-gradient(to bottom, rgba(6,7,10,.72) 0%, transparent 22%, transparent 72%, rgba(6,7,10,.86) 100%);
+}
+
+/* --- smooth scroll wrapper (desktop only; touch keeps native scroll) ------ */
+#scroll{position:relative;z-index:2}
+html.smooth #scroll{position:fixed;top:0;left:0;width:100%;will-change:transform}
+#spacer{display:none}
+html.smooth #spacer{display:block}
+
+/* --- persistent chrome ---------------------------------------------------- */
+.hud{position:fixed;z-index:5;font-family:var(--f-mono);font-size:.6875rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--grey)}
+.hud--brand{top:var(--gutter);left:var(--gutter);display:flex;align-items:baseline;gap:.7rem}
+.hud--brand b{font-family:var(--f-display);font-variation-settings:'wdth' 118,'wght' 800;
+  font-size:.95rem;letter-spacing:.26em;color:var(--bone)}
+.hud--boot{top:var(--gutter);right:var(--gutter);text-align:right;line-height:1.7}
+.hud--boot span{color:var(--amber);font-variant-numeric:tabular-nums}
+.hud--hint{bottom:var(--gutter);left:var(--gutter);display:flex;align-items:center;gap:.6rem;
+  transition:opacity .5s var(--e-out)}
+.hud--hint.gone{opacity:0}
+.hud--hint i{display:block;width:22px;height:1px;background:var(--amber);
+  transform-origin:left;animation:sweep 2.4s var(--e-out) infinite}
+@keyframes sweep{0%{transform:scaleX(0);opacity:0}35%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+
+/* chapter rail */
+.rail{position:fixed;z-index:5;right:var(--gutter);top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:.1rem;align-items:flex-end}
+.rail button{appearance:none;background:none;border:0;cursor:pointer;padding:.38rem 0 .38rem .9rem;
+  display:flex;align-items:center;gap:.7rem;font-family:var(--f-mono);font-size:.625rem;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--grey-deep);
+  transition:color .3s var(--e-out)}
+.rail button em{font-style:normal;opacity:0;transform:translateX(6px);
+  transition:opacity .3s var(--e-out),transform .3s var(--e-out)}
+.rail button i{display:block;width:20px;height:1px;background:currentColor;text-decoration:none;
+  transition:width .35s var(--e-out)}
+.rail button:hover{color:var(--bone-dim)}
+.rail button:hover em{opacity:1;transform:none}
+.rail button[aria-current="true"]{color:var(--amber)}
+.rail button[aria-current="true"] em{opacity:1;transform:none}
+.rail button[aria-current="true"] i{width:38px}
+
+/* --- chapters ------------------------------------------------------------- */
+.chapter{min-height:100svh;display:grid;align-content:end;
+  padding:var(--gutter);padding-block:calc(var(--gutter) * 1.4) calc(var(--gutter) * 2.6);
+  gap:clamp(1.5rem,4vw,3rem);
+  grid-template-columns:minmax(0,1fr);
+}
+@media(min-width:900px){
+  .chapter{grid-template-columns:minmax(0,30rem) minmax(0,1fr) auto;align-items:end}
+  .chapter .figures{justify-self:end;text-align:right}
+}
+.mark{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--grey);display:flex;align-items:center;gap:.75rem;margin:0 0 1.1rem}
+.mark i{display:block;width:2.2rem;height:1px;background:var(--amber);text-decoration:none;flex:none}
+h2{font-family:var(--f-display);font-variation-settings:'wdth' 112,'wght' 700;
+  font-size:clamp(1.9rem,3.6vw,3.05rem);line-height:1.02;letter-spacing:-.02em;
+  text-transform:uppercase;text-wrap:balance;margin:0 0 1rem;color:var(--bone)}
+.chapter p{margin:0;color:var(--bone-dim);max-width:44ch;font-size:1rem}
+.figures{display:flex;flex-direction:column;gap:1.1rem;font-family:var(--f-mono)}
+.figures div{display:grid;gap:.2rem}
+.figures dt{font-size:.625rem;letter-spacing:.2em;text-transform:uppercase;color:var(--grey-deep)}
+.figures dd{margin:0;font-size:1.3rem;color:var(--bone);font-variant-numeric:tabular-nums;
+  font-variation-settings:'wght' 500}
+.figures dd b{color:var(--amber);font-weight:inherit}
+
+/* hero is the one chapter that breaks the pattern */
+#c0{align-content:center;grid-template-columns:minmax(0,1fr)}
+#c0 h1{font-family:var(--f-display);font-variation-settings:'wdth' 120,'wght' 800;
+  font-size:clamp(2.4rem,8.2vw,6.2rem);line-height:.94;letter-spacing:-.03em;
+  text-transform:uppercase;margin:0 0 1.4rem;max-width:14ch;text-wrap:balance;
+  color:var(--bone)}
+#c0 p{font-size:clamp(1rem,1.5vw,1.15rem);max-width:46ch}
+#c0 .lede{border-left:1px solid var(--rule-bright);padding-left:1.1rem}
+
+/* closing chapter */
+#c6{align-content:center;grid-template-columns:minmax(0,1fr)}
+#c6 .cta{font:inherit;display:inline-flex;align-items:center;gap:.8rem;margin-top:1.8rem;
+  font-family:var(--f-mono);font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink);background:var(--amber);padding:.95rem 1.5rem;border:0;border-radius:1px;
+  text-decoration:none;cursor:pointer;transition:transform .3s var(--e-out),background .3s var(--e-out)}
+#c6 .cta:hover{transform:translateY(-2px);background:#FFC14F}
+footer{border-top:1px solid var(--rule);margin-top:clamp(3rem,10vh,7rem);padding-top:1.4rem;
+  display:flex;flex-wrap:wrap;gap:1rem 2.5rem;font-family:var(--f-mono);font-size:.6875rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--grey-deep)}
+
+/* --- reveals: visible by default, JS opts them into the animation --------- */
+.r{opacity:1;transform:none}
+html.js .r{opacity:0;transform:translateY(18px);
+  transition:opacity .9s var(--e-out),transform .9s var(--e-out)}
+html.js .r.in{opacity:1;transform:none}
+html.js .r:nth-child(2){transition-delay:.08s}
+html.js .r:nth-child(3){transition-delay:.16s}
+
+@media(prefers-reduced-motion:reduce){
+  html.js .r{opacity:1;transform:none;transition:none}
+  .hud--hint i{animation:none}
+  #c6 .cta{transition:none}
+}
+@media(max-width:899px){
+  .rail{display:none}
+  .hud--boot{font-size:.625rem}
+  .figures{flex-direction:row;flex-wrap:wrap;gap:1.4rem 2rem}
+  .figures dd{font-size:1.05rem}
+}
+</style>
+
+<canvas id="field" aria-hidden="true"></canvas>
+<div id="veil" aria-hidden="true"></div>
+
+<div class="hud hud--brand"><b>AXON</b><span>Financial intelligence infrastructure</span></div>
+<div class="hud hud--boot" aria-live="off">
+  Weights loaded <span id="boot">0000</span>/2048<br>Graph <span id="bootState">seed</span>
+</div>
+<div class="hud hud--hint" id="hint"><i></i> Scroll &middot; drag to rotate</div>
+<nav class="rail" id="rail" aria-label="Chapters"></nav>
+
+<div id="spacer"></div>
+<main id="scroll">
+
+  <section class="chapter" id="c0">
+    <div>
+      <p class="mark r"><i></i> 00 &mdash; Dormant</p>
+      <h1 class="r">The neural layer for global capital</h1>
+      <div class="lede r"><p>AXON turns every transaction your business touches into a signal, and every signal into a decision &mdash; in under 40&nbsp;milliseconds, before the money moves.</p></div>
+    </div>
+  </section>
+
+  <section class="chapter" id="c1">
+    <div>
+      <p class="mark r"><i></i> 01 &mdash; Ingest</p>
+      <h2 class="r">Every payment is a signal</h2>
+      <p class="r">Card rails, ACH, SEPA Instant, RTP, open-banking feeds and your own ledger resolve into a single continuously-updating graph. No warehouse hop, no overnight batch.</p>
+    </div>
+    <div></div>
+    <dl class="figures r">
+      <div><dt>Edges in graph</dt><dd>2.41<b>B</b></dd></div>
+      <div><dt>Full rebuild</dt><dd>90<b>s</b></dd></div>
+      <div><dt>Connected sources</dt><dd>41</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c2">
+    <div>
+      <p class="mark r"><i></i> 02 &mdash; Inference</p>
+      <h2 class="r">Six layers between fraud and settlement</h2>
+      <p class="r">A live ensemble scores each authorisation against the behaviour of the whole network, not just your own history. Cold-start merchants inherit the graph's priors on day one.</p>
+    </div>
+    <div></div>
+    <dl class="figures r">
+      <div><dt>Decision latency p99</dt><dd>38<b>ms</b></dd></div>
+      <div><dt>False positive rate</dt><dd>0.04<b>%</b></dd></div>
+      <div><dt>Features per decision</dt><dd>1,904</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c3">
+    <div>
+      <p class="mark r"><i></i> 03 &mdash; Settlement</p>
+      <h2 class="r">Capital that routes itself</h2>
+      <p class="r">Treasury moves along the cheapest legal path across 74 corridors, rebalancing overnight against tomorrow's forecast liquidity &mdash; with no one awake to approve it.</p>
+    </div>
+    <div></div>
+    <dl class="figures r">
+      <div><dt>Live corridors</dt><dd>74</dd></div>
+      <div><dt>Settlement currencies</dt><dd>19</dd></div>
+      <div><dt>Manual approvals</dt><dd>0</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c4">
+    <div>
+      <p class="mark r"><i></i> 04 &mdash; Assurance</p>
+      <h2 class="r">Auditable by construction</h2>
+      <p class="r">Every inference is written down with the feature vector that produced it, so a decision from eighteen months ago can be replayed exactly. Including the model that made it.</p>
+    </div>
+    <div></div>
+    <dl class="figures r">
+      <div><dt>Decision retention</dt><dd>7<b>yr</b></dd></div>
+      <div><dt>Attestation</dt><dd>SOC&nbsp;2 Type&nbsp;II</dd></div>
+      <div><dt>Card standard</dt><dd>PCI DSS 4.0</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c5">
+    <div>
+      <p class="mark r"><i></i> 05 &mdash; Proof</p>
+      <h2 class="r">What the network returns</h2>
+      <p class="r">Measured across 31 production deployments in the trailing twelve months, against each customer's own pre-AXON baseline.</p>
+    </div>
+    <div></div>
+    <dl class="figures r">
+      <div><dt>Approval rate lift</dt><dd>+31<b>%</b></dd></div>
+      <div><dt>Fraud prevented</dt><dd>$1.2<b>B</b></dd></div>
+      <div><dt>Median time to production</dt><dd>4<b>wk</b></dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c6">
+    <div>
+      <p class="mark r"><i></i> 06 &mdash; Begin</p>
+      <h2 class="r">Start with one corridor</h2>
+      <p class="r">We instrument a single payment corridor in four weeks and run it in shadow mode against your current stack. You see the delta before you migrate anything.</p>
+      <button class="cta r" type="button" id="cta">Book a technical session &rarr;</button>
+      <footer>
+        <span>AXON &mdash; demo build</span>
+        <span>Concept &amp; prototype</span>
+        <span>Not a real company</span>
+      </footer>
+    </div>
+  </section>
+
+</main>
+
+<script src="neural.js"></script>
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  root.classList.add('js');
+
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var coarse = matchMedia('(pointer: coarse)').matches;
+  var canvas = document.getElementById('field');
+  var scroller = document.getElementById('scroll');
+  var spacer = document.getElementById('spacer');
+
+  var CHAPTERS = [
+    ['00', 'Dormant'], ['01', 'Ingest'], ['02', 'Inference'],
+    ['03', 'Settlement'], ['04', 'Assurance'], ['05', 'Proof'], ['06', 'Begin']
+  ];
+
+  var field = new NeuralField(canvas, { interactive: true, autoRotate: 0.05 });
+  field.start();
+
+  /* --- chapter rail ------------------------------------------------------ */
+  var rail = document.getElementById('rail');
+  var buttons = CHAPTERS.map(function (c, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<em>' + c[1] + '</em><i></i>';
+    b.setAttribute('aria-label', 'Chapter ' + c[0] + ', ' + c[1]);
+    b.addEventListener('click', function () {
+      window.scrollTo({ top: tops[i], behavior: reduced ? 'auto' : 'smooth' });
+    });
+    rail.appendChild(b);
+    return b;
+  });
+
+  /* --- measurement ------------------------------------------------------- */
+  var sections = CHAPTERS.map(function (_, i) { return document.getElementById('c' + i); });
+  var tops = [], docHeight = 0;
+
+  function measure() {
+    var offset = 0;
+    if (root.classList.contains('smooth')) {
+      /* The scroller is fixed, so offsetTop is relative to it already. */
+      docHeight = scroller.scrollHeight;
+      spacer.style.height = docHeight + 'px';
+    } else {
+      docHeight = document.body.scrollHeight;
+    }
+    tops = sections.map(function (s) { return s.offsetTop + offset; });
+  }
+
+  /* Transform-driven smoothing on pointer-fine devices only. Touch keeps the
+     native scroller — hijacking it costs more in jank than it buys in feel,
+     which is exactly the trade this prototype exists to demonstrate. */
+  var smooth = !coarse && !reduced;
+  if (smooth) root.classList.add('smooth');
+
+  var current = 0, target = 0;
+
+  function progressFor(y) {
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (y >= tops[i] || i === 0) {
+        var next = (i + 1 < tops.length) ? tops[i + 1] : tops[i] + innerHeight;
+        var span = Math.max(1, next - tops[i]);
+        return i + Math.max(0, Math.min(1, (y - tops[i]) / span));
+      }
+    }
+    return 0;
+  }
+
+  var lastChapter = -1;
+  function applyProgress(p) {
+    field.setProgress(p);
+    var idx = Math.min(CHAPTERS.length - 1, Math.floor(p + 0.3));
+    if (idx !== lastChapter) {
+      lastChapter = idx;
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
+      }
+      document.getElementById('bootState').textContent =
+        NeuralField.STATES[Math.min(NeuralField.STATES.length - 1, idx)];
+      field.pulse(0.5);
+    }
+  }
+
+  function frame() {
+    target = window.scrollY || window.pageYOffset;
+    if (smooth) {
+      current += (target - current) * 0.09;
+      if (Math.abs(target - current) < 0.1) current = target;
+      scroller.style.transform = 'translate3d(0,' + (-current).toFixed(2) + 'px,0)';
+    } else {
+      current = target;
+    }
+    applyProgress(progressFor(current));
+    requestAnimationFrame(frame);
+  }
+
+  /* --- reveals ----------------------------------------------------------- */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.01 });
+
+  var reveals = document.querySelectorAll('.r');
+  for (var i = 0; i < reveals.length; i++) io.observe(reveals[i]);
+  /* The hero is above the fold on every viewport — show it without waiting
+     on the observer, so the first painted frame is already readable. */
+  requestAnimationFrame(function () {
+    var hero = document.querySelectorAll('#c0 .r');
+    for (var h = 0; h < hero.length; h++) hero[h].classList.add('in');
+  });
+
+  /* --- boot readout: the load ritual, without a blocking curtain ---------- */
+  var boot = document.getElementById('boot');
+  var loaded = 0, startTs = performance.now();
+  (function count(now) {
+    var t = Math.min(1, ((now || startTs) - startTs) / 2200);
+    var eased = 1 - Math.pow(1 - t, 3);
+    loaded = Math.round(eased * 2048);
+    boot.textContent = String(loaded).padStart(4, '0');
+    if (t < 1) requestAnimationFrame(count);
+  })(startTs);
+
+  document.getElementById('cta').addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  });
+
+  /* --- hint dismissal ---------------------------------------------------- */
+  var hint = document.getElementById('hint');
+  addEventListener('scroll', function () {
+    if (window.scrollY > 40) hint.classList.add('gone');
+  }, { passive: true });
+
+  /* --- go ---------------------------------------------------------------- */
+  addEventListener('resize', measure, { passive: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  measure();
+  requestAnimationFrame(frame);
+}());
+</script>
