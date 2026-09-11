@@ -37,15 +37,27 @@ Every chapter: copy reveals on `--e-out` over `--d-slow`, staggered 80 ms per
 element, triggered at 12% from the bottom of the viewport. The field morphs
 continuously and is never triggered — it is always exactly where scroll says.
 
-| # | State | Geometry | Edge family in force | Note |
+| # | State | Geometry | Edge family in force | Hue |
 |---|---|---|---|---|
-| 00 | `seed` | Vertical column, golden-angle spiral | proximity @ 0.55 | At rest. Slow auto-rotation only. |
-| 01 | `bloom` | Fibonacci sphere shell, jittered | proximity @ 1.00 | The graph "comes online". Pulse density peaks. |
-| 02 | `infer` | Six layers along X, grid within each | layer @ 1.00 | Proximity drops to 0.06 so the layering reads. |
-| 03 | `settle` | Globe, nodes gathered into 9 latitude corridors | proximity @ 0.85 | Auto-rotation rate ×1.4 here only. |
-| 04 | `vault` | Cubic lattice, ~75% filled | lattice @ 1.00 | Reads as an eroded vault wall. |
-| 05 | `ledger` | Flat plane with a low standing wave | proximity @ 0.45 | Camera pitch drifts to near-level. |
-| 06 | `core` | Collapse toward a single dense point | proximity @ 0.90 | Everything converges. CTA lands on the collapse. |
+| 00 | `seed` | Twisted double helix column, rungs across the strands | helix @ 1.00 | 250 indigo |
+| 01 | `bloom` | Two nested shells, spokes between them | prox @ 1.00, spoke @ 0.60 | 200 azure |
+| 02 | `infer` | Six layers, each a ring, fanned forward | layer @ 1.00 | 168 viridian |
+| 03 | `settle` | Globe banded into 11 latitude corridors, bowed arcs | ring @ 1.00, arc @ 0.85 | 130 green |
+| 04 | `vault` | Hollow cube — lattice on the faces, solid core inside | lattice @ 1.00 | 42 gold |
+| 05 | `ledger` | Ledger plane with risers standing off it | riser @ 1.00 | 12 vermilion |
+| 06 | `core` | Collapse to a core, one orbital ring holding | spoke @ 1.00 | −32 magenta |
+
+Each arrangement also carries a **viewing pose** — a yaw, pitch and scale
+offset lerped with the morph. Scroll spin alone presents some arrangements
+edge-on (the layered stack ends up viewed straight down its own axis), so the
+pose turns the model to its best face and fits it to the frame without
+interrupting the continuous rotation.
+
+**The aesthetic transforms with the state.** Hue and saturation are set on
+`<html>` from JS and every colour on the page and on the canvas derives from
+them. Discrete properties — display type width and weight, letter-spacing,
+surface texture, corner radius, rule weight, and which side of the content the
+model sits on — step per chapter via `data-chapter` and transition in CSS.
 
 **Edges fade, they never cut.** An edge's opacity is the blend of its
 visibility weight in the outgoing and incoming states. This is the whole trick

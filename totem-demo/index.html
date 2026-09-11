@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-chapter="0" data-side="right">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXON — the neural layer for global capital</title>
+<meta name="description" content="Scroll-driven demo: a neural model turning through seven arrangements while the page's entire aesthetic transforms with it.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<div class="texture" aria-hidden="true">
+  <span class="rules"></span><span class="dots"></span><span class="scan"></span>
+</div>
+
+<!-- the model, on one side of the content -->
+<div class="stage">
+  <canvas id="field" aria-label="Neural model. Scroll to turn and reconfigure it; drag to rotate."></canvas>
+  <div class="hud" aria-hidden="true">
+    <span class="corner c1"></span><span class="corner c2"></span>
+    <span class="corner c3"></span><span class="corner c4"></span>
+    <div class="hud-row hud-top">
+      <span id="hudCount">0 units</span>
+    </div>
+    <div></div>
+    <div class="hud-row hud-bot">
+      <span>model &middot; <b id="hudState">seed</b><br>yaw <b id="hudYaw">000°</b><br>arrangement <b id="hudProg">0.00</b></span>
+      <svg class="gizmo" viewBox="-20 -20 40 40" id="gizmo">
+        <line id="axX" x1="0" y1="0" x2="14" y2="0" stroke="currentColor"></line>
+        <line id="axY" x1="0" y1="0" x2="0" y2="-14" stroke="currentColor"></line>
+        <line id="axZ" x1="0" y1="0" x2="0" y2="0" stroke="currentColor"></line>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand"><b>AXON</b><span>Financial intelligence infrastructure</span></div>
+  <div class="controls">
+    <button class="btn" id="themeBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+      <span id="themeLabel">Light</span>
+    </button>
+  </div>
+</header>
+
+<nav class="rail" id="rail" aria-label="Chapters"></nav>
+
+<main class="doc">
+
+  <section class="chapter" id="c0">
+    <p class="marker rv"><i></i> 00 &mdash; Dormant</p>
+    <h1 class="rv">The neural layer for global capital</h1>
+    <p class="lede rv">AXON turns every transaction your business touches into a signal, and every
+    signal into a decision &mdash; in under 40&nbsp;milliseconds, before the money moves.</p>
+  </section>
+
+  <section class="chapter" id="c1">
+    <p class="marker rv"><i></i> 01 &mdash; Ingest</p>
+    <h2 class="rv">Every payment is a signal</h2>
+    <p class="rv">Card rails, ACH, SEPA Instant, RTP, open-banking feeds and your own ledger
+    resolve into a single continuously-updating graph. No warehouse hop, no overnight batch.</p>
+    <dl class="figures rv">
+      <div><dt>Edges in graph</dt><dd>2.41<b>B</b></dd></div>
+      <div><dt>Full rebuild</dt><dd>90<b>s</b></dd></div>
+      <div><dt>Connected sources</dt><dd>41</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c2">
+    <p class="marker rv"><i></i> 02 &mdash; Inference</p>
+    <h2 class="rv">Six layers between fraud and settlement</h2>
+    <p class="rv">A live ensemble scores each authorisation against the behaviour of the whole
+    network, not just your own history. Cold-start merchants inherit the graph's priors on day one.</p>
+    <dl class="figures rv">
+      <div><dt>Decision latency p99</dt><dd>38<b>ms</b></dd></div>
+      <div><dt>False positive rate</dt><dd>0.04<b>%</b></dd></div>
+      <div><dt>Features per decision</dt><dd>1,904</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c3">
+    <p class="marker rv"><i></i> 03 &mdash; Settlement</p>
+    <h2 class="rv">Capital that routes itself</h2>
+    <p class="rv">Treasury moves along the cheapest legal path across 74 corridors, rebalancing
+    overnight against tomorrow's forecast liquidity &mdash; with no one awake to approve it.</p>
+    <dl class="figures rv">
+      <div><dt>Live corridors</dt><dd>74</dd></div>
+      <div><dt>Settlement currencies</dt><dd>19</dd></div>
+      <div><dt>Manual approvals</dt><dd>0</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c4">
+    <p class="marker rv"><i></i> 04 &mdash; Assurance</p>
+    <h2 class="rv">Auditable by construction</h2>
+    <p class="rv">Every inference is written down with the feature vector that produced it, so a
+    decision from eighteen months ago can be replayed exactly. Including the model that made it.</p>
+    <dl class="figures rv">
+      <div><dt>Decision retention</dt><dd>7<b>yr</b></dd></div>
+      <div><dt>Attestation</dt><dd>SOC&nbsp;2 Type&nbsp;II</dd></div>
+      <div><dt>Card standard</dt><dd>PCI DSS 4.0</dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c5">
+    <p class="marker rv"><i></i> 05 &mdash; Proof</p>
+    <h2 class="rv">What the network returns</h2>
+    <p class="rv">Measured across 31 production deployments in the trailing twelve months, against
+    each customer's own pre-AXON baseline.</p>
+    <dl class="figures rv">
+      <div><dt>Approval rate lift</dt><dd>+31<b>%</b></dd></div>
+      <div><dt>Fraud prevented</dt><dd>$1.2<b>B</b></dd></div>
+      <div><dt>Median time to production</dt><dd>4<b>wk</b></dd></div>
+    </dl>
+  </section>
+
+  <section class="chapter" id="c6">
+    <p class="marker rv"><i></i> 06 &mdash; Begin</p>
+    <h2 class="rv">Start with one corridor</h2>
+    <p class="rv">We instrument a single payment corridor in four weeks and run it in shadow mode
+    against your current stack. You see the delta before you migrate anything.</p>
+    <button class="cta rv" type="button" id="cta">Book a technical session &rarr;</button>
+    <div class="colophon rv">
+      <span>AXON &mdash; demo build</span>
+      <span>Fictional company</span>
+      <span>All figures invented</span>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/neural.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

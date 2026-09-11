@@ -1,53 +1,51 @@
-# AXON — demo site blueprint
+# AXON — neural fintech demo
 
-Initial blueprint for a client demo, in the spirit of
-[totem.itsoffbrand.com](https://totem.itsoffbrand.com/) — one 3D object that
-owns the centre of the screen and transforms as you scroll — rebuilt around a
-**neural network** metaphor for a **fintech** brand.
+A scroll-driven demo page in the spirit of
+[totem.itsoffbrand.com](https://totem.itsoffbrand.com/) — one object that
+transforms as you scroll — rebuilt around a **neural model** for a **fintech**
+brand.
 
-*AXON is a fictional company invented for this demo. Every figure in the
-prototype is made up.*
+*AXON is fictional. Every figure on the page is invented.*
 
-## Start here
+## The demo
+
+**[`totem-demo/`](totem-demo/)** — plain HTML, CSS and JS. No build step, no
+dependencies. Start there; its [README](totem-demo/README.md) explains how it
+works and how it ports to React.
+
+```sh
+python3 -m http.server 8000 --directory totem-demo
+```
+
+- Light and dark, toggled top right. Light takes a saturated ground that
+  changes with every chapter; dark keeps a near-black ground and lets only the
+  signal carry the colour.
+- The model lives on one side of the content, not behind it, and swaps sides
+  as the chapters progress.
+- Scroll turns and rewires it through seven arrangements while the page's type,
+  texture, colour and layout transform with it.
+
+## Planning
 
 | | |
 |---|---|
-| **[docs/00-PLAN.md](docs/00-PLAN.md)** | Direction, what we're borrowing from the reference, IA, roadmap, open questions |
-| **[docs/01-STACK.md](docs/01-STACK.md)** | Stack recommendation and the alternatives considered |
-| **[docs/02-MOTION.md](docs/02-MOTION.md)** | Scroll choreography, chapter by chapter |
-| **[docs/03-CONTENT-MODEL.md](docs/03-CONTENT-MODEL.md)** | CMS schemas |
-| **[docs/04-PERFORMANCE.md](docs/04-PERFORMANCE.md)** | Budgets, device tiers, fallbacks |
+| [docs/00-PLAN.md](docs/00-PLAN.md) | Direction, what we're borrowing from the reference, IA, roadmap, open questions |
+| [docs/01-STACK.md](docs/01-STACK.md) | Stack recommendation and the alternatives considered |
+| [docs/02-MOTION.md](docs/02-MOTION.md) | Scroll choreography, chapter by chapter |
+| [docs/03-CONTENT-MODEL.md](docs/03-CONTENT-MODEL.md) | CMS schemas |
+| [docs/04-PERFORMANCE.md](docs/04-PERFORMANCE.md) | Budgets, device tiers, fallbacks |
 
-## Run the prototype
-
-No build step, no dependencies:
-
-```sh
-python3 -m http.server 8000 --directory site
-# then open http://localhost:8000/demo.html
-```
-
-`site/demo.html` is the scroll experience. `site/blueprint.html` is the
-client-facing deck. Both share `site/neural.js`.
-
-## The short version of the stack answer
+## Stack, in short
 
 **Next.js 15 + React Three Fiber + GSAP/ScrollTrigger + Lenis + Tailwind v4 +
-Sanity, on Vercel.**
+Sanity, on Vercel.** Reasoning in [docs/01-STACK.md](docs/01-STACK.md).
+`totem-demo/` is written so each file maps onto one piece of that — see
+[Porting](totem-demo/README.md#porting-to-nextjs--react).
 
-Sanity because motion parameters can live alongside the copy, so the client
-retunes the experience without a deploy. Next.js because route-level code
-splitting keeps the 3D bundle off the pages that don't need it. Three quality
-tiers with a no-WebGL fallback because "great on mid-end devices" is the
-constraint that decides whether this design survives contact with real hardware
-— reasoning in [docs/01-STACK.md](docs/01-STACK.md) and
-[docs/04-PERFORMANCE.md](docs/04-PERFORMANCE.md).
+## History
 
-## Why the prototype has no dependencies
-
-`site/neural.js` projects a 3D point graph onto a 2D canvas by hand. No WebGL,
-no Three.js, ~20 KB. That is deliberate: it opens instantly on the client's own
-phone during the pitch, and it demonstrates the quality-tier governor that the
-production build uses. The state machine — seven position targets, per-state
-edge visibility, smoothstepped blending — is the part that carries over to
-React Three Fiber unchanged.
+An earlier first-pass prototype and a separate blueprint deck lived in `site/`
+and `design/`. `totem-demo/` supersedes both — it carries a different token
+system, so keeping both in the tree would have meant two contradictory sources
+of truth. They remain in git history and on the `claude/sweet-rubin-b5hi8c`
+branch.

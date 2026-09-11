@@ -85,10 +85,9 @@ experience is spent where it converts.
 
 | Path | What it is |
 |---|---|
-| `site/demo.html` | Working scroll prototype. Open it in a browser. |
-| `site/blueprint.html` | The client-facing blueprint deck. |
-| `site/neural.js` | The field renderer both pages share. Dependency-free. |
-| `design/tokens.css` / `.json` | Design tokens, single source of truth. |
+| `totem-demo/` | The working demo. Plain HTML/CSS/JS, no build step. See its own README. |
+| `totem-demo/css/tokens.css` | Design tokens, single source of truth for both themes. |
+| `totem-demo/js/neural.js` | The model: arrangements, edge families, rendering. |
 | `docs/01-STACK.md` | Stack recommendation and the alternatives considered. |
 | `docs/02-MOTION.md` | Scroll choreography spec, frame by frame. |
 | `docs/03-CONTENT-MODEL.md` | CMS schemas. |
