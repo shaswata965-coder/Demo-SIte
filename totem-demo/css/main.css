@@ -12,7 +12,6 @@ body {
   font-family: var(--f-body);
   font-size: .9375rem;
   line-height: 1.6;
-  overflow-x: hidden;
 }
 ::selection { background: var(--accent); color: var(--on-accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
@@ -126,24 +125,24 @@ img, canvas { max-width: 100%; }
 .rail button[aria-current="true"] em, .rail button:hover em { opacity: 1; }
 
 /* --- chapters ------------------------------------------------------------- */
-/* A chapter is two viewports: one of copy, one the model crosses in. Change
-   this single number to retime the whole piece. */
-.chapter { position: relative; min-height: 200svh; }
+/* A chapter is 1.8 viewports of scroll. With the copy free-flowing, anything
+   past ~1.45 opened a stretch you could stop in and see nothing — the copy had
+   left and the next had not arrived. Pinning the copy removes that ceiling:
+   it is on screen for the whole chapter, so the transition can take as long as
+   it likes and there is nowhere in it to come to rest on an empty page. */
+.chapter { position: relative; min-height: 180svh; }
 
 /* Full-bleed colour band, painted below the model. Negative z-index works
-   because neither .doc nor .chapter creates a stacking context. */
-.band {
-  position: absolute; top: 0; bottom: 0;
-  left: calc(50% - 50vw); width: 100vw;
-  z-index: -1; background: var(--bg);
-}
+   because neither .doc nor .chapter creates a stacking context. Sized to the
+   chapter rather than to 100vw, so it never overflows past a scrollbar. */
+.band { position: absolute; inset: 0; z-index: -1; background: var(--bg); }
 
 .ch-body {
-  position: relative; z-index: 3;   /* above the model at z-index 2 */
-  min-height: 100svh;
+  position: sticky; top: 0; z-index: 3;   /* above the model at z-index 2 */
+  height: 100svh;
   display: grid; align-content: center;
   padding-block: clamp(4rem, 12vh, 8rem);
-  gap: clamp(1.5rem, 1.9vw, 2.4rem);
+  gap: clamp(1.75rem, 3.1vw, 3.6rem);
 }
 .marker {
   font-family: var(--f-mono); font-size: clamp(.625rem, .68vw, .875rem); letter-spacing: .2em;
@@ -182,7 +181,7 @@ img, canvas { max-width: 100%; }
   line-height: 1.5; color: var(--ink-2); }
 
 /* figures rail under the copy */
-.figures { display: flex; flex-wrap: wrap; gap: 1.8rem 3.2rem; margin-top: 1.2rem;
+.figures { display: flex; flex-wrap: wrap; gap: 2rem 3.4rem; margin-top: .4rem;
   font-family: var(--f-mono); }
 .figures div { display: grid; gap: .15rem; }
 .figures dt { font-size: clamp(.5625rem, .6vw, .75rem); letter-spacing: .2em; text-transform: uppercase; color: var(--faint); }
@@ -236,7 +235,7 @@ html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
 /* --- phone: overrides must sit after the base rules they replace --- */
 @media (max-width: 899px) {
   .stage { left: 0; width: 100vw; height: 42svh; border-bottom: var(--rule-weight) solid var(--rule); }
-  .doc { padding: 44svh 0 0; }
+  .doc { padding: 0; }
   .ch-body { padding-inline: var(--gutter); }
 
   /* There is no room for a full inspection readout over a 42svh stage, and it
@@ -249,9 +248,10 @@ html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
      of the copy and scrolling is the navigation anyway. */
   .rail { display: none; }
 
-  .chapter { min-height: 150svh; }
-  .chapter:last-of-type { min-height: 90svh; }
-  .ch-body { min-height: 56svh; padding-block: clamp(2.5rem, 8vh, 4rem); }
+  .chapter { min-height: 170svh; }
+  .chapter:last-of-type { min-height: 100svh; }
+  .ch-body { top: 42svh; height: 58svh; padding-block: clamp(1.5rem, 4vh, 3rem);
+    gap: clamp(1rem, 3vw, 1.75rem); }
   #c0 h1 { font-size: clamp(2rem, 9vw, 3rem); }
   .chapter h1, .chapter h2 { font-size: clamp(1.7rem, 7.6vw, 2.6rem); }
   .figures { gap: 1.1rem 1.6rem; }
@@ -279,25 +279,15 @@ html.theming .hud, html.theming .hud b, html.theming .colophon {
 @media (prefers-reduced-motion: reduce) { html.theming * { transition: none !important; } }
 
 /* ===========================================================================
-   Section rhythm. Every other chapter sits on a soft wash of its own accent,
-   so scrolling alternates between the airy ground and a tinted one. Each
-   chapter also pins its own accent pair, so its copy keeps its colour no
-   matter which chapter the scroll position currently reports.
+   Section rhythm. Every other chapter sits on a soft wash of the primary, so
+   scrolling alternates between the airy ground and a tinted one. One tint,
+   not one per chapter — the alternation is the rhythm, the colour is constant.
    =========================================================================== */
-#c0 { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
-#c1 { --accent: var(--c-cyan);   --contrast: var(--c-coral);  }
-#c2 { --accent: var(--c-violet); --contrast: var(--c-jade);   }
-#c3 { --accent: var(--c-jade);   --contrast: var(--c-violet); }
-#c4 { --accent: var(--c-amber);  --contrast: var(--c-blue);   }
-#c5 { --accent: var(--c-coral);  --contrast: var(--c-cyan);   }
-#c6 { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
-
 #c1 .band, #c3 .band, #c5 .band {
-  background: var(--bg-sunk);                                  /* fallback */
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  background: var(--bg-sunk);                                     /* fallback */
+  background: color-mix(in srgb, var(--c-primary) 7%, var(--bg));
 }
-/* The closing chapter gets the firmest ground on the page. */
 #c6 .band {
   background: var(--bg-sunk);
-  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+  background: color-mix(in srgb, var(--c-primary) 4%, var(--bg));
 }

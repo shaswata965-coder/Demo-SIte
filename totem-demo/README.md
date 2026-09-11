@@ -80,57 +80,70 @@ face and fitting its frame. These are tuned against the page's spin table
 
 ## Colour
 
-**One palette, held constant.** An earlier pass rotated the page's hue per
-chapter, repainting the whole ground every section — it read as seven different
-websites and, because the hue was rewritten every frame, it also repainted the
-full-viewport texture layers every frame.
+**Three colours. That is the whole palette.**
 
-Colour now lives in two places:
+| | Role |
+|---|---|
+| `--c-primary` | The structure you are looking at — the shell, the lattice, the coil, the ledger grid, and every piece of interface chrome. |
+| `--c-second` | Wiring that runs *between* structures — the layer fan, the spokes, the corridor rings and arcs. |
+| `--c-signal` | Reserved for what is **live**: the traced inference, the pulses, the output terminals, and the one claim in each sentence. Nothing else may use it. |
 
-**The model carries six hues at once,** assigned by *structure*, so the colour
-decodes rather than decorates. Each edge family gets its own: the shell wiring
-is blue, the layer fan violet, the lattice jade, the corridor rings cyan, the
-coil coral, the ledger grid amber. Hidden units are coloured by which layer they
-belong to — so the inference stack resolves into coloured bands, and every other
-arrangement groups rather than speckles. Input and output units keep blue and
-coral rings, and the traced inference path and the signal pulses share amber:
-one colour for "live signal" throughout.
+An earlier pass ran six accents in the model and a different accent pair per
+chapter. It was not a palette, it was a swatch book — the page had no colour
+identity because every screen had a different one. The rule now is that colour
+is assigned by *role*, never by position: the same thing is the same colour on
+every chapter.
 
-**The copy carries one accent per chapter,** and nothing else changes. Each
-chapter names an accent and a contrast in `CHAPTERS` (`app.js`); the marker, the
-`<em>` phrases, the `<strong>` claims and the figures pick them up from
-`[data-accent]` in `tokens.css`. `<em>` names the thing, `<strong>` states the
-claim — two levels of emphasis, both in colour, both carrying meaning.
+`<em>` names the thing in primary, `<strong>` states the claim in signal, and
+that pairing is identical in all seven chapters.
 
 The palette is read out of the stylesheet once (`palette()` in `app.js`), so the
-model and the page can never disagree and no colour maths is duplicated across
-two languages. Nothing is written to the root every frame.
+model and the page cannot disagree and no colour maths is duplicated across two
+languages. Nothing is written to the root per frame.
 
-Per chapter, the only things that still step are the display type's width and
-weight (Archivo's `wdth` axis runs 82 → 124) and which side of the content the
-model sits on.
+Per chapter, the only things that step are the display type's width and weight
+(Archivo's `wdth` axis runs 82 → 124) and which side of the content the model
+sits on.
 
-## Pacing
+## Pacing, and why the copy is pinned
 
-A chapter is **two viewports**: one of copy (`.ch-body { min-height: 100svh }`)
-and one the model crosses in. Progress is measured between section tops, so
-travel, roll and morph stretch over the whole 200svh — the transition is paced
-entirely by that one number and by nothing else. `.chapter { min-height }`
-retimes the whole piece; no easing value needs touching.
+A chapter is **1.8 viewports** of scroll, and `.ch-body` is `position: sticky`
+so the copy is on screen for all of it.
+
+That stickiness is not a style choice, it is what makes the pacing possible.
+With the copy free-flowing, an empty screen becomes reachable the moment a
+chapter is taller than one viewport plus the shortest copy block — measured at
+1.45 viewports here. Past that you can stop scrolling between two sections and
+be looking at nothing. Pinning the copy removes the ceiling entirely: the
+transition can take as long as it likes and there is nowhere in it to come to
+rest on a blank page.
+
+`dragEase` settles for the first 30% of the chapter, then travels the remaining
+70%, landing exactly as the next chapter's copy arrives. 70% of 1.8 viewports is
+the same scroll distance as the 64% of 2.0 it replaced, so the transition is
+unchanged in length.
+
+Verified by walking every scroll position at three viewport sizes: the least
+copy visible at any stop is 40–71% of the viewport, and that worst case is the
+opening frame.
+
+To retime the piece, change `.chapter { min-height }`. To change how much of it
+is settle versus travel, change the two numbers in `dragEase`.
 
 ## Section rhythm
 
-Every other chapter sits on a soft wash of its own accent
-(`color-mix(in srgb, var(--accent) 10%, var(--bg))`), so scrolling alternates
+Every other chapter sits on a soft wash of the primary
+(`color-mix(in srgb, var(--c-primary) 7%, var(--bg))`), so scrolling alternates
 between the airy ground and a tinted one and the boundary crosses the screen as
-a hard edge.
+a hard edge. One tint, not one per chapter — the alternation is the rhythm, the
+colour stays put.
 
 Getting the band *behind* the model took a specific stacking arrangement, worth
 knowing before you touch it:
 
 ```
 body background
-  .band              z-index: -1   full-bleed, per chapter
+  .band              z-index: -1   full-bleed, sized to the chapter
   .texture           z-index:  0
   .stage (canvas)    z-index:  2
   .ch-body (copy)    z-index:  3
@@ -140,10 +153,6 @@ body background
 `transform`, no `opacity` on either — or the band cannot reach below the canvas
 and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
 wrapper rather than sitting directly in the section.
-
-Each chapter also pins its own `--accent`/`--contrast` pair by id, so its copy
-keeps its colour regardless of which chapter the scroll position currently
-reports.
 
 ## Micro-animation
 

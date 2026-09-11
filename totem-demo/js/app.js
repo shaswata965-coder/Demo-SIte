@@ -27,16 +27,15 @@
      is negative so the wrap to magenta is a short move, not a long one. */
   /* The model alternates sides every chapter and the copy alternates with it.
      `side` is which side the MODEL sits on; the copy takes the other one.
-     `accent` names which of the six palette hues this chapter's marker,
-     highlighted words and figures use — the page itself does not recolour. */
+     Colour is not per chapter: one palette runs the whole page. */
   var CHAPTERS = [
-    { id: 'seed',   label: 'Dormant',    accent: 'blue',   side: 'right' },
-    { id: 'bloom',  label: 'Ingest',     accent: 'cyan',   side: 'left'  },
-    { id: 'infer',  label: 'Inference',  accent: 'violet', side: 'right' },
-    { id: 'settle', label: 'Settlement', accent: 'jade',   side: 'left'  },
-    { id: 'vault',  label: 'Assurance',  accent: 'amber',  side: 'right' },
-    { id: 'ledger', label: 'Proof',      accent: 'coral',  side: 'left'  },
-    { id: 'core',   label: 'Begin',      accent: 'blue',   side: 'right' }
+    { id: 'seed',   label: 'Dormant',    side: 'right' },
+    { id: 'bloom',  label: 'Ingest',     side: 'left' },
+    { id: 'infer',  label: 'Inference',  side: 'right' },
+    { id: 'settle', label: 'Settlement', side: 'left' },
+    { id: 'vault',  label: 'Assurance',  side: 'right' },
+    { id: 'ledger', label: 'Proof',      side: 'left' },
+    { id: 'core',   label: 'Begin',      side: 'right' }
   ];
 
   /* How far the model rolls while crossing from one side to the other. It
@@ -122,7 +121,7 @@
     /* The six accents, the ink and the muted tone all live in css/tokens.css.
        Reading them means the model and the page can never disagree, and there
        is no colour arithmetic duplicated in two languages. */
-    var PAL_VARS = ['--c-blue', '--c-violet', '--c-jade', '--c-cyan', '--c-coral', '--c-amber'];
+    var PAL_VARS = ['--c-primary', '--c-second', '--c-signal'];
     function palette() {
       var cs = getComputedStyle(root);
       return {
@@ -216,7 +215,6 @@
       if (idx !== lastChapter || force) {
         lastChapter = idx;
         root.setAttribute('data-chapter', String(idx));
-        root.setAttribute('data-accent', CHAPTERS[idx].accent);
         for (var i = 0; i < buttons.length; i++) {
           buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
         }

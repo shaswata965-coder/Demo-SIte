@@ -22,14 +22,15 @@
   --rule-hi:   rgba(12, 20, 36, 0.22);
   --tex-ink:   rgba(12, 20, 36, 0.055);
 
-  /* Six accents, used together in the model and one at a time in the copy.
-     Light values are deepened so they hold contrast on a near-white ground. */
-  --c-blue:    #1B4DF5;
-  --c-violet:  #7231E8;
-  --c-jade:    #00966C;
-  --c-cyan:    #0089BD;
-  --c-coral:   #E8331A;
-  --c-amber:   #C97A00;
+  /* Three. Primary carries the structure, secondary separates one kind of
+     structure from another, signal is reserved for what is live — the traced
+     inference, the pulses, the claim in a sentence. Nothing else gets colour. */
+  --c-primary: #1E3AD9;
+  --c-second:  #0C7C85;
+  --c-signal:  #DC5A1E;
+
+  --accent:   var(--c-primary);
+  --contrast: var(--c-signal);
 
   --on-accent: #FFFFFF;
   --canvas-mode: ink;
@@ -48,12 +49,9 @@
     --rule-hi: rgba(239, 242, 248, 0.24);
     --tex-ink: rgba(239, 242, 248, 0.05);
 
-    --c-blue:   #5B87FF;
-    --c-violet: #AE8DFF;
-    --c-jade:   #23E0A4;
-    --c-cyan:   #3FD2F2;
-    --c-coral:  #FF7A5E;
-    --c-amber:  #FFC24D;
+    --c-primary: #7C97FF;
+    --c-second:  #3FC6D2;
+    --c-signal:  #FF9B4D;
 
     --on-accent: #070A12;
     --canvas-mode: glow;
@@ -72,27 +70,15 @@
   --rule-hi: rgba(239, 242, 248, 0.24);
   --tex-ink: rgba(239, 242, 248, 0.05);
 
-  --c-blue:   #5B87FF;
-  --c-violet: #AE8DFF;
-  --c-jade:   #23E0A4;
-  --c-cyan:   #3FD2F2;
-  --c-coral:  #FF7A5E;
-  --c-amber:  #FFC24D;
+  --c-primary: #7C97FF;
+  --c-second:  #3FC6D2;
+  --c-signal:  #FF9B4D;
 
   --on-accent: #070A12;
   --canvas-mode: glow;
   color-scheme: dark;
 }
 
-/* Each chapter owns one accent and one contrast. The page does not change
-   colour — only the marker, the highlighted words and the figures do. */
-:root                    { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
-:root[data-accent="cyan"]   { --accent: var(--c-cyan);   --contrast: var(--c-coral);  }
-:root[data-accent="violet"] { --accent: var(--c-violet); --contrast: var(--c-jade);   }
-:root[data-accent="jade"]   { --accent: var(--c-jade);   --contrast: var(--c-violet); }
-:root[data-accent="amber"]  { --accent: var(--c-amber);  --contrast: var(--c-blue);   }
-:root[data-accent="coral"]  { --accent: var(--c-coral);  --contrast: var(--c-cyan);   }
-:root[data-accent="blue"]   { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
 
 :root {
   --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;

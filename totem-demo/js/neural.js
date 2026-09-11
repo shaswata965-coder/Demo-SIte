@@ -43,13 +43,16 @@
   function smoothstep(t) { return t * t * (3 - 2 * t); }
   function lerp(a, b, t) { return a + (b - a) * t; }
 
-  /* Hold, move, hold. The model sits still in its arrangement through the top
-     and tail of a chapter and does all of its travelling, turning and morphing
-     in the middle — which is what makes the change read as one deliberate drag
-     across the page instead of a constant drift. The page uses the identical
-     curve to move the stage, so every part of the transition is in step. */
+  /* A short settle at the top of a chapter, then the move runs the rest of the
+     way and lands exactly as the next chapter's copy arrives.
+
+     The model holds its arrangement while you read, then travels the rest of
+     the chapter and lands as the next copy arrives. The move spans 70% of a
+     1.8-viewport chapter — the same scroll distance as 64% of a 2-viewport one,
+     so the transition takes just as long as before. The page moves the stage on
+     this identical curve, so every part stays in step. */
   function dragEase(t) {
-    return smoothstep(clamp((t - 0.18) / 0.64, 0, 1));
+    return smoothstep(clamp((t - 0.30) / 0.70, 0, 1));
   }
 
   /* --------------------------------------------------------------------------
@@ -74,10 +77,13 @@
      are great-circle arcs; everything else is straight. */
   var CURVE = { arc: 0.30, ring: 0.07, spoke: 0.04 };
 
-  /* Index into the palette the page hands over: 0 blue, 1 violet, 2 jade,
-     3 cyan, 4 coral, 5 amber. */
-  var FAM_COLOR = { prox: 0, layer: 1, spoke: 1, lattice: 2, ring: 3, arc: 4, helix: 4, riser: 5 };
-  var C_BLUE = 0, C_VIOLET = 1, C_JADE = 2, C_CYAN = 3, C_CORAL = 4, C_AMBER = 5;
+  /* 0 primary — the structure itself. 1 secondary — wiring that runs between
+     structures. 2 signal — reserved for what is live, nothing else. */
+  var C_PRIMARY = 0, C_SECOND = 1, C_SIGNAL = 2;
+  var FAM_COLOR = {
+    helix: C_PRIMARY, prox: C_PRIMARY, lattice: C_PRIMARY, riser: C_PRIMARY,
+    layer: C_SECOND, spoke: C_SECOND, ring: C_SECOND, arc: C_SECOND
+  };
 
   /*        seed  bloom  infer  settle  vault  ledger  core  */
   var POSE_YAW   = [0, 0.00, -0.05, 0.00,  0.12,  0.28, 0.00];
@@ -736,7 +742,7 @@
     if (hotPath) {
       ctx.lineWidth = Math.min(2.6, 1.2 + this.u * 0.7);
       ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.9 : 0.95));
-      ctx.strokeStyle = PAL[C_AMBER];
+      ctx.strokeStyle = PAL[C_SIGNAL];
       ctx.stroke(hotPath);
     }
 
@@ -750,8 +756,8 @@
     /* Hidden units cycle through four of the six; inputs and outputs keep the
        two the copy uses for "in" and "out" so the ends of the model are
        readable at a glance. */
-    var DOT = [PAL[C_BLUE], PAL[C_VIOLET], PAL[C_JADE], PAL[C_CYAN]];
-    var RING = [PAL[C_BLUE], PAL[C_CORAL]];
+    var DOT = [PAL[C_PRIMARY], PAL[C_SECOND]];
+    var RING = [PAL[C_PRIMARY], PAL[C_SIGNAL]];
     var dots = [], rings = [], bias = new Path2D();
     for (var ci = 0; ci < DOT.length; ci++) {
       dots.push([]);
@@ -762,7 +768,7 @@
       for (bb = 0; bb < NB; bb++) rings[ci].push(new Path2D());
     }
     var halo = [];   /* flat x, y, r, colourIndex, alpha — no per-unit objects */
-    var dotUsed = [0, 0, 0, 0];
+    var dotUsed = [0, 0];
 
     for (var i = 0; i < n; i++) {
       var i4 = i * 4, d = P[i4 + 2];
@@ -784,7 +790,7 @@
         var sq = r * 1.7;
         bias.rect(nx - sq / 2, ny - sq / 2, sq, sq);
       } else {
-        var ci2 = this.meta.layerOf[i] & 3;
+        var ci2 = this.meta.layerOf[i] & 1;
         dotUsed[ci2] = 1;
         var dp = dots[ci2][bk];
         dp.moveTo(nx + r, ny);
@@ -838,19 +844,19 @@
       var head = (ink ? 2.2 : 2.6) * this.u * pd;
       var tail = Math.max(0, pu.t - 0.10);
       var lx = lerp(P[pa], P[pb], tail), ly = lerp(P[pa + 1], P[pb + 1], tail);
-      ctx.strokeStyle = PAL[C_AMBER];
+      ctx.strokeStyle = PAL[C_SIGNAL];
       ctx.lineCap = 'round';
       ctx.lineWidth = head * 0.85;
       ctx.globalAlpha = Math.min(1, pv * pd) * 0.42;
       ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(px2, py2); ctx.stroke();
 
-      ctx.fillStyle = PAL[C_AMBER];
+      ctx.fillStyle = PAL[C_SIGNAL];
       ctx.globalAlpha = Math.min(1, pv * pd);
       ctx.beginPath(); ctx.arc(px2, py2, head, 0, TAU); ctx.fill();
       if (!ink) {
         var gr = 6.5 * this.u * pd;
         ctx.globalAlpha = Math.min(0.6, pv * pd * 0.5);
-        ctx.drawImage(this._glow(PAL[C_AMBER]), px2 - gr, py2 - gr, gr * 2, gr * 2);
+        ctx.drawImage(this._glow(PAL[C_SIGNAL]), px2 - gr, py2 - gr, gr * 2, gr * 2);
       }
     }
 
