@@ -143,22 +143,36 @@ webfont. `app.js` sets `lang` and `data-chapter` on the root itself, so the
 embed build behaves identically to the standalone one. Use it for anywhere you
 are pasting the page into someone else's document; use `index.html` for hosting.
 
-## Nothing may leave the copy invisible
+## Rendering at full screen
 
-The chapter copy animates in, and the rule the code follows is that **no script
-failure can hide it**. It is visible in the stylesheet; it is hidden only while
-`.reveals-armed` is on the root, which `app.js` adds *after* it has successfully
-built an observer. Three independent things remove it again: the observer
-firing, a 2.5-second failsafe timer, and the `catch` around initialisation. A
-reader never depends on all three working — block `js/neural.js` in devtools and
-the page degrades to a readable static page rather than a blank one.
+Every mark is drawn in `u`, a unit derived from the model's own radius
+(`neural.js`, `resize`). Sizing dots, strokes and labels in fixed pixels holds
+together on a laptop and turns the model to dust on a 27-inch display, where the
+frame scales and the marks do not.
 
-Scroll progress is measured from `getBoundingClientRect()`, not `window.scrollY`,
-for the same reason: when the page is embedded, the element doing the scrolling
-may not be the window, and `scrollY` would sit at zero forever.
+Unit count scales with the stage's area, and each arrangement carries a scale in
+`POSE_SCALE` so it fits its frame — a flat plane seen square-on needs roughly
+half the scale of a volume. Measured margins at 1280×720 through 2560×1440: all
+seven arrangements clear the frame edge by at least 16px.
 
-If you add a reveal, give it the `.rv` class and it inherits all of this. Do not
-gate visibility on a class that only JS removes.
+**Line width does not scale with `u`.** This is the one exception and it matters:
+edge fill area is count × length × width under additive blending, and it is the
+entire frame cost. Scaling width with the model tripled the blended area at
+2560 for no visual gain — 19 fps. Hairlines plus a depth cutoff on faint edges
+put it back to 58. If you are ever profiling this, the cost is edges; it is not
+the node loop and it is not page compositing.
+
+## If the model fails to build
+
+`armReveals()` runs *after* `boot()`. That ordering is deliberate: the copy is
+visible in the stylesheet and hidden only once reveals are armed, so if the
+model throws, the hiding never happens, the page is a readable static page, and
+the error reaches the console rather than being swallowed. There is no timer and
+no `catch` doing this — just the call order.
+
+Scroll progress is measured from `getBoundingClientRect()`, not `window.scrollY`:
+when the page is embedded, the element doing the scrolling may not be the
+window, and `scrollY` would sit at zero forever.
 
 ## Porting to Next.js / React
 

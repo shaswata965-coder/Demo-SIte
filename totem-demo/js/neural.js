@@ -74,9 +74,9 @@
   var CURVE = { arc: 0.30, ring: 0.07, spoke: 0.04 };
 
   /*        seed  bloom  infer  settle  vault  ledger  core  */
-  var POSE_YAW   = [0, 0.00, -0.35, 0.00,  0.12, -0.10, 0.00];
-  var POSE_PITCH = [0, 0.00,  0.05, -0.10, 0.10,  0.50, 0.00];
-  var POSE_SCALE = [1, 1.00,  0.80,  0.96, 0.92,  0.84, 1.10];
+  var POSE_YAW   = [0, 0.00, -0.05, 0.00,  0.12,  0.28, 0.00];
+  var POSE_PITCH = [0, 0.00,  0.05, -0.10, 0.10,  0.50, 0.30];
+  var POSE_SCALE = [1, 0.94,  0.70,  0.88, 0.78,  0.47, 0.95];
 
   /* Contextual annotations — two per arrangement, pinned to a real node and
      faded with the blend. They are the difference between "abstract dots" and
@@ -92,9 +92,9 @@
   ];
 
   var TIERS = {
-    high:   { nodes: 300, edges: 1500, pulses: 18, dpr: 2.0, notes: true },
-    medium: { nodes: 210, edges: 950,  pulses: 12, dpr: 1.5, notes: true },
-    low:    { nodes: 130, edges: 520,  pulses: 6,  dpr: 1.0, notes: true }
+    high:   { nodes: 420, edges: 2100, pulses: 22, dpr: 2.0, notes: true },
+    medium: { nodes: 300, edges: 1400, pulses: 14, dpr: 1.5, notes: true },
+    low:    { nodes: 190, edges: 850,  pulses: 8,  dpr: 1.0, notes: true }
   };
 
   function detectTier() {
@@ -104,8 +104,8 @@
     var mem = navigator.deviceMemory || 4;
     var cores = navigator.hardwareConcurrency || 4;
     var coarse = global.matchMedia && global.matchMedia('(pointer: coarse)').matches;
-    if (mem <= 4 || cores <= 4) return 'low';
-    if (coarse || mem <= 6 || cores <= 6) return 'medium';
+    if (mem <= 2 || cores <= 2) return 'low';
+    if (coarse || mem <= 4 || cores <= 4) return 'medium';
     return 'high';
   }
 
@@ -122,9 +122,15 @@
     this.tier = opts.forceTier || detectTier();
     var t = TIERS[this.tier];
 
+    /* A full-screen stage is four times the area of a laptop one and needs the
+       units to match, or the model reads as dust scattered in a void. */
+    var box = canvas.getBoundingClientRect();
+    var area = Math.max(1, (box.width || 700) * (box.height || 800));
+    var density = Math.max(0.85, Math.min(1.32, Math.sqrt(area / 620000)));
+
     this.cfg = {
-      nodes: opts.nodes || t.nodes,
-      maxEdges: opts.maxEdges || t.edges,
+      nodes: opts.nodes || Math.round(t.nodes * density),
+      maxEdges: opts.maxEdges || Math.round(t.edges * Math.min(1.08, density)),
       pulses: opts.pulses !== undefined ? opts.pulses : t.pulses,
       dprCap: opts.dprCap || t.dpr,
       notes: opts.notes !== undefined ? opts.notes : t.notes,
@@ -132,7 +138,7 @@
       autoRotate: opts.autoRotate !== undefined ? opts.autoRotate : 0,
       spinPerChapter: opts.spinPerChapter !== undefined ? opts.spinPerChapter : 0.62,
       fov: opts.fov || 3.9,
-      scale: opts.scale || 0.33,
+      scale: opts.scale || 0.36,
       seed: opts.seed || 731
     };
 
@@ -206,8 +212,10 @@
     }
 
     /* Vault cells: hollow shell of a cube, so it reads as a container rather
-       than a solid cloud. Surface cells first, interior only if short. */
-    var g = 6, surf = [], inner = [];
+       than a solid cloud. The grid is sized to the unit count — a fixed 6³
+       holds only 216 cells and silently runs out once the model gets denser. */
+    var g = Math.max(6, Math.ceil(Math.cbrt(n * 1.3)));
+    var surf = [], inner = [];
     for (var x = 0; x < g; x++) for (var y = 0; y < g; y++) for (var z = 0; z < g; z++) {
       var onFace = x === 0 || y === 0 || z === 0 || x === g - 1 || y === g - 1 || z === g - 1;
       (onFace ? surf : inner).push([x, y, z]);
@@ -216,10 +224,16 @@
       for (var s = a.length - 1; s > 0; s--) { var j = (rand() * (s + 1)) | 0; var q = a[s]; a[s] = a[j]; a[j] = q; }
       return a;
     }
-    var cells = shuffle(surf).concat(shuffle(inner).map(function (c) { return [c[0] * 0.42 + 1.45, c[1] * 0.42 + 1.45, c[2] * 0.42 + 1.45]; }));
+    var surfCount = surf.length;
+    /* Interior cells are pulled into the middle half so they read as a core
+       inside the shell rather than a second, slightly smaller shell. */
+    var cells = shuffle(surf).concat(shuffle(inner).map(function (c) {
+      return [c[0] * 0.5 + g * 0.25, c[1] * 0.5 + g * 0.25, c[2] * 0.5 + g * 0.25];
+    }));
+    while (cells.length < n) cells.push(cells[cells.length % Math.max(1, surfCount)]);
     m.cell = cells.slice(0, n);
     m.grid = g;
-    for (i = 0; i < n; i++) m.surface[i] = i < surf.length ? 1 : 0;
+    for (i = 0; i < n; i++) m.surface[i] = i < surfCount ? 1 : 0;
 
     this.shapes = [
       this._seed(n, rng(11)), this._bloom(n, rng(22)), this._infer(n, rng(33)),
@@ -237,10 +251,10 @@
     var p = new Float32Array(n * 3), m = this.meta;
     for (var i = 0; i < n; i++) {
       var t = i / (n - 1);
-      var a = t * TAU * 3.1 + m.strand[i] * PI;
-      var r = 0.42 + 0.09 * Math.sin(t * PI * 3) + rand() * 0.04;
+      var a = t * TAU * 3.7 + m.strand[i] * PI;
+      var r = 0.74 + 0.14 * Math.sin(t * PI * 3) + rand() * 0.05;
       p[i * 3] = Math.cos(a) * r;
-      p[i * 3 + 1] = (t - 0.5) * 3.05;
+      p[i * 3 + 1] = (t - 0.5) * 2.45;
       p[i * 3 + 2] = Math.sin(a) * r;
     }
     return p;
@@ -267,9 +281,10 @@
     var p = new Float32Array(n * 3), m = this.meta;
     for (var i = 0; i < n; i++) {
       var l = m.layerOf[i], size = m.layerSize[l], k = m.idxInLayer[i];
-      var inner = k % 2 === 1 && size > 14;
-      var a = (k / size) * TAU + l * 0.31;
-      var r = (inner ? 0.52 : 0.92) * (0.78 + 0.26 * Math.sin((l / 5) * PI));
+      /* One ring per layer, tapering in and out again, with each layer given a
+         small twist so the rings do not stack into a single silhouette. */
+      var a = (k / size) * TAU + l * 0.26;
+      var r = 0.62 + 0.44 * Math.sin((l / 5) * PI);
       p[i * 3] = (l / 5 - 0.5) * 3.2;
       p[i * 3 + 1] = Math.cos(a) * r;
       p[i * 3 + 2] = Math.sin(a) * r;
@@ -333,11 +348,14 @@
         p[i * 3 + 1] = y * s;
         p[i * 3 + 2] = Math.sin(a) * rr * s;
       } else {
+        /* The orbit is tilted out of the horizontal plane, or it projects as a
+           flat ribbon and the closing frame has no height to it. */
         var t = (i / n) * TAU * 2.1;
-        var orb = 1.05 + rand() * 0.10;
-        p[i * 3] = Math.cos(t) * orb;
-        p[i * 3 + 1] = Math.sin(t * 2) * 0.16;
-        p[i * 3 + 2] = Math.sin(t) * orb;
+        var orb = 1.02 + rand() * 0.12;
+        var ox = Math.cos(t) * orb, oz = Math.sin(t) * orb;
+        p[i * 3] = ox;
+        p[i * 3 + 1] = oz * 0.62;
+        p[i * 3 + 2] = oz * 0.78;
       }
     }
     return p;
@@ -375,20 +393,58 @@
     }
 
     /* spoke — inner shell out to the surface, and core out to the orbit */
+    var coreIdx = [];
+    for (i = 0; i < n; i++) if (m.inCore[i]) coreIdx.push(i);
     for (i = 0; i < n; i++) {
       if (!m.outer[i] && outerIdx.length) add(i, outerIdx[(rand() * outerIdx.length) | 0], 'spoke');
-      if (!m.inCore[i]) add(i, (rand() * n) | 0, 'spoke');
+      /* Orbital units tie back into the core so the collapse reads as radial. */
+      if (!m.inCore[i] && coreIdx.length) add(i, coreIdx[(rand() * coreIdx.length) | 0], 'spoke');
     }
 
-    /* layer — feed-forward, with one lit path marked through the whole stack */
+    /* layer — feed-forward. Wiring each unit to *random* units in the next
+       layer produced a ball of long crossing lines that read as noise from
+       every angle. Fanning to the angularly nearest units instead gives the
+       braided structure a layered network actually has. */
+    var infer = this.shapes[2];
+    var angleOf = new Float32Array(n);
+    for (i = 0; i < n; i++) angleOf[i] = Math.atan2(infer[i * 3 + 2], infer[i * 3 + 1]);
+
+    function angDist(a, b) {
+      var d = Math.abs(a - b) % TAU;
+      return d > PI ? TAU - d : d;
+    }
+
     var byLayer = [[], [], [], [], [], []];
     for (i = 0; i < n; i++) byLayer[m.layerOf[i]].push(i);
+
+    function nearestIn(list, a, count) {
+      var scored = list.map(function (j) { return [angDist(angleOf[j], a), j]; });
+      scored.sort(function (x, y) { return x[0] - y[0]; });
+      return scored.slice(0, count).map(function (x) { return x[1]; });
+    }
+
     for (var l = 0; l < 5; l++) {
       var from = byLayer[l], to = byLayer[l + 1];
       if (!to.length) continue;
       for (var fi = 0; fi < from.length; fi++) {
-        var fan = 2 + (rand() < 0.4 ? 1 : 0);
-        for (var k = 0; k < fan; k++) add(from[fi], to[(rand() * to.length) | 0], 'layer');
+        var targets = nearestIn(to, angleOf[from[fi]], 2 + (rand() < 0.3 ? 1 : 0));
+        for (var k = 0; k < targets.length; k++) add(from[fi], targets[k], 'layer');
+      }
+    }
+
+    /* One lit path from an input unit all the way to an output — a single
+       inference, traced through the stack. Drawn brighter and heavier. */
+    var hot = {};
+    if (byLayer[0].length) {
+      var cur = byLayer[0][(rand() * byLayer[0].length) | 0];
+      for (var hl = 0; hl < 5; hl++) {
+        var nextList = byLayer[hl + 1];
+        if (!nextList.length) break;
+        var nxt = nearestIn(nextList, angleOf[cur], 3)[(rand() * 3) | 0];
+        if (nxt === undefined) break;
+        hot[Math.min(cur, nxt) + ':' + Math.max(cur, nxt)] = 1;
+        add(cur, nxt, 'layer');
+        cur = nxt;
       }
     }
 
@@ -441,15 +497,20 @@
       var allowed = SHARE[fam] * this.cfg.maxEdges;
       keepRate[fam] = have[fam] ? Math.min(1, allowed / have[fam]) : 1;
     }
-    E = E.filter(function (e) { return rand() < keepRate[e.fam]; });
+    E = E.filter(function (e) {
+      var key = Math.min(e.a, e.b) + ':' + Math.max(e.a, e.b);
+      return hot[key] || rand() < keepRate[e.fam];
+    });
 
     var c = E.length;
     this.eA = new Uint16Array(c); this.eB = new Uint16Array(c);
     this.eW = new Int8Array(c); this.eCurve = new Float32Array(c);
+    this.eHot = new Uint8Array(c);
     this.eVis = new Float32Array(c * NS);
     for (i = 0; i < c; i++) {
       this.eA[i] = E[i].a; this.eB[i] = E[i].b; this.eW[i] = E[i].w;
       this.eCurve[i] = CURVE[E[i].fam] || 0;
+      this.eHot[i] = hot[Math.min(E[i].a, E[i].b) + ':' + Math.max(E[i].a, E[i].b)] ? 1 : 0;
       var v = VIS[E[i].fam];
       for (var s = 0; s < NS; s++) this.eVis[i * NS + s] = v[s];
     }
@@ -473,6 +534,26 @@
   /* --------------------------------------------------------------------------
      Theme
      ------------------------------------------------------------------------ */
+  NeuralField.prototype._glow = function (color) {
+    var cache = this._spriteCache || (this._spriteCache = {});
+    var hit = cache[color];
+    if (hit) return hit;
+    var keys = Object.keys(cache);
+    if (keys.length > 9) delete cache[keys[0]];
+    var size = 64;
+    var cv = document.createElement('canvas');
+    cv.width = cv.height = size;
+    var g = cv.getContext('2d');
+    var grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grad.addColorStop(0, color);
+    grad.addColorStop(0.16, color);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    cache[color] = cv;
+    return cv;
+  };
+
   NeuralField.prototype.setTheme = function (mode, colors) {
     this.mode = mode;
     this.colors = colors;
@@ -481,7 +562,8 @@
   NeuralField.prototype.resize = function () {
     var rect = this.canvas.getBoundingClientRect();
     var w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
-    var dpr = Math.min(global.devicePixelRatio || 1, this.cfg.dprCap);
+    var budget = Math.sqrt(2.6e6 / Math.max(1, w * h));
+    var dpr = Math.max(1, Math.min(global.devicePixelRatio || 1, this.cfg.dprCap, budget));
     this.w = w; this.h = h;
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
@@ -490,6 +572,11 @@
        the top and bottom of it at the desktop scale. */
     var narrow = (global.innerWidth || w) < 900;
     this.radius = Math.min(w, h) * this.cfg.scale * (narrow ? 0.80 : 1);
+    /* Mark scale. 220 is the radius this was originally drawn against, so
+       u === 1 reproduces that look and everything tracks the model from
+       there. Clamped so a tiny panel stays legible and a 4K stage does not
+       render clown-sized dots. */
+    this.u = clamp(this.radius / 220, 0.8, 2.4);
     this.render();
   };
 
@@ -578,7 +665,7 @@
     ctx.globalCompositeOperation = ink ? 'source-over' : 'lighter';
 
     /* ---- edges, bucketed by opacity so the frame costs 8 strokes ---------- */
-    var B = 4, warm = [], cool = [];
+    var B = 4, warm = [], cool = [], hotPath = null, hotVis = 0;
     for (var q = 0; q < B; q++) { warm.push(new Path2D()); cool.push(new Path2D()); }
 
     for (var e = 0; e < this.eCount; e++) {
@@ -588,9 +675,10 @@
       var a4 = this.eA[e] * 4, b4 = this.eB[e] * 4;
       var depth = (P[a4 + 2] + P[b4 + 2]) * 0.5;
       var alpha = vis * (depth - 0.52) * 1.45;
-      if (alpha < 0.035) continue;
+      if (alpha < 0.095) continue;
       var bi = clamp((alpha * B) | 0, 0, B - 1);
-      var path = this.eW[e] > 0 ? warm[bi] : cool[bi];
+      var path = this.eHot[e] ? (hotPath || (hotPath = new Path2D())) : (this.eW[e] > 0 ? warm[bi] : cool[bi]);
+      if (this.eHot[e]) hotVis = Math.max(hotVis, vis);
       var ax = P[a4], ay = P[a4 + 1], bx = P[b4], by = P[b4 + 1];
       path.moveTo(ax, ay);
       var cv = this.eCurve[e];
@@ -605,8 +693,8 @@
       }
     }
 
-    ctx.lineWidth = ink ? 1.05 : 1;
-    ctx.lineCap = 'round';
+    ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.u * 0.38);
+    ctx.lineCap = 'butt';
     for (var p2 = 0; p2 < B; p2++) {
       var al = ((p2 + 0.55) / B) * (ink ? 0.66 : 0.34) * boost;
       ctx.globalAlpha = Math.min(ink ? 0.72 : 0.7, al);
@@ -615,32 +703,74 @@
       ctx.strokeStyle = C.accent2; ctx.stroke(cool[p2]);
     }
 
+    /* The traced inference, over the top of the rest of the stack. */
+    if (hotPath) {
+      ctx.lineWidth = Math.min(2.6, 1.2 + this.u * 0.7);
+      ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.85 : 0.95));
+      ctx.strokeStyle = C.ink;
+      ctx.stroke(hotPath);
+    }
+
     /* ---- nodes, drawn by role ------------------------------------------- */
+    /* Batched the same way the edges are. Issuing beginPath/arc/fill per unit
+       is four canvas calls each and arcs are expensive to tessellate; at four
+       hundred units that alone was most of the frame. Units are collected into
+       a path per colour and depth bucket and filled in one call apiece. */
     var n = this.cfg.nodes, ty = this.meta.type;
+    var NB = 4;
+    var COL = [C.ink, C.accent2, C.accent];
+    var dots = [], rings = [], bias = new Path2D();
+    for (var ci = 0; ci < 3; ci++) {
+      dots.push([]); rings.push([]);
+      for (var bb = 0; bb < NB; bb++) { dots[ci].push(new Path2D()); rings[ci].push(new Path2D()); }
+    }
+    var halo = [];   /* flat x, y, r, colourIndex, alpha — no per-unit objects */
+
     for (var i = 0; i < n; i++) {
       var i4 = i * 4, d = P[i4 + 2];
       var nx = P[i4], ny = P[i4 + 1];
       var a = clamp((d - 0.5) * 2.0, 0, 1);
+      var bk = clamp((a * NB) | 0, 0, NB - 1);
       var role = ty[i];
-      var r = (ink ? 2.7 : 2.4) * d * (0.85 + this.energy * 0.3);
-      ctx.globalAlpha = a * (ink ? 0.92 : 0.9);
+      var r = (ink ? 2.7 : 2.4) * this.u * d * (0.85 + this.energy * 0.3);
 
       if (role === INPUT || role === OUTPUT) {
-        ctx.strokeStyle = role === INPUT ? C.accent2 : C.accent;
-        ctx.lineWidth = ink ? 1.2 : 1.1;
-        ctx.beginPath(); ctx.arc(nx, ny, r * 1.9, 0, TAU); ctx.stroke();
+        var rr = r * 1.9, rc = role === INPUT ? 1 : 2, rp = rings[rc][bk];
+        rp.moveTo(nx + rr, ny);
+        rp.arc(nx, ny, rr, 0, TAU);
       } else if (role === BIAS) {
-        ctx.fillStyle = C.ink;
-        var s = r * 1.7;
-        ctx.fillRect(nx - s / 2, ny - s / 2, s, s);
+        var sq = r * 1.7;
+        bias.rect(nx - sq / 2, ny - sq / 2, sq, sq);
       } else {
-        ctx.fillStyle = (i % 5 === 0) ? C.ink : ((i % 3 === 0) ? C.accent2 : C.accent);
-        ctx.beginPath(); ctx.arc(nx, ny, r, 0, TAU); ctx.fill();
-        if (!ink) {  /* a soft halo carries the glow mode */
-          ctx.globalAlpha = a * 0.18;
-          ctx.beginPath(); ctx.arc(nx, ny, r * 3.4, 0, TAU); ctx.fill();
-        }
+        var ci2 = (i % 5 === 0) ? 0 : ((i % 3 === 0) ? 1 : 2);
+        var dp = dots[ci2][bk];
+        dp.moveTo(nx + r, ny);
+        dp.arc(nx, ny, r, 0, TAU);
+        /* Halo only on the units facing the viewer — the far half contributes
+           almost nothing visible and costs the same to draw. */
+        if (!ink && d > 0.97) { halo.push(nx, ny, r * 2.7, ci2, a * 0.34); }
       }
+    }
+
+    var roleAlpha = ink ? 0.92 : 0.9;
+    for (ci = 0; ci < 3; ci++) {
+      ctx.fillStyle = COL[ci];
+      ctx.strokeStyle = COL[ci];
+      for (bb = 0; bb < NB; bb++) {
+        ctx.globalAlpha = ((bb + 0.5) / NB) * roleAlpha;
+        ctx.fill(dots[ci][bb]);
+        if (ci > 0) { ctx.lineWidth = (ink ? 1.2 : 1.1) * this.u; ctx.stroke(rings[ci][bb]); }
+      }
+    }
+    ctx.globalAlpha = roleAlpha * 0.8;
+    ctx.fillStyle = C.ink;
+    ctx.fill(bias);
+
+    for (var hi2 = 0; hi2 < halo.length; hi2 += 5) {
+      var hr = halo[hi2 + 2];
+      ctx.globalAlpha = halo[hi2 + 4];
+      ctx.drawImage(this._glow(COL[halo[hi2 + 3]]),
+        halo[hi2] - hr, halo[hi2 + 1] - hr, hr * 2, hr * 2);
     }
 
     /* ---- signal pulses --------------------------------------------------- */
@@ -654,17 +784,18 @@
       if (pd < 0.55) continue;
       ctx.globalAlpha = Math.min(1, pv * pd);
       ctx.fillStyle = C.ink;
-      ctx.beginPath(); ctx.arc(px2, py2, (ink ? 2.2 : 2.6) * pd, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(px2, py2, (ink ? 2.2 : 2.6) * this.u * pd, 0, TAU); ctx.fill();
       if (!ink) {
-        ctx.globalAlpha = Math.min(0.5, pv * pd * 0.4);
-        ctx.beginPath(); ctx.arc(px2, py2, 9 * pd, 0, TAU); ctx.fill();
+        var gr = 9 * this.u * pd;
+        ctx.globalAlpha = Math.min(0.6, pv * pd * 0.5);
+        ctx.drawImage(this._glow(C.ink), px2 - gr, py2 - gr, gr * 2, gr * 2);
       }
     }
 
     /* ---- annotations ----------------------------------------------------- */
     if (this.cfg.notes) {
       ctx.globalCompositeOperation = 'source-over';
-      ctx.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.font = '500 ' + Math.round(10 * this.u) + 'px "IBM Plex Mono", ui-monospace, monospace';
       ctx.textBaseline = 'middle';
       this._notes(ctx, lo, 1 - t);
       this._notes(ctx, hi, t);
@@ -683,25 +814,27 @@
       var d = P[nd + 2];
       if (d < 0.6) continue;
       var x = P[nd], y = P[nd + 1];
+      var u = this.u;
       var right = x < this.w * 0.5;
-      var lead = Math.min(52, this.w * 0.12);
+      var lead = Math.min(52 * u, this.w * 0.12);
       var ex = right ? x + lead : x - lead;
+      var rise = 10 * u;
 
       ctx.globalAlpha = alpha * 0.5;
       ctx.strokeStyle = C.dim;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1 * u;
       ctx.beginPath();
-      ctx.moveTo(x, y); ctx.lineTo(ex, y - 10); ctx.lineTo(ex + (right ? 8 : -8), y - 10);
+      ctx.moveTo(x, y); ctx.lineTo(ex, y - rise); ctx.lineTo(ex + (right ? 8 * u : -8 * u), y - rise);
       ctx.stroke();
 
       ctx.globalAlpha = alpha * 0.62;
       ctx.fillStyle = C.dim;
-      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 3.2 * u, 0, TAU); ctx.stroke();
 
       ctx.globalAlpha = alpha;
       ctx.fillStyle = C.ink;
       ctx.textAlign = right ? 'left' : 'right';
-      ctx.fillText(notes[i].text, ex + (right ? 12 : -12), y - 10);
+      ctx.fillText(notes[i].text, ex + (right ? 12 * u : -12 * u), y - rise);
     }
     ctx.textAlign = 'left';
   };

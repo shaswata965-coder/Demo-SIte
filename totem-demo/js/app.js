@@ -12,8 +12,9 @@
    JS owns the hue rather than CSS so that the page and the canvas are painted
    from the identical value on the identical frame. Two sources would drift.
 
-   Rule this file follows: the copy is the page. Nothing here may leave text
-   invisible, whatever fails — see `armReveals` and the catch at the bottom.
+   Rule this file follows: the copy is the page. `armReveals` runs after the
+   model is built, so a failure there leaves a readable static page and the
+   error reaches the console instead of being swallowed.
    ========================================================================== */
 
 (function () {
@@ -50,19 +51,10 @@
     return out;
   }());
 
-  var sections = [], revealed = false;
+  var sections = [];
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-
-  /* Show every piece of copy and stop gating on script. Called on success
-     paths, on a timer, and from the catch — whichever happens first. */
-  function revealAll() {
-    revealed = true;
-    root.classList.remove('reveals-armed');
-    var rv = document.querySelectorAll('.rv');
-    for (var i = 0; i < rv.length; i++) rv[i].classList.add('in');
-  }
 
   /* Where the stage sits, in px from the left edge of the viewport, for a
      given side. Mirrors the widths in css/main.css. */
@@ -196,6 +188,7 @@
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
     var paintedHue = NaN, paintedSat = NaN, lastChapter = -1;
+    var themedHue = NaN, themedDark = null;
 
     function paint(force) {
       var p = field.progress;
@@ -208,14 +201,17 @@
 
       /* Writing a custom property on <html> invalidates style for the tree, so
          only write when the value actually moved. At rest this is a no-op. */
-      if (force || Math.abs(hue - paintedHue) > 0.06 || Math.abs(sat - paintedSat) > 0.06) {
+      if (force || Math.abs(hue - paintedHue) > 0.5 || Math.abs(sat - paintedSat) > 0.5) {
         paintedHue = hue; paintedSat = sat;
         root.style.setProperty('--h', hue.toFixed(2));
         root.style.setProperty('--s', sat.toFixed(2));
       }
 
       var dark = isDark();
-      field.setTheme(dark ? 'glow' : 'ink', palette(hue, sat, dark));
+      if (force || dark !== themedDark || Math.abs(hue - themedHue) > 2) {
+        themedHue = hue; themedDark = dark;
+        field.setTheme(dark ? 'glow' : 'ink', palette(hue, sat, dark));
+      }
 
       /* Travel, roll and morph all run off the same eased fraction, so the
          model crosses the page, turns and reconfigures as one movement. */
@@ -266,6 +262,9 @@
       requestAnimationFrame(frame);
     }
 
+    /* Handle for diagnostics in the console: __axon.field.stop() etc. */
+    window.__axon = { field: field, chapters: CHAPTERS };
+
     $('cta').addEventListener('click', function () {
       sections[0].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     });
@@ -279,9 +278,9 @@
   function wide() { return innerWidth >= 900; }
 
   /* ---- reveals ------------------------------------------------------------ */
-  /* Copy is visible in the stylesheet. It is hidden only once this runs, and
-     three independent things un-hide it: the observer, a failsafe timer, and
-     the catch below. A reader never depends on all three working. */
+  /* Copy is visible in the stylesheet and hidden only once this runs. Calling
+     it *after* boot is the whole trick: if the model fails to build, the
+     hiding never happens and the page is simply a readable static page. */
   function armReveals() {
     var rv = document.querySelectorAll('.rv');
     if (!('IntersectionObserver' in window) || !rv.length) return;
@@ -298,24 +297,12 @@
        first painted frame wait on an observer. */
     var hero = document.querySelectorAll('#c0 .rv');
     for (var h = 0; h < hero.length; h++) hero[h].classList.add('in');
-
-    /* Failsafe: if the observer never fires — an embedding host scrolls a
-       container it does not see, the tab is restored from bfcache, anything —
-       the copy appears anyway. Silently readable beats silently blank. */
-    setTimeout(function () { if (!revealed) revealAll(); }, 2500);
   }
 
   function init() {
     sections = CHAPTERS.map(function (_, i) { return $('c' + i); });
-    try {
-      armReveals();
-      boot();
-    } catch (err) {
-      /* Whatever broke, the page is still a page. */
-      revealAll();
-      root.classList.remove('theming');
-      if (window.console) console.error('[axon] falling back to static page:', err);
-    }
+    boot();
+    armReveals();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
