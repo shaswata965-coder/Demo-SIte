@@ -68,8 +68,8 @@ stack dims away as the globe forms rather than vanishing. That is the whole
 trick behind the model appearing to rewire itself.
 
 **Nodes are drawn by role** — inputs and outputs as rings, bias units as
-squares, hidden units as dots — and each arrangement carries two contextual
-annotations on leader lines (`σ activation`, `corridor 41`, `sha-256`).
+squares, hidden units as dots — and each arrangement carries one contextual
+annotation on a leader line (`σ activation`, `corridor 41`, `immutable`).
 
 **Viewing poses.** Scroll spin alone can present an arrangement edge-on; the
 layered stack was being viewed straight down its own axis. Each arrangement
@@ -78,39 +78,46 @@ the morph, so the model turns continuously but always arrives showing its best
 face and fitting its frame. These are tuned against the page's spin table
 (`SPIN_AT` in `app.js`) — change one and retune the other.
 
-## The aesthetic transforms with the view
+## Colour
 
-Two numbers — `--h` (hue) and `--s` (saturation) — are set on `<html>` and
-everything on the page is computed from them, including the colour of the model
-on the canvas. JavaScript owns them rather than CSS so that page and canvas are
-painted from the identical value on the identical frame.
+**One palette, held constant.** An earlier pass rotated the page's hue per
+chapter, repainting the whole ground every section — it read as seven different
+websites and, because the hue was rewritten every frame, it also repainted the
+full-viewport texture layers every frame.
 
-Hue walks the spectrum in one direction across the chapters, so a change never
-sweeps backwards through colours you have already passed:
+Colour now lives in two places:
 
-```
-250 indigo → 200 azure → 168 viridian → 130 green → 42 gold → 12 vermilion → -32 magenta
-```
+**The model carries six hues at once,** assigned by *structure*, so the colour
+decodes rather than decorates. Each edge family gets its own: the shell wiring
+is blue, the layer fan violet, the lattice jade, the corridor rings cyan, the
+coil coral, the ledger grid amber. Hidden units are coloured by which layer they
+belong to — so the inference stack resolves into coloured bands, and every other
+arrangement groups rather than speckles. Input and output units keep blue and
+coral rings, and the traced inference path and the signal pulses share amber:
+one colour for "live signal" throughout.
 
-Light and dark read that hue very differently, on purpose:
+**The copy carries one accent per chapter,** and nothing else changes. Each
+chapter names an accent and a contrast in `CHAPTERS` (`app.js`); the marker, the
+`<em>` phrases, the `<strong>` claims and the figures pick them up from
+`[data-accent]` in `tokens.css`. `<em>` names the thing, `<strong>` states the
+claim — two levels of emphasis, both in colour, both carrying meaning.
 
-- **light** — the ground itself takes a saturated wash. Each chapter is a
-  distinctly different colourway.
-- **dark** — the ground stays near-black and only the signal carries the hue.
+The palette is read out of the stylesheet once (`palette()` in `app.js`), so the
+model and the page can never disagree and no colour maths is duplicated across
+two languages. Nothing is written to the root every frame.
 
-Discrete things step per chapter via `data-chapter` on `<html>` and transition
-in CSS: display type width (Archivo's `wdth` axis runs 76 → 125 across the
-chapters) and weight, letter-spacing, which surface texture is showing, corner
-radius, rule weight, and **which side of the content the model sits on**.
+Per chapter, the only things that still step are the display type's width and
+weight (Archivo's `wdth` axis runs 82 → 124) and which side of the content the
+model sits on.
 
-### One thing worth knowing if you edit this
+## Pacing
 
-Do not put a CSS `transition` on any property derived from `--h`. JS moves the
-hue every frame, so a transition restarts every frame and the page colour ends
-up permanently lagging the model's. Colour changes are already smooth because
-the hue itself is interpolated. Only the light/dark flip is a genuine step, and
-it gets a transition through the `.theming` class that the toggle adds for the
-length of the fade.
+Each chapter is one viewport of copy followed by a **half-viewport gap**
+(`.chapter + .chapter { margin-top: 50svh }`), so a chapter spans 150svh of
+scroll. Progress is measured between section tops, so travel, roll and morph all
+stretch over that whole distance — the transition is 50% slower than a
+one-viewport chapter without changing a single easing value. To retime the whole
+piece, change that one margin.
 
 ## Performance
 

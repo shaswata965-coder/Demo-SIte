@@ -26,18 +26,12 @@ img, canvas { max-width: 100%; }
   position: absolute; inset: 0; display: block;
   transition: opacity var(--d-theme) var(--e-inout);
 }
-.texture .rules {
-  opacity: var(--tex-rule);
-  background: repeating-linear-gradient(90deg, var(--tex-ink) 0 1px, transparent 1px 84px);
-}
+.texture .rules { display: none; }
+.texture .scan  { display: none; }
 .texture .dots {
-  opacity: var(--tex-dot);
-  background-image: radial-gradient(var(--tex-ink-hi) 1px, transparent 1px);
-  background-size: 26px 26px;
-}
-.texture .scan {
-  opacity: var(--tex-scan);
-  background: repeating-linear-gradient(0deg, var(--tex-ink) 0 1px, transparent 1px 7px);
+  opacity: 1;
+  background-image: radial-gradient(var(--tex-ink) 1.2px, transparent 1.2px);
+  background-size: 30px 30px;
 }
 
 /* --- the model stage: on one side of the content, never behind it --------- */
@@ -136,14 +130,17 @@ img, canvas { max-width: 100%; }
   min-height: 100svh;
   display: grid; align-content: center;
   padding-block: clamp(4rem, 12vh, 8rem);
-  gap: 1.4rem;
+  gap: clamp(1.5rem, 1.9vw, 2.4rem);
 }
+/* The transition gap. Each chapter's copy still sits centred in its own
+   viewport; this is the extra scroll the model crosses the page in. */
+.chapter + .chapter { margin-top: 50svh; }
 .marker {
   font-family: var(--f-mono); font-size: clamp(.625rem, .68vw, .875rem); letter-spacing: .2em;
   text-transform: uppercase; color: var(--faint);
-  display: flex; align-items: center; gap: .75rem; margin: 0;
+  display: flex; align-items: center; gap: .9rem; margin: 0 0 .4rem;
 }
-.marker i { display: block; width: 2.2rem; height: var(--rule-weight); background: var(--accent);
+.marker i { display: block; width: 2.6rem; height: 2px; background: var(--accent); border-radius: 2px;
   flex: none; }
 
 .chapter h1, .chapter h2 {
@@ -157,16 +154,31 @@ img, canvas { max-width: 100%; }
               letter-spacing var(--d-theme) var(--e-inout);
 }
 #c0 h1 { font-size: clamp(2.4rem, 6vw, 7.6rem); max-width: 13ch; }
-.chapter p { margin: 0; max-width: 46ch; font-size: clamp(1rem, 1.05vw, 1.35rem); }
-.chapter .lede { font-size: clamp(1.05rem, 1.25vw, 1.6rem); max-width: 42ch; }
+.chapter p { margin: 0; max-width: 44ch; font-size: clamp(1.0625rem, 1.1vw, 1.4rem);
+  line-height: 1.62; color: var(--ink-2); }
+
+/* Two levels of emphasis, both in colour, both carrying meaning rather than
+   decorating: <em> names the thing, <strong> states the claim. */
+.chapter em {
+  font-style: normal; color: var(--accent);
+  font-variation-settings: 'wght' 500;
+}
+.chapter strong {
+  font-weight: 400; color: var(--contrast);
+  font-variation-settings: 'wght' 500;
+  box-shadow: inset 0 -0.34em 0 color-mix(in srgb, var(--contrast) 13%, transparent);
+}
+.chapter .lede { font-size: clamp(1.15rem, 1.4vw, 1.85rem); max-width: 38ch;
+  line-height: 1.5; color: var(--ink-2); }
 
 /* figures rail under the copy */
-.figures { display: flex; flex-wrap: wrap; gap: 1.6rem 2.4rem; margin-top: .6rem;
+.figures { display: flex; flex-wrap: wrap; gap: 1.8rem 3.2rem; margin-top: 1.2rem;
   font-family: var(--f-mono); }
 .figures div { display: grid; gap: .15rem; }
 .figures dt { font-size: clamp(.5625rem, .6vw, .75rem); letter-spacing: .2em; text-transform: uppercase; color: var(--faint); }
-.figures dd { margin: 0; font-size: clamp(1.35rem, 1.5vw, 2.1rem); color: var(--ink);
-  font-variant-numeric: tabular-nums; font-variation-settings: 'wght' 500; }
+.figures dd { margin: 0; font-size: clamp(1.6rem, 1.9vw, 2.6rem); color: var(--ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  font-family: var(--f-display); font-variation-settings: 'wdth' 100, 'wght' 600; }
 .figures dd b { color: var(--accent); font-weight: inherit; }
 
 .cta {
@@ -203,20 +215,13 @@ html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
    here so the whole look — type width, texture, side, rule weight, corner
    radius — steps with the state of the view.
    =========================================================================== */
-[data-chapter="0"] { --disp-wdth: 76;  --disp-wght: 800; --disp-track: -.01em;
-  --tex-rule: .6; --tex-dot: 0;  --tex-scan: 0;  --panel-radius: 0px;  --rule-weight: 1px; }
-[data-chapter="1"] { --disp-wdth: 95;  --disp-wght: 600; --disp-track: -.02em;
-  --tex-rule: .25; --tex-dot: .8; --tex-scan: 0;  --panel-radius: 14px; --rule-weight: 1px; }
-[data-chapter="2"] { --disp-wdth: 112; --disp-wght: 700; --disp-track: -.03em;
-  --tex-rule: 0;  --tex-dot: .35; --tex-scan: .26; --panel-radius: 2px;  --rule-weight: 1px; }
-[data-chapter="3"] { --disp-wdth: 125; --disp-wght: 500; --disp-track: -.035em;
-  --tex-rule: 0;  --tex-dot: .55; --tex-scan: 0;  --panel-radius: 999px; --rule-weight: 1px; }
-[data-chapter="4"] { --disp-wdth: 88;  --disp-wght: 900; --disp-track: 0em;
-  --tex-rule: .45; --tex-dot: 0;  --tex-scan: .14; --panel-radius: 0px;  --rule-weight: 2px; }
-[data-chapter="5"] { --disp-wdth: 100; --disp-wght: 400; --disp-track: .01em;
-  --tex-rule: 0;  --tex-dot: .9; --tex-scan: 0;  --panel-radius: 3px;  --rule-weight: 1px; }
-[data-chapter="6"] { --disp-wdth: 120; --disp-wght: 850; --disp-track: -.04em;
-  --tex-rule: 0;  --tex-dot: 0;  --tex-scan: .3; --panel-radius: 999px; --rule-weight: 1px; }
+[data-chapter="0"] { --disp-wdth: 82;  --disp-wght: 700; --disp-track: -.015em; }
+[data-chapter="1"] { --disp-wdth: 100; --disp-wght: 600; --disp-track: -.022em; }
+[data-chapter="2"] { --disp-wdth: 114; --disp-wght: 650; --disp-track: -.028em; }
+[data-chapter="3"] { --disp-wdth: 124; --disp-wght: 550; --disp-track: -.032em; }
+[data-chapter="4"] { --disp-wdth: 92;  --disp-wght: 800; --disp-track: -.01em;  }
+[data-chapter="5"] { --disp-wdth: 106; --disp-wght: 500; --disp-track: -.018em; }
+[data-chapter="6"] { --disp-wdth: 120; --disp-wght: 750; --disp-track: -.035em; }
 
 /* --- phone: overrides must sit after the base rules they replace --- */
 @media (max-width: 899px) {

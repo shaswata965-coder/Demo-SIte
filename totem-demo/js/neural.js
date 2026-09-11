@@ -61,7 +61,8 @@
   var VIS = {
     /*          seed  bloom infer settle vault ledger core */
     helix:   [1.00, 0.14, 0.04, 0.06, 0.05, 0.06, 0.12],
-    prox:    [0.10, 1.00, 0.05, 0.30, 0.10, 0.26, 0.42],
+    /* prox lifted at rest so the opening frame carries more than one hue */
+    prox:    [0.26, 1.00, 0.05, 0.30, 0.10, 0.26, 0.42],
     spoke:   [0.06, 0.60, 0.06, 0.10, 0.08, 0.06, 1.00],
     layer:   [0.04, 0.08, 1.00, 0.05, 0.05, 0.08, 0.12],
     ring:    [0.03, 0.10, 0.04, 1.00, 0.06, 0.10, 0.38],
@@ -73,6 +74,11 @@
      are great-circle arcs; everything else is straight. */
   var CURVE = { arc: 0.30, ring: 0.07, spoke: 0.04 };
 
+  /* Index into the palette the page hands over: 0 blue, 1 violet, 2 jade,
+     3 cyan, 4 coral, 5 amber. */
+  var FAM_COLOR = { prox: 0, layer: 1, spoke: 1, lattice: 2, ring: 3, arc: 4, helix: 4, riser: 5 };
+  var C_BLUE = 0, C_VIOLET = 1, C_JADE = 2, C_CYAN = 3, C_CORAL = 4, C_AMBER = 5;
+
   /*        seed  bloom  infer  settle  vault  ledger  core  */
   var POSE_YAW   = [0, 0.00, -0.05, 0.00,  0.12,  0.28, 0.00];
   var POSE_PITCH = [0, 0.00,  0.05, -0.10, 0.10,  0.50, 0.30];
@@ -82,13 +88,13 @@
      faded with the blend. They are the difference between "abstract dots" and
      "a model you are looking at". */
   var NOTES = [
-    [['dormant', 0.10], ['2048 w', 0.72]],
-    [['input x₀…xₙ', 0.06], ['σ activation', 0.55]],
-    [['W₃ · 6 layers', 0.28], ['ŷ output', 0.94]],
-    [['corridor 41', 0.18], ['T+0 settle', 0.66]],
-    [['sha-256', 0.22], ['immutable', 0.78]],
-    [['p99 38 ms', 0.14], ['31 deployments', 0.63]],
-    [['commit', 0.04], ['one corridor', 0.48]]
+    [['dormant', 0.10]],
+    [['σ activation', 0.55]],
+    [['ŷ output', 0.94]],
+    [['corridor 41', 0.18]],
+    [['immutable', 0.78]],
+    [['p99 38 ms', 0.14]],
+    [['commit', 0.04]]
   ];
 
   var TIERS = {
@@ -251,7 +257,7 @@
     var p = new Float32Array(n * 3), m = this.meta;
     for (var i = 0; i < n; i++) {
       var t = i / (n - 1);
-      var a = t * TAU * 3.7 + m.strand[i] * PI;
+      var a = t * TAU * 3.7 + m.strand[i] * PI * 0.34;
       var r = 0.74 + 0.14 * Math.sin(t * PI * 3) + rand() * 0.05;
       p[i * 3] = Math.cos(a) * r;
       p[i * 3 + 1] = (t - 0.5) * 2.45;
@@ -374,7 +380,7 @@
 
     /* helix — along each strand, plus rungs across */
     for (i = 0; i + 2 < n; i++) if (m.strand[i] === m.strand[i + 2]) add(i, i + 2, 'helix');
-    for (i = 0; i + 1 < n; i += 2) add(i, i + 1, 'helix');
+    for (i = 0; i + 1 < n; i += 8) add(i, i + 1, 'helix');
 
     /* prox — 3 nearest on the outer shell */
     var outerIdx = [];
@@ -506,10 +512,12 @@
     this.eA = new Uint16Array(c); this.eB = new Uint16Array(c);
     this.eW = new Int8Array(c); this.eCurve = new Float32Array(c);
     this.eHot = new Uint8Array(c);
+    this.eColor = new Uint8Array(c);
     this.eVis = new Float32Array(c * NS);
     for (i = 0; i < c; i++) {
       this.eA[i] = E[i].a; this.eB[i] = E[i].b; this.eW[i] = E[i].w;
       this.eCurve[i] = CURVE[E[i].fam] || 0;
+      this.eColor[i] = FAM_COLOR[E[i].fam] || 0;
       this.eHot[i] = hot[Math.min(E[i].a, E[i].b) + ':' + Math.max(E[i].a, E[i].b)] ? 1 : 0;
       var v = VIS[E[i].fam];
       for (var s = 0; s < NS; s++) this.eVis[i * NS + s] = v[s];
@@ -556,7 +564,7 @@
 
   NeuralField.prototype.setTheme = function (mode, colors) {
     this.mode = mode;
-    this.colors = colors;
+    this.colors = colors;   /* { pal: [6 hues], ink, dim } */
   };
 
   NeuralField.prototype.resize = function () {
@@ -665,8 +673,12 @@
     ctx.globalCompositeOperation = ink ? 'source-over' : 'lighter';
 
     /* ---- edges, bucketed by opacity so the frame costs 8 strokes ---------- */
-    var B = 4, warm = [], cool = [], hotPath = null, hotVis = 0;
-    for (var q = 0; q < B; q++) { warm.push(new Path2D()); cool.push(new Path2D()); }
+    var PAL = C.pal;
+    var B = 3, lanes = [], used = [], hotPath = null, hotVis = 0;
+    for (var q = 0; q < PAL.length; q++) {
+      lanes.push([]); used.push([]);
+      for (var bq = 0; bq < B; bq++) { lanes[q].push(new Path2D()); used[q].push(0); }
+    }
 
     for (var e = 0; e < this.eCount; e++) {
       var base = e * NS;
@@ -675,10 +687,11 @@
       var a4 = this.eA[e] * 4, b4 = this.eB[e] * 4;
       var depth = (P[a4 + 2] + P[b4 + 2]) * 0.5;
       var alpha = vis * (depth - 0.52) * 1.45;
-      if (alpha < 0.095) continue;
+      if (alpha < 0.115) continue;
       var bi = clamp((alpha * B) | 0, 0, B - 1);
-      var path = this.eHot[e] ? (hotPath || (hotPath = new Path2D())) : (this.eW[e] > 0 ? warm[bi] : cool[bi]);
-      if (this.eHot[e]) hotVis = Math.max(hotVis, vis);
+      var lc = this.eColor[e];
+      var path = this.eHot[e] ? (hotPath || (hotPath = new Path2D())) : lanes[lc][bi];
+      if (this.eHot[e]) hotVis = Math.max(hotVis, vis); else used[lc][bi] = 1;
       var ax = P[a4], ay = P[a4 + 1], bx = P[b4], by = P[b4 + 1];
       path.moveTo(ax, ay);
       var cv = this.eCurve[e];
@@ -695,19 +708,25 @@
 
     ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.u * 0.38);
     ctx.lineCap = 'butt';
-    for (var p2 = 0; p2 < B; p2++) {
-      var al = ((p2 + 0.55) / B) * (ink ? 0.66 : 0.34) * boost;
-      ctx.globalAlpha = Math.min(ink ? 0.72 : 0.7, al);
-      ctx.strokeStyle = C.accent; ctx.stroke(warm[p2]);
-      ctx.globalAlpha = Math.min(ink ? 0.60 : 0.62, al * 0.88);
-      ctx.strokeStyle = C.accent2; ctx.stroke(cool[p2]);
+    /* Only two or three families are visible in any one arrangement, so most
+       of the eighteen lanes are empty — stroking them still costs a call. */
+    for (var ln = 0; ln < PAL.length; ln++) {
+      var anyUsed = used[ln][0] | used[ln][1] | used[ln][2];
+      if (!anyUsed) continue;
+      ctx.strokeStyle = PAL[ln];
+      for (var p2 = 0; p2 < B; p2++) {
+        if (!used[ln][p2]) continue;
+        var al = ((p2 + 0.6) / B) * (ink ? 0.62 : 0.40) * boost;
+        ctx.globalAlpha = Math.min(ink ? 0.70 : 0.72, al);
+        ctx.stroke(lanes[ln][p2]);
+      }
     }
 
     /* The traced inference, over the top of the rest of the stack. */
     if (hotPath) {
       ctx.lineWidth = Math.min(2.6, 1.2 + this.u * 0.7);
-      ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.85 : 0.95));
-      ctx.strokeStyle = C.ink;
+      ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.9 : 0.95));
+      ctx.strokeStyle = PAL[C_AMBER];
       ctx.stroke(hotPath);
     }
 
@@ -717,14 +736,23 @@
        hundred units that alone was most of the frame. Units are collected into
        a path per colour and depth bucket and filled in one call apiece. */
     var n = this.cfg.nodes, ty = this.meta.type;
-    var NB = 4;
-    var COL = [C.ink, C.accent2, C.accent];
+    var NB = 3;
+    /* Hidden units cycle through four of the six; inputs and outputs keep the
+       two the copy uses for "in" and "out" so the ends of the model are
+       readable at a glance. */
+    var DOT = [PAL[C_BLUE], PAL[C_VIOLET], PAL[C_JADE], PAL[C_CYAN]];
+    var RING = [PAL[C_BLUE], PAL[C_CORAL]];
     var dots = [], rings = [], bias = new Path2D();
-    for (var ci = 0; ci < 3; ci++) {
-      dots.push([]); rings.push([]);
-      for (var bb = 0; bb < NB; bb++) { dots[ci].push(new Path2D()); rings[ci].push(new Path2D()); }
+    for (var ci = 0; ci < DOT.length; ci++) {
+      dots.push([]);
+      for (var bb = 0; bb < NB; bb++) dots[ci].push(new Path2D());
+    }
+    for (ci = 0; ci < RING.length; ci++) {
+      rings.push([]);
+      for (bb = 0; bb < NB; bb++) rings[ci].push(new Path2D());
     }
     var halo = [];   /* flat x, y, r, colourIndex, alpha — no per-unit objects */
+    var dotUsed = [0, 0, 0, 0];
 
     for (var i = 0; i < n; i++) {
       var i4 = i * 4, d = P[i4 + 2];
@@ -735,14 +763,15 @@
       var r = (ink ? 2.7 : 2.4) * this.u * d * (0.85 + this.energy * 0.3);
 
       if (role === INPUT || role === OUTPUT) {
-        var rr = r * 1.9, rc = role === INPUT ? 1 : 2, rp = rings[rc][bk];
+        var rr = r * 1.9, rc = role === INPUT ? 0 : 1, rp = rings[rc][bk];
         rp.moveTo(nx + rr, ny);
         rp.arc(nx, ny, rr, 0, TAU);
       } else if (role === BIAS) {
         var sq = r * 1.7;
         bias.rect(nx - sq / 2, ny - sq / 2, sq, sq);
       } else {
-        var ci2 = (i % 5 === 0) ? 0 : ((i % 3 === 0) ? 1 : 2);
+        var ci2 = this.meta.layerOf[i] & 3;
+        dotUsed[ci2] = 1;
         var dp = dots[ci2][bk];
         dp.moveTo(nx + r, ny);
         dp.arc(nx, ny, r, 0, TAU);
@@ -752,24 +781,31 @@
       }
     }
 
-    var roleAlpha = ink ? 0.92 : 0.9;
-    for (ci = 0; ci < 3; ci++) {
-      ctx.fillStyle = COL[ci];
-      ctx.strokeStyle = COL[ci];
+    var roleAlpha = ink ? 0.95 : 0.92;
+    for (ci = 0; ci < DOT.length; ci++) {
+      if (!dotUsed[ci]) continue;
+      ctx.fillStyle = DOT[ci];
       for (bb = 0; bb < NB; bb++) {
-        ctx.globalAlpha = ((bb + 0.5) / NB) * roleAlpha;
+        ctx.globalAlpha = ((bb + 0.6) / NB) * roleAlpha;
         ctx.fill(dots[ci][bb]);
-        if (ci > 0) { ctx.lineWidth = (ink ? 1.2 : 1.1) * this.u; ctx.stroke(rings[ci][bb]); }
       }
     }
-    ctx.globalAlpha = roleAlpha * 0.8;
+    ctx.lineWidth = (ink ? 1.3 : 1.2) * this.u;
+    for (ci = 0; ci < RING.length; ci++) {
+      ctx.strokeStyle = RING[ci];
+      for (bb = 0; bb < NB; bb++) {
+        ctx.globalAlpha = ((bb + 0.6) / NB) * roleAlpha;
+        ctx.stroke(rings[ci][bb]);
+      }
+    }
+    ctx.globalAlpha = roleAlpha * 0.75;
     ctx.fillStyle = C.ink;
     ctx.fill(bias);
 
     for (var hi2 = 0; hi2 < halo.length; hi2 += 5) {
       var hr = halo[hi2 + 2];
       ctx.globalAlpha = halo[hi2 + 4];
-      ctx.drawImage(this._glow(COL[halo[hi2 + 3]]),
+      ctx.drawImage(this._glow(DOT[halo[hi2 + 3]]),
         halo[hi2] - hr, halo[hi2 + 1] - hr, hr * 2, hr * 2);
     }
 
@@ -783,12 +819,12 @@
       var pd = lerp(P[pa + 2], P[pb + 2], pu.t);
       if (pd < 0.55) continue;
       ctx.globalAlpha = Math.min(1, pv * pd);
-      ctx.fillStyle = C.ink;
+      ctx.fillStyle = PAL[C_AMBER];
       ctx.beginPath(); ctx.arc(px2, py2, (ink ? 2.2 : 2.6) * this.u * pd, 0, TAU); ctx.fill();
       if (!ink) {
         var gr = 9 * this.u * pd;
         ctx.globalAlpha = Math.min(0.6, pv * pd * 0.5);
-        ctx.drawImage(this._glow(C.ink), px2 - gr, py2 - gr, gr * 2, gr * 2);
+        ctx.drawImage(this._glow(PAL[C_AMBER]), px2 - gr, py2 - gr, gr * 2, gr * 2);
       }
     }
 

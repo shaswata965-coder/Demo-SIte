@@ -22,7 +22,6 @@
   <!-- The model travels through every corner of the page, so its readout
        travels with it: one block in the stage's own bottom-right. -->
   <div class="hud" aria-hidden="true">
-    <span class="corner c1"></span><span class="corner c2"></span>
     <span class="corner c3"></span><span class="corner c4"></span>
     <div></div>
     <div class="hud-bot">
@@ -31,10 +30,7 @@
         <line id="axY" x1="0" y1="0" x2="0" y2="-14" stroke="currentColor"></line>
         <line id="axZ" x1="0" y1="0" x2="0" y2="0" stroke="currentColor"></line>
       </svg>
-      <span>
-        <b id="hudState">seed</b> &middot; <span id="hudCount">0 units</span><br>
-        yaw <b id="hudYaw">000°</b> &middot; arrangement <b id="hudProg">0.00</b>
-      </span>
+      <span><b id="hudState">seed</b> &middot; <span id="hudCount">0 units</span></span>
     </div>
   </div>
 </div>
@@ -56,15 +52,16 @@
   <section class="chapter" id="c0">
     <p class="marker rv"><i></i> 00 &mdash; Dormant</p>
     <h1 class="rv">The neural layer for global capital</h1>
-    <p class="lede rv">AXON turns every transaction your business touches into a signal, and every
-    signal into a decision &mdash; in under 40&nbsp;milliseconds, before the money moves.</p>
+    <p class="lede rv">Every transaction your business touches becomes a <em>signal</em>.
+    Every signal becomes a <em>decision</em> &mdash; in <strong>under 40 milliseconds</strong>,
+    before the money moves.</p>
   </section>
 
   <section class="chapter" id="c1">
     <p class="marker rv"><i></i> 01 &mdash; Ingest</p>
     <h2 class="rv">Every payment is a signal</h2>
-    <p class="rv">Card rails, ACH, SEPA Instant, RTP, open-banking feeds and your own ledger
-    resolve into a single continuously-updating graph. No warehouse hop, no overnight batch.</p>
+    <p class="rv">Card rails, ACH, SEPA Instant, RTP and your own ledger resolve into
+    <em>one continuously-updating graph</em>. <strong>No warehouse hop. No overnight batch.</strong></p>
     <dl class="figures rv">
       <div><dt>Edges in graph</dt><dd>2.41<b>B</b></dd></div>
       <div><dt>Full rebuild</dt><dd>90<b>s</b></dd></div>
@@ -75,8 +72,9 @@
   <section class="chapter" id="c2">
     <p class="marker rv"><i></i> 02 &mdash; Inference</p>
     <h2 class="rv">Six layers between fraud and settlement</h2>
-    <p class="rv">A live ensemble scores each authorisation against the behaviour of the whole
-    network, not just your own history. Cold-start merchants inherit the graph's priors on day one.</p>
+    <p class="rv">Each authorisation is scored against <em>the behaviour of the whole
+    network</em> &mdash; not just your own history. <strong>Cold-start merchants inherit the
+    graph's priors on day one.</strong></p>
     <dl class="figures rv">
       <div><dt>Decision latency p99</dt><dd>38<b>ms</b></dd></div>
       <div><dt>False positive rate</dt><dd>0.04<b>%</b></dd></div>
@@ -87,8 +85,9 @@
   <section class="chapter" id="c3">
     <p class="marker rv"><i></i> 03 &mdash; Settlement</p>
     <h2 class="rv">Capital that routes itself</h2>
-    <p class="rv">Treasury moves along the cheapest legal path across 74 corridors, rebalancing
-    overnight against tomorrow's forecast liquidity &mdash; with no one awake to approve it.</p>
+    <p class="rv">Treasury finds <em>the cheapest legal path</em> across 74 corridors and
+    rebalances against tomorrow's forecast liquidity &mdash; <strong>with no one awake to
+    approve it.</strong></p>
     <dl class="figures rv">
       <div><dt>Live corridors</dt><dd>74</dd></div>
       <div><dt>Settlement currencies</dt><dd>19</dd></div>
@@ -99,8 +98,9 @@
   <section class="chapter" id="c4">
     <p class="marker rv"><i></i> 04 &mdash; Assurance</p>
     <h2 class="rv">Auditable by construction</h2>
-    <p class="rv">Every inference is written down with the feature vector that produced it, so a
-    decision from eighteen months ago can be replayed exactly. Including the model that made it.</p>
+    <p class="rv">Every inference is written down with <em>the feature vector that produced
+    it</em>. A decision from eighteen months ago <strong>replays exactly</strong> &mdash;
+    including the model that made it.</p>
     <dl class="figures rv">
       <div><dt>Decision retention</dt><dd>7<b>yr</b></dd></div>
       <div><dt>Attestation</dt><dd>SOC&nbsp;2 Type&nbsp;II</dd></div>
@@ -111,8 +111,8 @@
   <section class="chapter" id="c5">
     <p class="marker rv"><i></i> 05 &mdash; Proof</p>
     <h2 class="rv">What the network returns</h2>
-    <p class="rv">Measured across 31 production deployments in the trailing twelve months, against
-    each customer's own pre-AXON baseline.</p>
+    <p class="rv">Measured across <em>31 production deployments</em> in the trailing twelve
+    months, against each customer's own pre-AXON baseline.</p>
     <dl class="figures rv">
       <div><dt>Approval rate lift</dt><dd>+31<b>%</b></dd></div>
       <div><dt>Fraud prevented</dt><dd>$1.2<b>B</b></dd></div>
@@ -123,8 +123,8 @@
   <section class="chapter" id="c6">
     <p class="marker rv"><i></i> 06 &mdash; Begin</p>
     <h2 class="rv">Start with one corridor</h2>
-    <p class="rv">We instrument a single payment corridor in four weeks and run it in shadow mode
-    against your current stack. You see the delta before you migrate anything.</p>
+    <p class="rv">One corridor. <em>Four weeks.</em> Run in shadow mode against your current
+    stack, so <strong>you see the delta before you migrate anything.</strong></p>
     <button class="cta rv" type="button" id="cta">Book a technical session &rarr;</button>
     <div class="colophon rv">
       <span>AXON &mdash; demo build</span>

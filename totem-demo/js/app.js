@@ -26,15 +26,17 @@
      never sweeps backwards through colours you have already passed. The last
      is negative so the wrap to magenta is a short move, not a long one. */
   /* The model alternates sides every chapter and the copy alternates with it.
-     `side` is which side the MODEL sits on; the copy takes the other one. */
+     `side` is which side the MODEL sits on; the copy takes the other one.
+     `accent` names which of the six palette hues this chapter's marker,
+     highlighted words and figures use — the page itself does not recolour. */
   var CHAPTERS = [
-    { id: 'seed',   label: 'Dormant',    h: 250, s: 70, side: 'right' },
-    { id: 'bloom',  label: 'Ingest',     h: 200, s: 82, side: 'left'  },
-    { id: 'infer',  label: 'Inference',  h: 168, s: 72, side: 'right' },
-    { id: 'settle', label: 'Settlement', h: 130, s: 60, side: 'left'  },
-    { id: 'vault',  label: 'Assurance',  h:  42, s: 88, side: 'right' },
-    { id: 'ledger', label: 'Proof',      h:  12, s: 78, side: 'left'  },
-    { id: 'core',   label: 'Begin',      h: -32, s: 76, side: 'right' }
+    { id: 'seed',   label: 'Dormant',    accent: 'blue',   side: 'right' },
+    { id: 'bloom',  label: 'Ingest',     accent: 'cyan',   side: 'left'  },
+    { id: 'infer',  label: 'Inference',  accent: 'violet', side: 'right' },
+    { id: 'settle', label: 'Settlement', accent: 'jade',   side: 'left'  },
+    { id: 'vault',  label: 'Assurance',  accent: 'amber',  side: 'right' },
+    { id: 'ledger', label: 'Proof',      accent: 'coral',  side: 'left'  },
+    { id: 'core',   label: 'Begin',      accent: 'blue',   side: 'right' }
   ];
 
   /* How far the model rolls while crossing from one side to the other. It
@@ -116,21 +118,17 @@
     else if (systemDark.addListener) systemDark.addListener(onSystemChange);
     syncThemeButton();
 
-    /* ---- palette: mirrors the formulas in css/tokens.css ------------------ */
-    function palette(h, s, dark) {
-      if (dark) {
-        return {
-          accent:  'hsl(' + h + ' ' + (s * 0.95) + '% 64%)',
-          accent2: 'hsl(' + (h + 165) + ' ' + (s * 0.80) + '% 62%)',
-          ink:     'hsl(' + h + ' 14% 93%)',
-          dim:     'hsl(' + h + ' 12% 52%)'
-        };
-      }
+    /* ---- palette: read once from the stylesheet -------------------------- */
+    /* The six accents, the ink and the muted tone all live in css/tokens.css.
+       Reading them means the model and the page can never disagree, and there
+       is no colour arithmetic duplicated in two languages. */
+    var PAL_VARS = ['--c-blue', '--c-violet', '--c-jade', '--c-cyan', '--c-coral', '--c-amber'];
+    function palette() {
+      var cs = getComputedStyle(root);
       return {
-        accent:  'hsl(' + h + ' ' + (s * 0.95) + '% 40%)',
-        accent2: 'hsl(' + (h + 165) + ' ' + (s * 0.78) + '% 38%)',
-        ink:     'hsl(' + h + ' 46% 11%)',
-        dim:     'hsl(' + h + ' 22% 44%)'
+        pal: PAL_VARS.map(function (v) { return cs.getPropertyValue(v).trim(); }),
+        ink: cs.getPropertyValue('--ink').trim(),
+        dim: cs.getPropertyValue('--faint').trim()
       };
     }
 
@@ -143,7 +141,7 @@
       interactive: true,
       autoRotate: 0,
       mode: isDark() ? 'glow' : 'ink',
-      colors: palette(CHAPTERS[0].h, CHAPTERS[0].s, isDark())
+      colors: palette()
     });
     field.start();
 
@@ -183,34 +181,20 @@
     }
 
     /* ---- painting --------------------------------------------------------- */
-    var hudState = $('hudState'), hudYaw = $('hudYaw'), hudProg = $('hudProg'), hudCount = $('hudCount');
+    var hudState = $('hudState'), hudCount = $('hudCount');
     var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
-    var paintedHue = NaN, paintedSat = NaN, lastChapter = -1;
-    var themedHue = NaN, themedDark = null;
+    var lastChapter = -1, themedDark = null;
 
     function paint(force) {
       var p = field.progress;
       var lo = Math.floor(p), hi = Math.min(CHAPTERS.length - 1, lo + 1), t = p - lo;
 
-      /* Hue is interpolated continuously so the recolour happens *through* the
-         scroll rather than snapping at the chapter boundary. */
-      var hue = CHAPTERS[lo].h + (CHAPTERS[hi].h - CHAPTERS[lo].h) * t;
-      var sat = CHAPTERS[lo].s + (CHAPTERS[hi].s - CHAPTERS[lo].s) * t;
-
-      /* Writing a custom property on <html> invalidates style for the tree, so
-         only write when the value actually moved. At rest this is a no-op. */
-      if (force || Math.abs(hue - paintedHue) > 0.5 || Math.abs(sat - paintedSat) > 0.5) {
-        paintedHue = hue; paintedSat = sat;
-        root.style.setProperty('--h', hue.toFixed(2));
-        root.style.setProperty('--s', sat.toFixed(2));
-      }
-
       var dark = isDark();
-      if (force || dark !== themedDark || Math.abs(hue - themedHue) > 2) {
-        themedHue = hue; themedDark = dark;
-        field.setTheme(dark ? 'glow' : 'ink', palette(hue, sat, dark));
+      if (force || dark !== themedDark) {
+        themedDark = dark;
+        field.setTheme(dark ? 'glow' : 'ink', palette());
       }
 
       /* Travel, roll and morph all run off the same eased fraction, so the
@@ -232,6 +216,7 @@
       if (idx !== lastChapter || force) {
         lastChapter = idx;
         root.setAttribute('data-chapter', String(idx));
+        root.setAttribute('data-accent', CHAPTERS[idx].accent);
         for (var i = 0; i < buttons.length; i++) {
           buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
         }
@@ -239,12 +224,10 @@
         if (!force) field.pulse(0.6);
       }
 
+      /* Axis gizmo, projected with the same yaw and pitch as the model — the
+         one piece of readout kept, because it is a picture, not a number. */
       var yaw = field.viewYaw !== undefined ? field.viewYaw
               : field.spinBase + p * field.cfg.spinPerChapter;
-      hudYaw.textContent = String(Math.round((yaw * 180 / Math.PI) % 360 + 360) % 360).padStart(3, '0') + '°';
-      hudProg.textContent = p.toFixed(2);
-
-      /* Axis gizmo, projected with the same yaw and pitch as the model. */
       var cy = Math.cos(yaw), sy = Math.sin(yaw);
       var cp = Math.cos(field.pitch), sp = Math.sin(field.pitch);
       function ax(el, x, y, z) {

@@ -1,94 +1,98 @@
 /* ===========================================================================
    TOTEM DEMO — tokens
    ---------------------------------------------------------------------------
-   The whole page is derived from two numbers, --h (hue) and --s (saturation),
-   which JavaScript lerps as you scroll from one chapter to the next. Every
-   colour on the page — and the colour of the model on the canvas — is computed
-   from them, so the aesthetic transforms with the state of the view rather
-   than being seven hand-written palettes.
+   One palette, held constant across the whole page.
 
-   Light and dark read the same hue very differently on purpose:
-     light — the ground itself takes a saturated wash. Colourful.
-     dark  — the ground stays near-black; only the signal carries the hue.
+   An earlier pass rotated the page's hue per chapter, which repainted the
+   entire ground every section and read as seven different websites. The colour
+   now lives where colour belongs: in the model, which carries six hues at once,
+   and in the handful of words each chapter needs to land. The ground, the type
+   and the rules never move.
    ========================================================================= */
 
 :root {
-  /* Driven from JS. Defaults match chapter 00 so the page is correct before
-     any script runs. */
-  --h: 250;
-  --s: 70;
+  /* ---- light: airy, near-white, cool ---------------------------------- */
+  --bg:        #F3F6FB;
+  --bg-2:      #FFFFFF;
+  --bg-sunk:   #E7EDF6;
+  --ink:       #0C1424;
+  --ink-2:     #46536B;
+  --faint:     #8791A5;
+  --rule:      rgba(12, 20, 36, 0.10);
+  --rule-hi:   rgba(12, 20, 36, 0.22);
+  --tex-ink:   rgba(12, 20, 36, 0.055);
 
-  /* Chapter-driven, transitioned by CSS (see chapters block in main.css) */
-  --disp-wdth: 78;
-  --disp-wght: 800;
-  --disp-track: -0.02em;
-  --tex-rule: 0;
-  --tex-dot: 0;
-  --tex-scan: 0;
-  --panel-radius: 0px;
-  --rule-weight: 1px;
+  /* Six accents, used together in the model and one at a time in the copy.
+     Light values are deepened so they hold contrast on a near-white ground. */
+  --c-blue:    #1B4DF5;
+  --c-violet:  #7231E8;
+  --c-jade:    #00966C;
+  --c-cyan:    #0089BD;
+  --c-coral:   #E8331A;
+  --c-amber:   #C97A00;
 
-  /* ---- light: the ground takes the colour ------------------------------ */
-  --bg:        hsl(var(--h) calc(var(--s) * 0.82%) 91%);
-  --bg-deep:   hsl(var(--h) calc(var(--s) * 0.88%) 85%);
-  --surface:   hsl(var(--h) calc(var(--s) * 0.55%) 96.5%);
-  --surface-2: hsl(var(--h) calc(var(--s) * 0.78%) 87%);
-  --ink:       hsl(var(--h) 55% 10%);
-  --dim:       hsl(var(--h) 32% 28%);
-  --faint:     hsl(var(--h) 30% 42%);
-  --accent:    hsl(var(--h) calc(var(--s) * 1%) 36%);
-  --accent-2:  hsl(calc(var(--h) + 165) calc(var(--s) * 0.85%) 34%);
-  --on-accent: hsl(var(--h) 45% 97%);
-  --rule:      hsl(var(--h) 45% 14% / 0.20);
-  --rule-hi:   hsl(var(--h) 50% 14% / 0.40);
-  --shadow:    0 1px 0 hsl(var(--h) 30% 20% / .08), 0 10px 30px hsl(var(--h) 40% 22% / .07);
-  --tex-ink:   rgba(22, 20, 34, 0.16);
-  --tex-ink-hi: rgba(22, 20, 34, 0.30);
+  --on-accent: #FFFFFF;
   --canvas-mode: ink;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:        hsl(var(--h) calc(var(--s) * 0.22%) 4.5%);
-    --bg-deep:   hsl(var(--h) calc(var(--s) * 0.26%) 2.5%);
-    --surface:   hsl(var(--h) calc(var(--s) * 0.20%) 8.5%);
-    --surface-2: hsl(var(--h) calc(var(--s) * 0.22%) 13%);
-    --ink:       hsl(var(--h) 14% 93%);
-    --dim:       hsl(var(--h) 12% 62%);
-    --faint:     hsl(var(--h) 12% 40%);
-    --accent:    hsl(var(--h) calc(var(--s) * 0.95%) 64%);
-    --accent-2:  hsl(calc(var(--h) + 165) calc(var(--s) * 0.80%) 62%);
-    --on-accent: hsl(var(--h) 40% 7%);
-    --rule:      hsl(var(--h) 20% 88% / 0.13);
-    --rule-hi:   hsl(var(--h) 22% 90% / 0.30);
-    --shadow:    0 1px 0 hsl(var(--h) 30% 2% / .5), 0 14px 40px hsl(var(--h) 40% 1% / .55);
-    --tex-ink:   rgba(232, 230, 245, 0.11);
-    --tex-ink-hi: rgba(232, 230, 245, 0.22);
+    --bg:      #070A12;
+    --bg-2:    #0E1320;
+    --bg-sunk: #040610;
+    --ink:     #EFF2F8;
+    --ink-2:   #97A2B8;
+    --faint:   #5A6479;
+    --rule:    rgba(239, 242, 248, 0.12);
+    --rule-hi: rgba(239, 242, 248, 0.24);
+    --tex-ink: rgba(239, 242, 248, 0.05);
+
+    --c-blue:   #5B87FF;
+    --c-violet: #AE8DFF;
+    --c-jade:   #23E0A4;
+    --c-cyan:   #3FD2F2;
+    --c-coral:  #FF7A5E;
+    --c-amber:  #FFC24D;
+
+    --on-accent: #070A12;
     --canvas-mode: glow;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg:        hsl(var(--h) calc(var(--s) * 0.22%) 4.5%);
-  --bg-deep:   hsl(var(--h) calc(var(--s) * 0.26%) 2.5%);
-  --surface:   hsl(var(--h) calc(var(--s) * 0.20%) 8.5%);
-  --surface-2: hsl(var(--h) calc(var(--s) * 0.22%) 13%);
-  --ink:       hsl(var(--h) 14% 93%);
-  --dim:       hsl(var(--h) 12% 62%);
-  --faint:     hsl(var(--h) 12% 40%);
-  --accent:    hsl(var(--h) calc(var(--s) * 0.95%) 64%);
-  --accent-2:  hsl(calc(var(--h) + 165) calc(var(--s) * 0.80%) 62%);
-  --on-accent: hsl(var(--h) 40% 7%);
-  --rule:      hsl(var(--h) 20% 88% / 0.13);
-  --rule-hi:   hsl(var(--h) 22% 90% / 0.30);
-  --shadow:    0 1px 0 hsl(var(--h) 30% 2% / .5), 0 14px 40px hsl(var(--h) 40% 1% / .55);
-  --tex-ink:   rgba(232, 230, 245, 0.11);
-  --tex-ink-hi: rgba(232, 230, 245, 0.22);
+  --bg:      #070A12;
+  --bg-2:    #0E1320;
+  --bg-sunk: #040610;
+  --ink:     #EFF2F8;
+  --ink-2:   #97A2B8;
+  --faint:   #5A6479;
+  --rule:    rgba(239, 242, 248, 0.12);
+  --rule-hi: rgba(239, 242, 248, 0.24);
+  --tex-ink: rgba(239, 242, 248, 0.05);
+
+  --c-blue:   #5B87FF;
+  --c-violet: #AE8DFF;
+  --c-jade:   #23E0A4;
+  --c-cyan:   #3FD2F2;
+  --c-coral:  #FF7A5E;
+  --c-amber:  #FFC24D;
+
+  --on-accent: #070A12;
   --canvas-mode: glow;
   color-scheme: dark;
 }
+
+/* Each chapter owns one accent and one contrast. The page does not change
+   colour — only the marker, the highlighted words and the figures do. */
+:root                    { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
+:root[data-accent="cyan"]   { --accent: var(--c-cyan);   --contrast: var(--c-coral);  }
+:root[data-accent="violet"] { --accent: var(--c-violet); --contrast: var(--c-jade);   }
+:root[data-accent="jade"]   { --accent: var(--c-jade);   --contrast: var(--c-violet); }
+:root[data-accent="amber"]  { --accent: var(--c-amber);  --contrast: var(--c-blue);   }
+:root[data-accent="coral"]  { --accent: var(--c-coral);  --contrast: var(--c-cyan);   }
+:root[data-accent="blue"]   { --accent: var(--c-blue);   --contrast: var(--c-coral);  }
 
 :root {
   --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
@@ -97,10 +101,9 @@
 
   --e-out: cubic-bezier(.16, 1, .3, 1);
   --e-inout: cubic-bezier(.76, 0, .24, 1);
-  --d-fast: 180ms;
   --d-base: 420ms;
-  --d-theme: 900ms;   /* one chapter's worth of aesthetic change */
+  --d-theme: 700ms;
 
-  --gutter: clamp(1.25rem, 3vw, 3rem);
-  --stage-w: 46vw;
+  --gutter: clamp(1.5rem, 3.5vw, 4rem);
+  --stage-w: 44vw;
 }
