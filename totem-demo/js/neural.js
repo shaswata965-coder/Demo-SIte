@@ -161,6 +161,7 @@
     this.pitch = -0.16;
     this.yawVel = 0; this.pitchVel = 0;
     this.energy = 0;
+    this.t = 0;
     this.frames = 0; this.slowFrames = 0;
     this.running = false;
 
@@ -249,6 +250,8 @@
 
     this.pos = new Float32Array(n * 3);
     this.proj = new Float32Array(n * 4);   /* sx, sy, depth, visible */
+    this.phase = new Float32Array(n);
+    for (i = 0; i < n; i++) this.phase[i] = (i * 0.61803398875 % 1) * TAU;
     this._edges(rand);
   };
 
@@ -638,9 +641,15 @@
     var fov = this.cfg.fov, ox = this.w / 2, oy = this.h / 2;
     var R = this.radius * lerp(POSE_SCALE[lo], POSE_SCALE[hi], t);
 
+    var T = this.t;
     for (var i = 0; i < n; i++) {
       var i3 = i * 3, i4 = i * 4;
       var x = lerp(A[i3], B[i3], t), y = lerp(A[i3 + 1], B[i3 + 1], t), z = lerp(A[i3 + 2], B[i3 + 2], t);
+      /* Two incommensurate sines per axis so the wander never loops visibly. */
+      var ph = this.phase[i];
+      x += Math.sin(T * 0.53 + ph) * 0.016;
+      y += Math.sin(T * 0.41 + ph * 1.7) * 0.016;
+      z += Math.cos(T * 0.47 + ph * 2.3) * 0.016;
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy;
       var y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var d = fov / (fov + z2);
@@ -667,6 +676,7 @@
     var lo = this._lo, hi = this._hi, t = this._t, P = this.proj;
     var boost = 1 + this.energy * 0.45;
     var cx = this.w / 2, cyc = this.h / 2;
+    var T = this.t;
 
     /* Additive light on a dark ground; plain compositing on a pale one, where
        'lighter' would wash everything to white. */
@@ -757,10 +767,14 @@
     for (var i = 0; i < n; i++) {
       var i4 = i * 4, d = P[i4 + 2];
       var nx = P[i4], ny = P[i4 + 1];
-      var a = clamp((d - 0.5) * 2.0, 0, 1);
+      /* Each unit fires on its own slow cycle, so the model shimmers rather
+         than sitting still. Sharpened with a power curve: mostly quiet, with
+         a brief bright peak, the way an activation actually behaves. */
+      var fire = Math.pow((Math.sin(T * 1.35 + this.phase[i]) + 1) * 0.5, 3);
+      var a = clamp((d - 0.5) * 2.0, 0, 1) * (0.72 + fire * 0.42);
       var bk = clamp((a * NB) | 0, 0, NB - 1);
       var role = ty[i];
-      var r = (ink ? 2.7 : 2.4) * this.u * d * (0.85 + this.energy * 0.3);
+      var r = (ink ? 2.7 : 2.4) * this.u * d * (0.78 + fire * 0.5 + this.energy * 0.3);
 
       if (role === INPUT || role === OUTPUT) {
         var rr = r * 1.9, rc = role === INPUT ? 0 : 1, rp = rings[rc][bk];
@@ -818,11 +832,23 @@
       var px2 = lerp(P[pa], P[pb], pu.t), py2 = lerp(P[pa + 1], P[pb + 1], pu.t);
       var pd = lerp(P[pa + 2], P[pb + 2], pu.t);
       if (pd < 0.55) continue;
-      ctx.globalAlpha = Math.min(1, pv * pd);
+      /* A comet: one round-capped segment for the tail, one dot for the head.
+         A bare dot gave no sense of direction, and four stacked dots cost four
+         fills per pulse for the same read. */
+      var head = (ink ? 2.2 : 2.6) * this.u * pd;
+      var tail = Math.max(0, pu.t - 0.10);
+      var lx = lerp(P[pa], P[pb], tail), ly = lerp(P[pa + 1], P[pb + 1], tail);
+      ctx.strokeStyle = PAL[C_AMBER];
+      ctx.lineCap = 'round';
+      ctx.lineWidth = head * 0.85;
+      ctx.globalAlpha = Math.min(1, pv * pd) * 0.42;
+      ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(px2, py2); ctx.stroke();
+
       ctx.fillStyle = PAL[C_AMBER];
-      ctx.beginPath(); ctx.arc(px2, py2, (ink ? 2.2 : 2.6) * this.u * pd, 0, TAU); ctx.fill();
+      ctx.globalAlpha = Math.min(1, pv * pd);
+      ctx.beginPath(); ctx.arc(px2, py2, head, 0, TAU); ctx.fill();
       if (!ink) {
-        var gr = 9 * this.u * pd;
+        var gr = 6.5 * this.u * pd;
         ctx.globalAlpha = Math.min(0.6, pv * pd * 0.5);
         ctx.drawImage(this._glow(PAL[C_AMBER]), px2 - gr, py2 - gr, gr * 2, gr * 2);
       }
@@ -839,6 +865,7 @@
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
+    ctx.lineCap = 'butt';
   };
 
   /* A leader line out to a label — the model annotated, like a schematic. */
@@ -882,12 +909,14 @@
     function frame(now) {
       if (!self.running) return;
       var dt = Math.min(0.05, (now - last) / 1000); last = now;
+      self.t += dt;
       self.frames++;
 
       if (dt > 0.028) self.slowFrames++; else self.slowFrames = Math.max(0, self.slowFrames - 1);
       if (self.slowFrames > 90 && self.cfg.notes) { self.cfg.notes = false; self.slowFrames = 0; }
 
       self.progress += (self.targetProgress - self.progress) * Math.min(1, dt * 4.6);
+      if (self.reduced) self.t = 0;
       if (!self.reduced) {
         self.spinBase += self.yawVel + self.cfg.autoRotate * dt;
         self.pitch = clamp(self.pitch + self.pitchVel, -0.8, 0.8);

@@ -112,12 +112,55 @@ model sits on.
 
 ## Pacing
 
-Each chapter is one viewport of copy followed by a **half-viewport gap**
-(`.chapter + .chapter { margin-top: 50svh }`), so a chapter spans 150svh of
-scroll. Progress is measured between section tops, so travel, roll and morph all
-stretch over that whole distance — the transition is 50% slower than a
-one-viewport chapter without changing a single easing value. To retime the whole
-piece, change that one margin.
+A chapter is **two viewports**: one of copy (`.ch-body { min-height: 100svh }`)
+and one the model crosses in. Progress is measured between section tops, so
+travel, roll and morph stretch over the whole 200svh — the transition is paced
+entirely by that one number and by nothing else. `.chapter { min-height }`
+retimes the whole piece; no easing value needs touching.
+
+## Section rhythm
+
+Every other chapter sits on a soft wash of its own accent
+(`color-mix(in srgb, var(--accent) 10%, var(--bg))`), so scrolling alternates
+between the airy ground and a tinted one and the boundary crosses the screen as
+a hard edge.
+
+Getting the band *behind* the model took a specific stacking arrangement, worth
+knowing before you touch it:
+
+```
+body background
+  .band              z-index: -1   full-bleed, per chapter
+  .texture           z-index:  0
+  .stage (canvas)    z-index:  2
+  .ch-body (copy)    z-index:  3
+```
+
+`.doc` and `.chapter` must **not** create stacking contexts — no `z-index`, no
+`transform`, no `opacity` on either — or the band cannot reach below the canvas
+and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
+wrapper rather than sitting directly in the section.
+
+Each chapter also pins its own `--accent`/`--contrast` pair by id, so its copy
+keeps its colour regardless of which chapter the scroll position currently
+reports.
+
+## Micro-animation
+
+With ambient rotation off, a stationary model looked frozen between chapters.
+Three things keep it alive, all driven from one clock (`field.t`):
+
+- **Idle wander** — each unit drifts on two incommensurate sines per axis, about
+  1.6% of the model's radius, so the structure never loops visibly and never
+  sits perfectly still.
+- **Firing** — each unit brightens and swells on its own slow cycle, cubed so it
+  is mostly quiet with a brief peak, the way an activation behaves.
+- **Comet pulses** — a round-capped segment for the tail and a dot for the head,
+  travelling the visible edges in amber.
+
+Each of these costs fill area, which is the frame budget (see above). The
+trail in particular: four stacked dots and one thick stroke both read the same
+and both cost more than they look like they should.
 
 ## Performance
 
