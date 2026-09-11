@@ -190,13 +190,17 @@ img, canvas { max-width: 100%; }
   text-transform: uppercase; color: var(--faint);
 }
 
-/* --- reveals: visible by default; JS opts in only when it is running ------ */
-html.js .rv { opacity: 0; transform: translateY(16px);
+/* --- reveals ------------------------------------------------------------- */
+/* Copy is visible here. It is hidden only while .reveals-armed is on the root,
+   which JS adds after it has successfully set up an observer — and removes
+   again from a failsafe timer or its own error handler. Nothing on this page
+   may leave text invisible because a script did not finish. */
+html.reveals-armed .rv { opacity: 0; transform: translateY(16px);
   transition: opacity .85s var(--e-out), transform .85s var(--e-out); }
-html.js .rv.in { opacity: 1; transform: none; }
-html.js .rv:nth-child(2) { transition-delay: .07s; }
-html.js .rv:nth-child(3) { transition-delay: .14s; }
-html.js .rv:nth-child(4) { transition-delay: .21s; }
+html.reveals-armed .rv.in { opacity: 1; transform: none; }
+html.reveals-armed .rv:nth-child(2) { transition-delay: .07s; }
+html.reveals-armed .rv:nth-child(3) { transition-delay: .14s; }
+html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
 
 /* ===========================================================================
    Per-chapter aesthetic. Hue is lerped from JS; everything discrete lives
@@ -242,7 +246,7 @@ html.js .rv:nth-child(4) { transition-delay: .21s; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  html.js .rv { opacity: 1; transform: none; transition: none; }
+  html.reveals-armed .rv { opacity: 1; transform: none; transition: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
 }
 

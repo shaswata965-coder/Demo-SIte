@@ -18,11 +18,12 @@ Opening `index.html` directly from disk works too.
 ## Files
 
 ```
-index.html        markup and copy
-css/tokens.css    the colour system — light and dark, both derived from one hue
-css/main.css      layout, chapters, per-chapter aesthetic
-js/neural.js      the model: arrangements, edge families, rendering
-js/app.js         scroll → everything else
+index.html            markup and copy
+css/tokens.css        the colour system — light and dark, both derived from one hue
+css/main.css          layout, chapters, per-chapter aesthetic
+js/neural.js          the model: arrangements, edge families, rendering
+js/app.js             scroll → everything else
+tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
 
 ## How it works
@@ -106,6 +107,39 @@ structure.
 
 `prefers-reduced-motion` stops the rotation and the pulses and snaps the morph;
 the page stays fully legible and navigable.
+
+## Embedding
+
+`index.html` is a complete document — doctype, `<html lang>`, `<head>`, `<body>`
+— which is what you want when hosting it. Some embedding hosts supply their own
+document skeleton and drop your file inside their `<body>`, which leaves a
+second document nested in the first and the attributes on `<html>` discarded.
+
+```sh
+node tools/make-embed.mjs   # writes dist/index.html
+```
+
+That emits only what belongs inside a body. `css/` and `js/` are referenced by
+the same relative paths, so publish them alongside it unchanged. `app.js` sets
+`lang`, `data-chapter` and `data-side` on the root itself, so the embed build
+behaves identically.
+
+## Nothing may leave the copy invisible
+
+The chapter copy animates in, and the rule the code follows is that **no script
+failure can hide it**. It is visible in the stylesheet; it is hidden only while
+`.reveals-armed` is on the root, which `app.js` adds *after* it has successfully
+built an observer. Three independent things remove it again: the observer
+firing, a 2.5-second failsafe timer, and the `catch` around initialisation. A
+reader never depends on all three working — block `js/neural.js` in devtools and
+the page degrades to a readable static page rather than a blank one.
+
+Scroll progress is measured from `getBoundingClientRect()`, not `window.scrollY`,
+for the same reason: when the page is embedded, the element doing the scrolling
+may not be the window, and `scrollY` would sit at zero forever.
+
+If you add a reveal, give it the `.rv` class and it inherits all of this. Do not
+gate visibility on a class that only JS removes.
 
 ## Porting to Next.js / React
 
