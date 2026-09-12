@@ -138,7 +138,10 @@
        units to match, or the model reads as dust scattered in a void. */
     var box = canvas.getBoundingClientRect();
     var area = Math.max(1, (box.width || 700) * (box.height || 800));
-    var density = Math.max(0.85, Math.min(1.32, Math.sqrt(area / 620000)));
+    /* The stage is the whole viewport now, so the reference area is a whole
+       viewport too — otherwise every desktop would read as "huge stage" and
+       inflate the unit count past what the frame budget allows. */
+    var density = Math.max(0.80, Math.min(1.25, Math.sqrt(area / 1200000)));
 
     this.cfg = {
       nodes: opts.nodes || Math.round(t.nodes * density),
@@ -150,7 +153,7 @@
       autoRotate: opts.autoRotate !== undefined ? opts.autoRotate : 0,
       spinPerChapter: opts.spinPerChapter !== undefined ? opts.spinPerChapter : 0.62,
       fov: opts.fov || 3.9,
-      scale: opts.scale || 0.36,
+      scale: opts.scale || 0.30,
       seed: opts.seed || 731
     };
 
@@ -165,6 +168,20 @@
     this.spinBase = 0.5;      /* auto-rotation + pointer drag accumulate here */
     this.scrollSpin = 0;      /* set by the page; the roll across the layout   */
     this.pitch = -0.16;
+    /* Where the model sits inside the canvas, and how big it is drawn, both as
+       plain numbers the page writes every frame. The canvas itself never moves
+       or resizes — it is the viewport. Travel is the origin sliding; going
+       full-screen behind the copy is the zoom opening up. Doing it this way
+       keeps the backing store fixed, so nothing reallocates mid-scroll and
+       nothing is scaled up by CSS and blurred. */
+    this.originX = 0.5;
+    this.originY = 0.5;
+    this.zoom = 1;
+    /* 1 draws every edge the arrangement has; below that the faintest are
+       dropped. The page turns this down when the model is a dimmed backdrop —
+       an edge at 12% alpha behind a stage at 28% opacity is not visible, and
+       edge fill area is the entire frame cost. See `detail` in js/app.js. */
+    this.detail = 1;
     this.yawVel = 0; this.pitchVel = 0;
     this.energy = 0;
     this.t = 0;
@@ -585,15 +602,20 @@
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    /* A phone's stage is a short, wide band — the column arrangement runs past
-       the top and bottom of it at the desktop scale. */
-    var narrow = (global.innerWidth || w) < 900;
-    this.radius = Math.min(w, h) * this.cfg.scale * (narrow ? 0.80 : 1);
+    /* Sized off the short edge of the viewport and capped, so a 4K or an
+       ultrawide monitor does not draw a model three times the size of the one
+       on a laptop. How big it reads per chapter is `zoom`, which the page
+       owns — see CHAPTERS in js/app.js. */
+    this.radius = Math.min(w, h, 1150) * this.cfg.scale;
+    /* The unzoomed unit. Line width is sized off this rather than off `u`,
+       because zooming the model must not thicken every stroke — see the
+       lineWidth note below. */
+    this.uBase = clamp(this.radius / 220, 0.8, 2.4);
     /* Mark scale. 220 is the radius this was originally drawn against, so
        u === 1 reproduces that look and everything tracks the model from
        there. Clamped so a tiny panel stays legible and a 4K stage does not
        render clown-sized dots. */
-    this.u = clamp(this.radius / 220, 0.8, 2.4);
+    this.u = clamp(this.radius * this.zoom / 220, 0.7, 2.4);
     this.render();
   };
 
@@ -644,8 +666,14 @@
     this.viewYaw = yaw;
     var cy = Math.cos(yaw), sy = Math.sin(yaw);
     var cp = Math.cos(pitch), sp = Math.sin(pitch);
-    var fov = this.cfg.fov, ox = this.w / 2, oy = this.h / 2;
-    var R = this.radius * lerp(POSE_SCALE[lo], POSE_SCALE[hi], t);
+    var fov = this.cfg.fov;
+    var ox = this.w * this.originX, oy = this.h * this.originY;
+    var R = this.radius * this.zoom * lerp(POSE_SCALE[lo], POSE_SCALE[hi], t);
+    /* Marks track the model, not the canvas, so a backgrounded model at zoom
+       1.4 draws heavier nodes and the thing stays one object rather than a
+       cloud of the same dust spread wider. Line width is the exception and
+       uses uBase — see the lineWidth note in render(). */
+    this.u = clamp(this.radius * this.zoom / 220, 0.7, 2.4);
 
     var T = this.t;
     for (var i = 0; i < n; i++) {
@@ -681,7 +709,7 @@
     this._project();
     var lo = this._lo, hi = this._hi, t = this._t, P = this.proj;
     var boost = 1 + this.energy * 0.45;
-    var cx = this.w / 2, cyc = this.h / 2;
+    var cx = this.w * this.originX, cyc = this.h * this.originY;
     var T = this.t;
 
     /* Additive light on a dark ground; plain compositing on a pale one, where
@@ -690,6 +718,11 @@
 
     /* ---- edges, bucketed by opacity so the frame costs 8 strokes ---------- */
     var PAL = C.pal;
+    /* Edge fill area is the whole frame cost, and it grows with zoom: a model
+       drawn at 1.34 has edges a third longer. So the cutoff rises as the model
+       is dimmed — the edges dropped are the ones already below the threshold
+       of visible at that opacity. Full strength keeps the original 0.115. */
+    var cut = 0.115 + (1 - clamp(this.detail, 0, 1)) * 0.38;
     var B = 3, lanes = [], used = [], hotPath = null, hotVis = 0;
     for (var q = 0; q < PAL.length; q++) {
       lanes.push([]); used.push([]);
@@ -703,7 +736,7 @@
       var a4 = this.eA[e] * 4, b4 = this.eB[e] * 4;
       var depth = (P[a4 + 2] + P[b4 + 2]) * 0.5;
       var alpha = vis * (depth - 0.52) * 1.45;
-      if (alpha < 0.115) continue;
+      if (alpha < cut) continue;
       var bi = clamp((alpha * B) | 0, 0, B - 1);
       var lc = this.eColor[e];
       var path = this.eHot[e] ? (hotPath || (hotPath = new Path2D())) : lanes[lc][bi];
@@ -722,7 +755,12 @@
       }
     }
 
-    ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.u * 0.38);
+    /* Line width does NOT scale with the model. Edge fill area is count ×
+       length × width, and it is the entire frame cost; scaling width with the
+       model tripled the blended area at 2560 for no visual gain. uBase is the
+       unzoomed unit, so a backgrounded model at zoom 1.34 gets longer edges
+       but not fatter ones. */
+    ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.uBase * 0.38);
     ctx.lineCap = 'butt';
     /* Only two or three families are visible in any one arrangement, so most
        of the eighteen lanes are empty — stroking them still costs a call. */
@@ -884,7 +922,7 @@
       if (d < 0.6) continue;
       var x = P[nd], y = P[nd + 1];
       var u = this.u;
-      var right = x < this.w * 0.5;
+      var right = x < this.w * this.originX;
       var lead = Math.min(52 * u, this.w * 0.12);
       var ex = right ? x + lead : x - lead;
       var rise = 10 * u;

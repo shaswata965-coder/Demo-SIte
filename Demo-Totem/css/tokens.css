@@ -5,76 +5,89 @@
 
    An earlier pass rotated the page's hue per chapter, which repainted the
    entire ground every section and read as seven different websites. The colour
-   now lives where colour belongs: in the model, which carries six hues at once,
-   and in the handful of words each chapter needs to land. The ground, the type
-   and the rules never move.
+   now lives where colour belongs: in the model, which carries the palette at
+   once, and in the handful of words each chapter needs to land. The ground,
+   the type and the rules never move.
+
+   The palette is warm: a paper ground rather than a cool near-white, ink with
+   brown in it, and a burnt orange doing the work blue used to. "Muted" is the
+   whole point — the orange is desaturated far enough to sit under body copy
+   for a full screen without buzzing, and the one cool hue is there so the
+   model has something to separate its two kinds of wiring with.
    ========================================================================= */
 
 :root {
-  /* ---- light: airy, near-white, cool ---------------------------------- */
-  --bg:        #F3F6FB;
-  --bg-2:      #FFFFFF;
-  --bg-sunk:   #E7EDF6;
-  --ink:       #0C1424;
-  --ink-2:     #46536B;
-  --faint:     #8791A5;
-  --rule:      rgba(12, 20, 36, 0.10);
-  --rule-hi:   rgba(12, 20, 36, 0.22);
-  --tex-ink:   rgba(12, 20, 36, 0.055);
+  /* ---- light: warm paper ---------------------------------------------- */
+  --bg:        #FAF6F0;
+  --bg-2:      #FFFDFA;
+  --bg-sunk:   #F2E9DD;
+  --ink:       #1F1710;
+  --ink-2:     #574839;
+  --faint:     #978674;
+  --rule:      rgba(31, 23, 16, 0.12);
+  --rule-hi:   rgba(31, 23, 16, 0.24);
+  --tex-ink:   rgba(31, 23, 16, 0.055);
 
   /* Three. Primary carries the structure, secondary separates one kind of
      structure from another, signal is reserved for what is live — the traced
      inference, the pulses, the claim in a sentence. Nothing else gets colour. */
-  --c-primary: #1E3AD9;
-  --c-second:  #0C7C85;
-  --c-signal:  #DC5A1E;
+  --c-primary: #C05621;
+  --c-second:  #3F6E75;
+  --c-signal:  #E0982F;
 
   --accent:   var(--c-primary);
-  --contrast: var(--c-signal);
+  --contrast: var(--c-second);
 
   --on-accent: #FFFFFF;
+  --surface:   rgba(255, 253, 250, 0.72);
+  --surface-2: rgba(255, 253, 250, 0.94);
+  --dim:       var(--ink-2);
   --canvas-mode: ink;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:      #070A12;
-    --bg-2:    #0E1320;
-    --bg-sunk: #040610;
-    --ink:     #EFF2F8;
-    --ink-2:   #97A2B8;
-    --faint:   #5A6479;
-    --rule:    rgba(239, 242, 248, 0.12);
-    --rule-hi: rgba(239, 242, 248, 0.24);
-    --tex-ink: rgba(239, 242, 248, 0.05);
+    --bg:      #120C08;
+    --bg-2:    #1C130C;
+    --bg-sunk: #0A0604;
+    --ink:     #F7EFE5;
+    --ink-2:   #C0AC98;
+    --faint:   #857263;
+    --rule:    rgba(247, 239, 229, 0.13);
+    --rule-hi: rgba(247, 239, 229, 0.26);
+    --tex-ink: rgba(247, 239, 229, 0.05);
 
-    --c-primary: #7C97FF;
-    --c-second:  #3FC6D2;
-    --c-signal:  #FF9B4D;
+    --c-primary: #F0864A;
+    --c-second:  #6FB3BC;
+    --c-signal:  #FFC06A;
 
-    --on-accent: #070A12;
+    --on-accent: #180F08;
+    --surface:   rgba(28, 19, 12, 0.66);
+    --surface-2: rgba(28, 19, 12, 0.92);
     --canvas-mode: glow;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg:      #070A12;
-  --bg-2:    #0E1320;
-  --bg-sunk: #040610;
-  --ink:     #EFF2F8;
-  --ink-2:   #97A2B8;
-  --faint:   #5A6479;
-  --rule:    rgba(239, 242, 248, 0.12);
-  --rule-hi: rgba(239, 242, 248, 0.24);
-  --tex-ink: rgba(239, 242, 248, 0.05);
+  --bg:      #120C08;
+  --bg-2:    #1C130C;
+  --bg-sunk: #0A0604;
+  --ink:     #F7EFE5;
+  --ink-2:   #C0AC98;
+  --faint:   #857263;
+  --rule:    rgba(247, 239, 229, 0.13);
+  --rule-hi: rgba(247, 239, 229, 0.26);
+  --tex-ink: rgba(247, 239, 229, 0.05);
 
-  --c-primary: #7C97FF;
-  --c-second:  #3FC6D2;
-  --c-signal:  #FF9B4D;
+  --c-primary: #F0864A;
+  --c-second:  #6FB3BC;
+  --c-signal:  #FFC06A;
 
-  --on-accent: #070A12;
+  --on-accent: #180F08;
+  --surface:   rgba(28, 19, 12, 0.66);
+  --surface-2: rgba(28, 19, 12, 0.92);
   --canvas-mode: glow;
   color-scheme: dark;
 }
@@ -90,6 +103,17 @@
   --d-base: 420ms;
   --d-theme: 700ms;
 
-  --gutter: clamp(1.5rem, 3.5vw, 4rem);
-  --stage-w: 44vw;
+  /* --maxw is the one number that makes a 3440px monitor behave: every band
+     of content is centred inside it, and js/app.js parks the model against
+     the same box rather than against the raw viewport. */
+  --maxw: 1680px;
+  --gutter: clamp(1.25rem, 3.2vw, 4rem);
+  --rule-weight: 1px;
+  --panel-radius: 3px;
+  --card-radius: 10px;
+
+  /* Fallback only. js/app.js writes the live value onto .stage each frame —
+     where the model is sitting, 0..1 across the viewport — and the HUD, which
+     is inside .stage, frames the model with it. */
+  --model-x: 0.74;
 }

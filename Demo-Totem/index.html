@@ -2,9 +2,12 @@
 <html lang="en" data-chapter="0">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AXON — the neural layer for global capital</title>
-<meta name="description" content="Scroll-driven demo: a neural model turning through seven arrangements while the page's entire aesthetic transforms with it.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AXON — LLM inference efficiency</title>
+<meta name="description" content="AXON is a four-person consultancy that makes large language models cheaper to serve. Scroll-driven demo: a neural model turning through seven arrangements while the page transforms with it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23C05621'/%3E%3Cg stroke='%23FAF6F0' stroke-width='1.4' fill='%23FAF6F0'%3E%3Cpath d='M9 22 L16 9 L23 22' fill='none'/%3E%3Cpath d='M11.6 17.2 H20.4' fill='none'/%3E%3Ccircle cx='16' cy='9' r='2.1'/%3E%3Ccircle cx='9' cy='22' r='2.1'/%3E%3Ccircle cx='23' cy='22' r='2.1'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="theme-color" content="#FAF6F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#120C08" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/tokens.css">
@@ -16,11 +19,15 @@
   <span class="rules"></span><span class="dots"></span><span class="scan"></span>
 </div>
 
-<!-- the model, on one side of the content -->
-<div class="stage">
+<!-- The model. One fixed, viewport-sized canvas for the whole page: it never
+     moves and never resizes. Where the model sits inside it, how big it is
+     drawn and how far forward it comes are three numbers js/app.js writes
+     every frame — which is what lets it stand beside the copy in one chapter
+     and lie behind a full screen of it in the next. -->
+<div class="stage" id="stage">
   <canvas id="field" aria-label="Neural model. Scroll to turn and reconfigure it; drag to rotate."></canvas>
-  <!-- The model travels through every corner of the page, so its readout
-       travels with it: one block in the stage's own bottom-right. -->
+  <!-- The readout travels with the model rather than sitting in a page
+       corner: --model-x, written from the same value that positions it. -->
   <div class="hud" aria-hidden="true">
     <span class="corner c3"></span><span class="corner c4"></span>
     <div></div>
@@ -36,8 +43,14 @@
 </div>
 
 <header class="topbar">
-  <div class="brand"><b>AXON</b><span>Financial intelligence infrastructure</span></div>
+  <a class="brand" href="#c0" data-goto="0">
+    <b>AXON</b><span>LLM inference efficiency</span>
+  </a>
   <div class="controls">
+    <button class="cta cta-sm" type="button" data-goto="6">
+      <span class="cta-long">Book a teardown</span><span class="cta-short">Book a call</span>
+      <i aria-hidden="true">&rarr;</i>
+    </button>
     <button class="btn" id="themeBtn" type="button" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
       <span id="themeLabel">Light</span>
@@ -45,113 +58,289 @@
   </div>
 </header>
 
-<nav class="rail" id="rail" aria-label="Chapters"></nav>
+<nav class="rail" id="rail" aria-label="Sections"></nav>
 
 <main class="doc">
 
-  <section class="chapter" id="c0">
+  <!-- ====================================================== 00 — intro -->
+  <section class="chapter is-side side-right" id="c0">
     <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 00 &mdash; Dormant</p>
-      <h1 class="rv">The neural layer for global capital</h1>
-      <p class="lede rv">Every transaction your business touches becomes a <em>signal</em>.
-      Every signal becomes a <em>decision</em> &mdash; in <strong>under 40 milliseconds</strong>,
-      before the money moves.</p>
-    </div>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <p class="marker rv"><i></i> 00 &mdash; Inference efficiency</p>
+      <h1 class="rv">Same model.<br>Half the bill.</h1>
+      <p class="lede rv">AXON is a <em>four-person consultancy</em> that makes large
+      language models cheaper to serve &mdash; rebuilding the path you actually run,
+      <strong>measured against your p99 and your evals.</strong></p>
+
+      <div class="cta-row rv">
+        <button class="cta" type="button" data-goto="6">Book an inference teardown <i aria-hidden="true">&rarr;</i></button>
+        <button class="link-btn" type="button" data-goto="3">See selected work</button>
+      </div>
+
+      <p class="trust rv">
+        <span><b>42</b> engagements</span>
+        <span><b>3.1&times;</b> median throughput gain</span>
+        <span><b>4wk</b> typical build</span>
+      </p>
+
+    </div></div></div>
   </section>
 
-  <section class="chapter" id="c1">
+  <!-- =================================================== 01 — services -->
+  <section class="chapter is-side side-left" id="c1">
     <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 01 &mdash; Ingest</p>
-      <h2 class="rv">Every payment is a signal</h2>
-      <p class="rv">Card rails, ACH, SEPA Instant, RTP and your own ledger resolve into
-      <em>one continuously-updating graph</em>. <strong>No warehouse hop. No overnight batch.</strong></p>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <p class="marker rv"><i></i> 01 &mdash; Services</p>
+      <h2 class="rv">Four levers on the bill</h2>
+      <p class="rv">Most teams pull <em>one</em> of these and could pull all four. We take
+      the ones with headroom and <strong>leave the rest alone.</strong></p>
+
+      <ul class="svc rv">
+        <li>
+          <span class="svc-n">01</span>
+          <div>
+            <h3>Inference audit</h3>
+            <p>Two weeks instrumenting your live serving path. Out the far end: a
+            costed list of what to change, in order.</p>
+          </div>
+        </li>
+        <li>
+          <span class="svc-n">02</span>
+          <div>
+            <h3>Model compression</h3>
+            <p>FP8 and 4-bit quantisation, distillation, speculative decoding &mdash;
+            each held to your own eval suite.</p>
+          </div>
+        </li>
+        <li>
+          <span class="svc-n">03</span>
+          <div>
+            <h3>Serving architecture</h3>
+            <p>Continuous batching, paged KV cache, prefix reuse, and routing so the
+            big model only sees what needs it.</p>
+          </div>
+        </li>
+        <li>
+          <span class="svc-n">04</span>
+          <div>
+            <h3>Capacity &amp; procurement</h3>
+            <p>Fleet right-sizing, the spot-to-reserved mix, and whether to leave the
+            hosted API at all.</p>
+          </div>
+        </li>
+      </ul>
+
+    </div></div></div>
+  </section>
+
+  <!-- ===================================================== 02 — method -->
+  <section class="chapter is-full" id="c2">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <div class="head rv">
+        <p class="marker"><i></i> 02 &mdash; Method</p>
+        <h2>Four weeks, measure to shipped</h2>
+        <p class="head-p">One engagement, one fixed shape. You get the numbers in
+        week one, so <strong>you can stop after it if the numbers are boring.</strong></p>
+      </div>
+
+      <ol class="steps rv">
+        <li class="card">
+          <span class="step-n">Week 01</span>
+          <h3>Measure</h3>
+          <p>Traces on every hop of the request. Token mix, batch occupancy, cache
+          hit rate, where the GPU is actually idle.</p>
+          <span class="step-out">Ends with &mdash; a baseline you can argue with</span>
+        </li>
+        <li class="card">
+          <span class="step-n">Week 02</span>
+          <h3>Model</h3>
+          <p>Compression candidates run against your evals, not ours. Anything that
+          costs more than a point of quality is dropped here.</p>
+          <span class="step-out">Ends with &mdash; two or three live candidates</span>
+        </li>
+        <li class="card">
+          <span class="step-n">Week 03</span>
+          <h3>Rebuild</h3>
+          <p>The serving path goes back together around the winner: batching,
+          cache policy, routing, autoscaling thresholds.</p>
+          <span class="step-out">Ends with &mdash; a shadow deployment</span>
+        </li>
+        <li class="card">
+          <span class="step-n">Week 04</span>
+          <h3>Prove</h3>
+          <p>Shadow traffic against production until the delta holds for a full
+          week, then a cutover your on-call team runs, not us.</p>
+          <span class="step-out">Ends with &mdash; a signed-off cost delta</span>
+        </li>
+      </ol>
+
+    </div></div></div>
+  </section>
+
+  <!-- =============================================== 03 — selected work -->
+  <section class="chapter is-full" id="c3">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <div class="head rv">
+        <p class="marker"><i></i> 03 &mdash; Selected work</p>
+        <h2>Projects</h2>
+        <p class="head-p">Three of the last twelve. Every figure is the client's own
+        measurement, taken against <em>their</em> pre-AXON baseline.</p>
+      </div>
+
+      <div class="cards work rv">
+        <article class="card">
+          <p class="card-tag">Marketplace &middot; EU &middot; 2025</p>
+          <h3>A 70B assistant, distilled to 8B</h3>
+          <p class="card-p">40M sessions a month on a frontier-sized model. Distilled
+          to an 8B student, with a router that keeps the big model for the 4% of turns
+          that need it.</p>
+          <dl class="card-figs">
+            <div><dt>Cost / 1k tokens</dt><dd>&minus;71<b>%</b></dd></div>
+            <div><dt>Eval delta</dt><dd>&minus;1.2<b>pt</b></dd></div>
+          </dl>
+        </article>
+        <article class="card">
+          <p class="card-tag">Voice agent &middot; US &middot; 2025</p>
+          <h3>First token under a heartbeat</h3>
+          <p class="card-p">A support agent where every millisecond of time-to-first-token
+          was audible. Prefix cache on the system prompt, speculative decoding, and a
+          queue rebuilt around admission control.</p>
+          <dl class="card-figs">
+            <div><dt>TTFT p95</dt><dd>640<b>ms</b></dd></div>
+            <div><dt>Was</dt><dd>2.4<b>s</b></dd></div>
+          </dl>
+        </article>
+        <article class="card">
+          <p class="card-tag">Document platform &middot; UK &middot; 2024</p>
+          <h3>A batch fleet, two thirds smaller</h3>
+          <p class="card-p">Overnight summarisation across 9M documents. Nothing wrong
+          with the model &mdash; the fleet was sized for a peak concurrency it never saw.
+          Rewritten as a batched, preemptible job.</p>
+          <dl class="card-figs">
+            <div><dt>GPUs</dt><dd>42 &rarr; 12</dd></div>
+            <div><dt>Window</dt><dd>&minus;38<b>%</b></dd></div>
+          </dl>
+        </article>
+      </div>
+
+    </div></div></div>
+  </section>
+
+  <!-- ======================================================= 04 — team -->
+  <section class="chapter is-full" id="c4">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <div class="head rv">
+        <p class="marker"><i></i> 04 &mdash; The team</p>
+        <h2>Four people, no bench</h2>
+        <p class="head-p">Everyone you meet in the first call is <em>on the work</em>.
+        We run two engagements at a time and <strong>say no to the third.</strong></p>
+      </div>
+
+      <div class="cards team rv">
+        <article class="person">
+          <span class="avatar" aria-hidden="true">MO</span>
+          <h3>Mara Ostrowski</h3>
+          <p class="role">Principal &middot; serving systems</p>
+          <p class="bio">Ten years inside inference runtimes; built the continuous
+          batching layer at a top-five GPU cloud.</p>
+        </article>
+        <article class="person">
+          <span class="avatar" aria-hidden="true">IB</span>
+          <h3>Ifeanyi Balogun</h3>
+          <p class="role">Quantisation lead</p>
+          <p class="bio">Publishes on low-bit attention, and keeps the eval harness
+          honest when a compression result looks too good.</p>
+        </article>
+        <article class="person">
+          <span class="avatar" aria-hidden="true">JP</span>
+          <h3>June Park</h3>
+          <p class="role">Applied research</p>
+          <p class="bio">Distillation and speculative decoding. Came from ranking, so
+          treats every quality claim as an A/B until proven.</p>
+        </article>
+        <article class="person">
+          <span class="avatar" aria-hidden="true">TV</span>
+          <h3>Tomáš Vrba</h3>
+          <p class="role">Infrastructure &amp; cost</p>
+          <p class="bio">Schedulers, fleet economics, and the spreadsheet that decides
+          whether any of the above was worth doing.</p>
+        </article>
+      </div>
+
+    </div></div></div>
+  </section>
+
+  <!-- ============================================== 05 — collaborations -->
+  <section class="chapter is-full" id="c5">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <div class="head rv">
+        <p class="marker"><i></i> 05 &mdash; Collaborations</p>
+        <h2>Who we build with</h2>
+        <p class="head-p">A small team stays small by borrowing. These are the partners
+        we co-deliver with &mdash; <strong>hardware, runtimes, and the teams who stay
+        after we leave.</strong></p>
+      </div>
+
+      <ul class="logos rv">
+        <li><span>NORTHWIND<em>CLOUD</em></span><small>GPU capacity</small></li>
+        <li><span>KERNEL<em>WORKS</em></span><small>Custom CUDA</small></li>
+        <li><span>PARABOLA<em>AI</em></span><small>Eval infrastructure</small></li>
+        <li><span>MERIDIAN<em>DATA</em></span><small>Data engineering</small></li>
+        <li><span>ATLAS<em>ROBOTICS</em></span><small>Edge inference</small></li>
+        <li><span>HELIO<em>HEALTH</em></span><small>Regulated deployments</small></li>
+      </ul>
+
+      <figure class="quote rv">
+        <blockquote>&ldquo;They spent the first week telling us which of our
+        assumptions were wrong, and the last week proving it in production. We kept
+        the model. We stopped paying for it twice.&rdquo;</blockquote>
+        <figcaption><b>Dana Whitlock</b> &mdash; VP Engineering, Northwind Cloud</figcaption>
+      </figure>
+
+    </div></div></div>
+  </section>
+
+  <!-- ==================================================== 06 — contact -->
+  <section class="chapter is-side side-right" id="c6">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+
+      <p class="marker rv"><i></i> 06 &mdash; Start here</p>
+      <h2 class="rv">Send us your p99</h2>
+      <p class="rv">One page on what you serve and where it hurts. We answer inside
+      two working days with <em>whether we can help</em> &mdash;
+      <strong>and, if we can't, who can.</strong></p>
+
+      <div class="cta-row rv">
+        <a class="cta cta-lg" href="mailto:hello@axon.example?subject=Inference%20teardown">
+          Book an inference teardown <i aria-hidden="true">&rarr;</i>
+        </a>
+        <a class="link-btn" href="mailto:hello@axon.example">hello@axon.example</a>
+      </div>
+
       <dl class="figures rv">
-        <div><dt>Edges in graph</dt><dd>2.41<b>B</b></dd></div>
-        <div><dt>Full rebuild</dt><dd>90<b>s</b></dd></div>
-        <div><dt>Connected sources</dt><dd>41</dd></div>
+        <div><dt>Typical engagement</dt><dd>4<b>wk</b></dd></div>
+        <div><dt>Next opening</dt><dd>Nov</dd></div>
+        <div><dt>Based in</dt><dd>Berlin</dd></div>
       </dl>
-    </div>
-  </section>
 
-  <section class="chapter" id="c2">
-    <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 02 &mdash; Inference</p>
-      <h2 class="rv">Six layers between fraud and settlement</h2>
-      <p class="rv">Each authorisation is scored against <em>the behaviour of the whole
-      network</em> &mdash; not just your own history. <strong>Cold-start merchants inherit the
-      graph's priors on day one.</strong></p>
-      <dl class="figures rv">
-        <div><dt>Decision latency p99</dt><dd>38<b>ms</b></dd></div>
-        <div><dt>False positive rate</dt><dd>0.04<b>%</b></dd></div>
-        <div><dt>Features per decision</dt><dd>1,904</dd></div>
-      </dl>
-    </div>
-  </section>
-
-  <section class="chapter" id="c3">
-    <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 03 &mdash; Settlement</p>
-      <h2 class="rv">Capital that routes itself</h2>
-      <p class="rv">Treasury finds <em>the cheapest legal path</em> across 74 corridors and
-      rebalances against tomorrow's forecast liquidity &mdash; <strong>with no one awake to
-      approve it.</strong></p>
-      <dl class="figures rv">
-        <div><dt>Live corridors</dt><dd>74</dd></div>
-        <div><dt>Settlement currencies</dt><dd>19</dd></div>
-        <div><dt>Manual approvals</dt><dd>0</dd></div>
-      </dl>
-    </div>
-  </section>
-
-  <section class="chapter" id="c4">
-    <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 04 &mdash; Assurance</p>
-      <h2 class="rv">Auditable by construction</h2>
-      <p class="rv">Every inference is written down with <em>the feature vector that produced
-      it</em>. A decision from eighteen months ago <strong>replays exactly</strong> &mdash;
-      including the model that made it.</p>
-      <dl class="figures rv">
-        <div><dt>Decision retention</dt><dd>7<b>yr</b></dd></div>
-        <div><dt>Attestation</dt><dd>SOC&nbsp;2 Type&nbsp;II</dd></div>
-        <div><dt>Card standard</dt><dd>PCI DSS 4.0</dd></div>
-      </dl>
-    </div>
-  </section>
-
-  <section class="chapter" id="c5">
-    <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 05 &mdash; Proof</p>
-      <h2 class="rv">What the network returns</h2>
-      <p class="rv">Measured across <em>31 production deployments</em> in the trailing twelve
-      months, against each customer's own pre-AXON baseline.</p>
-      <dl class="figures rv">
-        <div><dt>Approval rate lift</dt><dd>+31<b>%</b></dd></div>
-        <div><dt>Fraud prevented</dt><dd>$1.2<b>B</b></dd></div>
-        <div><dt>Median time to production</dt><dd>4<b>wk</b></dd></div>
-      </dl>
-    </div>
-  </section>
-
-  <section class="chapter" id="c6">
-    <span class="band" aria-hidden="true"></span>
-    <div class="ch-body">
-      <p class="marker rv"><i></i> 06 &mdash; Begin</p>
-      <h2 class="rv">Start with one corridor</h2>
-      <p class="rv">One corridor. <em>Four weeks.</em> Run in shadow mode against your current
-      stack, so <strong>you see the delta before you migrate anything.</strong></p>
-      <button class="cta rv" type="button" id="cta">Book a technical session &rarr;</button>
       <div class="colophon rv">
         <span>AXON &mdash; demo build</span>
         <span>Fictional company</span>
         <span>All figures invented</span>
       </div>
-    </div>
+
+    </div></div></div>
   </section>
 
 </main>

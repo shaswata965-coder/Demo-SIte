@@ -1,5 +1,22 @@
 /* ===========================================================================
    TOTEM DEMO — layout, chapters, components
+   ---------------------------------------------------------------------------
+   Written narrow-first. The base rules are the phone; each min-width block
+   adds to them rather than undoing them, which is what stops the two layouts
+   from fighting when a component grows.
+
+   Two layout modes, set per section in the markup:
+
+     .is-side  the copy takes one half of the container and the model stands
+               in the other. This is the signature of the page and the reason
+               the model travels; the sections that can stay slim keep it.
+     .is-full  the copy takes the whole container and the model drops behind
+               it, dimmed. For the sections that are a grid of things — work,
+               team, partners — where half a screen is not enough.
+
+   Neither mode moves the canvas: it is fixed at viewport size for the life of
+   the page and js/app.js repositions the model *inside* it. See the stage
+   comment in index.html.
    =========================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -11,67 +28,73 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--dim);
+  color: var(--ink-2);
   font-family: var(--f-body);
   font-size: .9375rem;
   line-height: 1.6;
+  overflow-x: hidden;          /* nothing here may scroll sideways */
 }
 ::selection { background: var(--accent); color: var(--on-accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 img, canvas { max-width: 100%; }
 
-/* --- texture layers: the surface treatment shifts with the chapter -------- */
-.texture {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-}
+/* --- texture ------------------------------------------------------------- */
+.texture { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .texture span {
-  position: absolute; inset: 0; display: block;
+  position: absolute; inset: -40px; display: block;
   transition: opacity var(--d-theme) var(--e-inout);
 }
-.texture .rules { display: none; }
-.texture .scan  { display: none; }
+.texture .rules, .texture .scan { display: none; }
 .texture .dots {
   opacity: 1;
   background-image: radial-gradient(var(--tex-ink) 1.2px, transparent 1.2px);
   background-size: 30px 30px;
 }
 
-/* --- the model stage: on one side of the content, never behind it --------- */
-.stage {
-  /* 90% of the copy block beside it, centred — so the model has a margin of
-     its own and can never reach the section edges. */
-  position: fixed; top: 5svh; left: 0; z-index: 2;
-  width: var(--stage-w); height: 90svh;
-  display: grid; place-items: stretch;
-  will-change: transform, opacity;
-}
-.stage canvas { display: block; width: 100%; height: 100%; }
+/* --- the model stage ------------------------------------------------------
+   One fixed canvas the size of the viewport, for the whole page. It is never
+   resized by the layout and never scaled by CSS — both of those would either
+   reallocate the backing store mid-scroll or blur the marks. Everything the
+   model does spatially is done in js/neural.js by moving its projection
+   origin and its zoom.
 
+   pointer-events: the canvas takes them so drag-to-rotate works, and the copy
+   column takes them back over its own text. See .ch-body below.
+   ------------------------------------------------------------------------ */
+.stage {
+  position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  will-change: opacity;
+}
+.stage canvas { display: block; width: 100%; height: 100%; pointer-events: auto; }
+
+/* No z-index here. .band sits at z-index -1 and has to escape to the root
+   stacking context to paint *below* the stage; giving .doc a z-index traps it
+   and the band paints over the model instead. .ch-body carries its own
+   z-index, which is what puts the copy above it. */
 .doc { position: relative; }
 
-/* The copy alternates sides with the model: odd chapters keep the copy left
-   and the model right, even chapters swap. Each section carries its own
-   layout, so nothing here animates — the travel is the model's alone. */
-@media (min-width: 900px) {
-  .chapter:nth-of-type(odd)  .ch-body { padding-left: 4vw;  padding-right: 52vw; }
-  .chapter:nth-of-type(even) .ch-body { padding-left: 52vw; padding-right: 4vw; }
-}
-
-
-/* --- stage HUD: the model as something being inspected -------------------- */
+/* --- stage HUD ------------------------------------------------------------
+   The readout frames the model rather than the page, so it travels with it:
+   --model-x is the model's own position, written once a frame by app.js.
+   ------------------------------------------------------------------------ */
 .hud {
-  position: absolute; inset: 0; pointer-events: none;
+  position: absolute; top: 12svh; bottom: 11svh;
+  left: calc(var(--model-x) * 100%);
+  width: min(46vw, 620px);
+  transform: translateX(-50%);
+  opacity: var(--hud-a, 1);
+  pointer-events: none;
   font-family: var(--f-mono); font-size: clamp(.625rem, .62vw, .8125rem);
   letter-spacing: .16em; text-transform: uppercase; color: var(--faint);
   padding: clamp(.9rem, 2vw, 1.6rem);
-  display: grid; grid-template-rows: 1fr auto; gap: .5rem;
+  display: none;                      /* pointer devices only; see 900px up */
+  grid-template-rows: 1fr auto; gap: .5rem;
 }
 .hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; gap: .8rem;
   text-align: right; line-height: 1.8; }
 .hud b { color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; }
 .hud .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--rule-hi); }
-.hud .c1 { top: .7rem; left: .7rem; border-right: 0; border-bottom: 0; }
-.hud .c2 { top: .7rem; right: .7rem; border-left: 0; border-bottom: 0; }
 .hud .c3 { bottom: .7rem; left: .7rem; border-right: 0; border-top: 0; }
 .hud .c4 { bottom: .7rem; right: .7rem; border-left: 0; border-top: 0; }
 .hud .gizmo { width: clamp(34px, 2.6vw, 54px); height: clamp(34px, 2.6vw, 54px); opacity: .75 }
@@ -80,62 +103,80 @@ img, canvas { max-width: 100%; }
 /* --- persistent chrome ---------------------------------------------------- */
 .topbar {
   position: fixed; z-index: 6; top: 0; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: var(--gutter); pointer-events: none;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem;
+  padding: clamp(.7rem, 2.4vw, 1.5rem) var(--gutter);
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--bg) 22%, transparent);
 }
 .topbar > * { pointer-events: auto; }
-.brand { display: flex; align-items: baseline; gap: .7rem; font-family: var(--f-mono);
-  font-size: clamp(.625rem, .62vw, .8125rem); letter-spacing: .18em;
-  text-transform: uppercase; color: var(--faint); }
+.brand {
+  display: flex; align-items: baseline; gap: .7rem; text-decoration: none;
+  font-family: var(--f-mono);
+  font-size: clamp(.5625rem, .62vw, .8125rem); letter-spacing: .18em;
+  text-transform: uppercase; color: var(--faint); min-width: 0;
+}
 .brand b {
   font-family: var(--f-display); font-size: clamp(1rem, 1.05vw, 1.45rem);
   letter-spacing: .24em; color: var(--ink);
   font-variation-settings: 'wdth' 112, 'wght' 800;
 }
 .brand span { display: none; }
-@media (min-width: 1200px) { .brand span { display: inline; } }
+@media (min-width: 1100px) { .brand span { display: inline; } }
 
 .controls { display: flex; gap: .4rem; align-items: center; }
 .btn {
   font: inherit; font-family: var(--f-mono); font-size: .625rem;
   letter-spacing: .14em; text-transform: uppercase;
   color: var(--ink); background: var(--surface);
-  border: 1px solid var(--rule-hi); border-radius: var(--panel-radius);
-  padding: .6rem .85rem; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
-  transition: border-color var(--d-base) var(--e-out);
+  border: var(--rule-weight) solid var(--rule-hi); border-radius: var(--panel-radius);
+  padding: .6rem .7rem; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
+  transition: border-color var(--d-base) var(--e-out), color var(--d-base) var(--e-out);
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
-.btn svg { width: 13px; height: 13px; }
+.btn svg { width: 13px; height: 13px; flex: none; }
+.btn span { display: none; }
+@media (min-width: 560px) { .btn span { display: inline; } }
 
 /* --- chapter rail --------------------------------------------------------- */
 /* Top centre — the one strip of the page the travelling model never crosses. */
 .rail {
-  position: fixed; z-index: 6; top: calc(var(--gutter) * 0.7);
+  position: fixed; z-index: 6; top: calc(var(--gutter) * .7);
   left: 50%; transform: translateX(-50%);
-  display: flex; gap: .3rem; align-items: flex-start; flex-wrap: nowrap;
+  display: none; gap: .3rem; align-items: flex-start; flex-wrap: nowrap;
 }
-.rail button { padding: .45rem .2rem; justify-items: center; }
 .rail button {
-  appearance: none; border: 0; background: none; cursor: pointer; padding: .5rem .2rem;
-  display: grid; gap: .35rem; justify-items: start;
+  appearance: none; border: 0; background: none; cursor: pointer;
+  /* Fixed width with the label taken out of flow. Sized by its own label, each
+     button was a different width and the ticks came out unevenly spaced —
+     and the whole rail reflowed every time a label faded in. */
+  position: relative; width: 2.7rem; height: 1.9rem; padding: 0;
   font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
   text-transform: uppercase; color: var(--faint);
 }
-.rail button i { display: block; width: 16px; height: 2px; background: currentColor;
-  transition: width var(--d-base) var(--e-out); }
-.rail button:hover { color: var(--dim); }
+.rail button i {
+  position: absolute; bottom: .35rem; left: 50%; transform: translateX(-50%);
+  display: block; width: 16px; height: 2px; background: currentColor;
+  transition: width var(--d-base) var(--e-out);
+}
+.rail button:hover { color: var(--ink-2); }
 .rail button[aria-current="true"] { color: var(--accent); }
-.rail button[aria-current="true"] i { width: 38px; }
-.rail button em { font-style: normal; opacity: 0; transition: opacity var(--d-base) var(--e-out); }
+.rail button[aria-current="true"] i { width: 34px; }
+.rail button em {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  font-style: normal; white-space: nowrap; opacity: 0;
+  transition: opacity var(--d-base) var(--e-out);
+}
 .rail button[aria-current="true"] em, .rail button:hover em { opacity: 1; }
 
 /* --- chapters ------------------------------------------------------------- */
-/* A chapter is 1.8 viewports of scroll. With the copy free-flowing, anything
-   past ~1.45 opened a stretch you could stop in and see nothing — the copy had
-   left and the next had not arrived. Pinning the copy removes that ceiling:
-   it is on screen for the whole chapter, so the transition can take as long as
-   it likes and there is nowhere in it to come to rest on an empty page. */
-.chapter { position: relative; min-height: 180svh; }
+/* A chapter is a run of scroll with one screen of copy pinned inside it. The
+   pin is what removes the ceiling on transition length: the copy is on screen
+   for the whole chapter, so the model can take as long as it likes to cross
+   and there is nowhere in the scroll to come to rest on an empty page. */
+/* Narrow: a section is as tall as it needs to be, with a screen as its floor.
+   Wide: a fixed run of scroll with the copy pinned inside it. */
+.chapter { position: relative; min-height: 100svh; }
 
 /* Full-bleed colour band, painted below the model. Negative z-index works
    because neither .doc nor .chapter creates a stacking context. Sized to the
@@ -143,72 +184,251 @@ img, canvas { max-width: 100%; }
 .band { position: absolute; inset: 0; z-index: -1; background: var(--bg); }
 
 .ch-body {
-  position: sticky; top: 0; z-index: 3;   /* above the model at z-index 2 */
-  height: 100svh;
+  /* Narrow: in flow. A pinned block taller than the viewport hides its own
+     last lines, and at 360x640 every section with a grid in it is taller than
+     the viewport. From 900px up it pins — see the 900px block. */
+  position: relative; z-index: 3;         /* above the model at z-index 1 */
+  min-height: 100svh;
   display: grid; align-content: center;
-  padding-block: clamp(4rem, 12vh, 8rem);
-  gap: clamp(1.75rem, 3.1vw, 3.6rem);
+  padding-block: clamp(4.5rem, 13svh, 8rem) clamp(2rem, 7svh, 5rem);
+  padding-inline: var(--gutter);
+  /* The column takes pointer events over its own content only, so the exposed
+     half of the canvas stays draggable. */
+  pointer-events: none;
 }
-.marker {
-  font-family: var(--f-mono); font-size: clamp(.625rem, .68vw, .875rem); letter-spacing: .2em;
+.ch-inner { width: 100%; max-width: var(--maxw); margin-inline: auto; }
+.ch-col { display: grid; gap: clamp(1rem, 2.4vw, 2rem); }
+.ch-col > * { pointer-events: auto; }
+
+.chapter .marker {
+  max-width: none;
+  font-family: var(--f-mono); font-size: clamp(.5625rem, .68vw, .875rem); letter-spacing: .2em;
   text-transform: uppercase; color: var(--faint);
-  display: flex; align-items: center; gap: .9rem; margin: 0 0 .4rem;
+  display: flex; align-items: center; gap: .8rem; margin: 0;
 }
-.marker i { display: block; width: 2.6rem; height: 2px; background: var(--accent); border-radius: 2px;
+.marker i { display: block; width: 2rem; height: 2px; background: var(--accent); border-radius: 2px;
   flex: none; }
 
 .chapter h1, .chapter h2 {
   font-family: var(--f-display);
   font-variation-settings: 'wdth' var(--disp-wdth), 'wght' var(--disp-wght);
   letter-spacing: var(--disp-track);
-  font-size: clamp(2rem, 4.6vw, 6rem);
+  font-size: clamp(1.9rem, 7.4vw, 3rem);
   line-height: .98; text-transform: uppercase; text-wrap: balance;
-  color: var(--ink); margin: 0; max-width: 15ch;
+  color: var(--ink); margin: 0; max-width: 16ch;
   transition: font-variation-settings var(--d-theme) var(--e-inout),
               letter-spacing var(--d-theme) var(--e-inout);
 }
-#c0 h1 { font-size: clamp(2.4rem, 6vw, 7.6rem); max-width: 13ch; }
-.chapter p { margin: 0; max-width: 44ch; font-size: clamp(1.0625rem, 1.1vw, 1.4rem);
+.chapter h3 {
+  font-family: var(--f-display); font-variation-settings: 'wdth' 100, 'wght' 640;
+  font-size: clamp(.95rem, 1.15vw, 1.15rem); line-height: 1.2; margin: 0;
+  color: var(--ink); letter-spacing: -.005em;
+}
+.chapter p { margin: 0; max-width: 46ch; font-size: clamp(.9375rem, 1.05vw, 1.15rem);
   line-height: 1.62; color: var(--ink-2); }
+.chapter .lede { font-size: clamp(1.05rem, 1.35vw, 1.55rem); max-width: 40ch;
+  line-height: 1.5; }
 
 /* Two levels of emphasis, both in colour, both carrying meaning rather than
    decorating: <em> names the thing, <strong> states the claim. */
-.chapter em {
-  font-style: normal; color: var(--accent);
-  font-variation-settings: 'wght' 500;
-}
+.chapter em { font-style: normal; color: var(--accent); font-variation-settings: 'wght' 500; }
 .chapter strong {
   font-weight: 400; color: var(--contrast);
   font-variation-settings: 'wght' 500;
-  box-shadow: inset 0 -0.34em 0 color-mix(in srgb, var(--contrast) 13%, transparent);
+  box-shadow: inset 0 -0.34em 0 color-mix(in srgb, var(--contrast) 14%, transparent);
 }
-.chapter .lede { font-size: clamp(1.15rem, 1.4vw, 1.85rem); max-width: 38ch;
-  line-height: 1.5; color: var(--ink-2); }
 
-/* figures rail under the copy */
-.figures { display: flex; flex-wrap: wrap; gap: 2rem 3.4rem; margin-top: .4rem;
+/* --- section head (used by the full-width sections) ----------------------- */
+.head { display: grid; gap: clamp(.7rem, 1.4vw, 1.1rem); pointer-events: auto; }
+.chapter .head-p { max-width: 56ch; }
+
+/* --- call to action ------------------------------------------------------- */
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.25rem; }
+.cta {
+  font: inherit; font-family: var(--f-mono); font-weight: 500;
+  font-size: clamp(.6875rem, .78vw, .8125rem);
+  letter-spacing: .13em; text-transform: uppercase; text-decoration: none;
+  background: var(--accent); color: var(--on-accent);
+  border: 0; border-radius: var(--panel-radius);
+  padding: 1rem 1.4rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .6rem; justify-self: start;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 12%, transparent),
+              0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent);
+  transition: transform var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out),
+              background-color var(--d-base) var(--e-out);
+}
+.cta i { font-style: normal; transition: transform var(--d-base) var(--e-out); }
+.cta:hover { transform: translateY(-2px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 14%, transparent),
+              0 18px 34px -16px color-mix(in srgb, var(--accent) 95%, transparent); }
+.cta:hover i { transform: translateX(3px); }
+.cta-lg { padding: 1.15rem 1.8rem; font-size: clamp(.75rem, .9vw, .9375rem); }
+.cta-sm { padding: .62rem .85rem; font-size: .625rem; letter-spacing: .12em; box-shadow: none; }
+.cta-sm .cta-short { display: inline; }
+.cta-sm .cta-long { display: none; }
+@media (min-width: 560px) {
+  .cta-sm .cta-short { display: none; }
+  .cta-sm .cta-long { display: inline; }
+}
+
+.link-btn {
+  font: inherit; font-family: var(--f-mono); font-size: clamp(.6875rem, .78vw, .8125rem);
+  letter-spacing: .13em; text-transform: uppercase;
+  background: none; border: 0; padding: .4rem 0; cursor: pointer;
+  color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--rule-hi);
+  transition: color var(--d-base) var(--e-out), border-color var(--d-base) var(--e-out);
+}
+.link-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* --- hero trust strip ----------------------------------------------------- */
+.chapter .trust {
+  display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; max-width: none;
+  font-family: var(--f-mono); font-size: clamp(.625rem, .68vw, .75rem);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--faint);
+  border-top: var(--rule-weight) solid var(--rule); padding-top: 1rem;
+}
+.trust b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* --- services list -------------------------------------------------------- */
+.svc { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.svc li {
+  display: grid; grid-template-columns: auto 1fr; gap: .9rem;
+  padding: clamp(.75rem, 1.5vw, 1.05rem) 0;
+  border-top: var(--rule-weight) solid var(--rule);
+}
+.svc li:last-child { border-bottom: var(--rule-weight) solid var(--rule); }
+.svc-n {
+  font-family: var(--f-mono); font-size: .625rem; letter-spacing: .14em;
+  color: var(--accent); padding-top: .25rem;
+}
+.svc div { display: grid; gap: .3rem; }
+.chapter .svc p { font-size: clamp(.8125rem, .9vw, .9375rem); line-height: 1.5; max-width: 46ch; }
+
+/* --- cards ---------------------------------------------------------------- */
+/* Translucent rather than solid: the model is behind them, and the point of
+   putting it there is that you can still see it. */
+.card {
+  background: var(--surface);
+  border: var(--rule-weight) solid var(--rule);
+  border-radius: var(--card-radius);
+  padding: clamp(.9rem, 1.5vw, 1.4rem);
+  display: grid; gap: .5rem; align-content: start;
+  transition: border-color var(--d-base) var(--e-out), transform var(--d-base) var(--e-out);
+}
+.card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); }
+.cards { display: grid; gap: clamp(.6rem, 1.1vw, 1rem); }
+
+/* method steps */
+.steps { list-style: none; margin: 0; padding: 0;
+  display: grid; gap: clamp(.6rem, 1.1vw, 1rem); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.step-n {
+  font-family: var(--f-mono); font-size: .625rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--accent);
+}
+.chapter .steps p { font-size: clamp(.8125rem, .9vw, .9375rem); line-height: 1.45; max-width: none; }
+.step-out {
+  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+  border-top: var(--rule-weight) solid var(--rule); padding-top: .55rem; margin-top: .15rem;
+}
+
+/* selected work */
+.chapter .card-tag {
+  max-width: none;
+  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--faint);
+}
+.chapter .card-p { font-size: clamp(.8125rem, .9vw, .9375rem); line-height: 1.5; max-width: none; }
+.card-figs { display: flex; flex-wrap: wrap; gap: .6rem 1.6rem; margin: .35rem 0 0;
+  border-top: var(--rule-weight) solid var(--rule); padding-top: .7rem; }
+.card-figs div { display: grid; gap: .1rem; }
+.card-figs dt { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--faint); }
+.card-figs dd { margin: 0; font-family: var(--f-display); font-size: clamp(1.1rem, 1.35vw, 1.5rem);
+  font-variation-settings: 'wdth' 100, 'wght' 620; color: var(--ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.card-figs b { color: var(--accent); font-weight: inherit; }
+
+/* team */
+.team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.person {
+  display: grid; gap: .35rem; align-content: start;
+  padding: clamp(.9rem, 1.4vw, 1.3rem);
+  background: var(--surface);
+  border: var(--rule-weight) solid var(--rule);
+  border-radius: var(--card-radius);
+  transition: border-color var(--d-base) var(--e-out);
+}
+.person:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); }
+.avatar {
+  width: clamp(2.1rem, 3.4vw, 2.9rem); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; margin-bottom: .35rem;
+  font-family: var(--f-mono); font-size: clamp(.625rem, .78vw, .8125rem);
+  letter-spacing: .06em; font-weight: 500;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: var(--rule-weight) solid color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.chapter .role { max-width: none;
+  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--accent); }
+.chapter .bio { font-size: clamp(.75rem, .88vw, .875rem); line-height: 1.45; color: var(--ink-2); max-width: none; }
+
+/* collaborations */
+.logos {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: var(--rule-weight) solid var(--rule); border-radius: var(--card-radius);
+  overflow: hidden; background: var(--surface);
+}
+.logos li {
+  display: grid; gap: .3rem; align-content: center;
+  padding: clamp(.8rem, 1.6vw, 1.35rem) clamp(.7rem, 1.4vw, 1.2rem);
+  border-top: var(--rule-weight) solid var(--rule);
+  border-left: var(--rule-weight) solid var(--rule);
+  transition: background-color var(--d-base) var(--e-out);
+}
+.logos li:nth-child(-n+2) { border-top: 0; }
+.logos li:nth-child(2n+1) { border-left: 0; }
+.logos li:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.logos span {
+  font-family: var(--f-display); font-variation-settings: 'wdth' 92, 'wght' 750;
+  font-size: clamp(.8125rem, 1.15vw, 1.0625rem); letter-spacing: .04em;
+  text-transform: uppercase; color: var(--ink); line-height: 1.1;
+}
+.logos em { font-style: normal; color: var(--accent); }
+.logos small { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint); }
+
+.quote {
+  margin: 0; display: grid; gap: .8rem;
+  border-left: 3px solid var(--accent);
+  padding: .2rem 0 .2rem clamp(.9rem, 1.8vw, 1.5rem);
+}
+.quote blockquote { margin: 0; font-family: var(--f-display);
+  font-variation-settings: 'wdth' 96, 'wght' 450;
+  font-size: clamp(.9375rem, 1.5vw, 1.35rem); line-height: 1.35; color: var(--ink);
+  text-wrap: pretty; max-width: 60ch; }
+.quote figcaption { font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint); }
+.quote b { color: var(--ink); font-weight: 500; }
+
+/* --- figures rail --------------------------------------------------------- */
+.figures { display: flex; flex-wrap: wrap; gap: 1rem 2.4rem; margin: 0;
   font-family: var(--f-mono); }
 .figures div { display: grid; gap: .15rem; }
-.figures dt { font-size: clamp(.5625rem, .6vw, .75rem); letter-spacing: .2em; text-transform: uppercase; color: var(--faint); }
-.figures dd { margin: 0; font-size: clamp(1.6rem, 1.9vw, 2.6rem); color: var(--ink);
+.figures dt { font-size: clamp(.5rem, .6vw, .6875rem); letter-spacing: .2em;
+  text-transform: uppercase; color: var(--faint); }
+.figures dd { margin: 0; font-size: clamp(1.3rem, 1.9vw, 2.4rem); color: var(--ink);
   font-variant-numeric: tabular-nums; letter-spacing: -.02em;
   font-family: var(--f-display); font-variation-settings: 'wdth' 100, 'wght' 600; }
 .figures dd b { color: var(--accent); font-weight: inherit; }
 
-.cta {
-  font: inherit; font-family: var(--f-mono); font-size: .6875rem;
-  letter-spacing: .16em; text-transform: uppercase;
-  background: var(--accent); color: var(--on-accent);
-  border: 0; border-radius: var(--panel-radius);
-  padding: 1rem 1.5rem; margin-top: .8rem; cursor: pointer; justify-self: start;
-  transition: transform var(--d-base) var(--e-out);
-}
-.cta:hover { transform: translateY(-2px); }
-
 .colophon {
-  border-top: var(--rule-weight) solid var(--rule); margin-top: 3rem; padding-top: 1.2rem;
-  display: flex; flex-wrap: wrap; gap: .6rem 2rem;
-  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
+  border-top: var(--rule-weight) solid var(--rule); padding-top: 1rem;
+  display: flex; flex-wrap: wrap; gap: .5rem 1.6rem;
+  font-family: var(--f-mono); font-size: .5rem; letter-spacing: .16em;
   text-transform: uppercase; color: var(--faint);
 }
 
@@ -220,63 +440,166 @@ img, canvas { max-width: 100%; }
 html.reveals-armed .rv { opacity: 0; transform: translateY(16px);
   transition: opacity .85s var(--e-out), transform .85s var(--e-out); }
 html.reveals-armed .rv.in { opacity: 1; transform: none; }
-html.reveals-armed .rv:nth-child(2) { transition-delay: .07s; }
-html.reveals-armed .rv:nth-child(3) { transition-delay: .14s; }
-html.reveals-armed .rv:nth-child(4) { transition-delay: .21s; }
+html.reveals-armed .rv:nth-child(2) { transition-delay: .06s; }
+html.reveals-armed .rv:nth-child(3) { transition-delay: .12s; }
+html.reveals-armed .rv:nth-child(4) { transition-delay: .18s; }
+html.reveals-armed .rv:nth-child(5) { transition-delay: .24s; }
+html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
 
 /* ===========================================================================
-   Per-chapter aesthetic. Hue is lerped from JS; everything discrete lives
-   here so the whole look — type width, texture, side, rule weight, corner
-   radius — steps with the state of the view.
+   Per-chapter aesthetic. Everything discrete lives here so the whole look —
+   type width, weight, tracking — steps with the state of the view.
    =========================================================================== */
-[data-chapter="0"] { --disp-wdth: 82;  --disp-wght: 700; --disp-track: -.015em; }
-[data-chapter="1"] { --disp-wdth: 100; --disp-wght: 600; --disp-track: -.022em; }
-[data-chapter="2"] { --disp-wdth: 114; --disp-wght: 650; --disp-track: -.028em; }
-[data-chapter="3"] { --disp-wdth: 124; --disp-wght: 550; --disp-track: -.032em; }
-[data-chapter="4"] { --disp-wdth: 92;  --disp-wght: 800; --disp-track: -.01em;  }
-[data-chapter="5"] { --disp-wdth: 106; --disp-wght: 500; --disp-track: -.018em; }
-[data-chapter="6"] { --disp-wdth: 120; --disp-wght: 750; --disp-track: -.035em; }
+[data-chapter="0"] { --disp-wdth: 84;  --disp-wght: 780; --disp-track: -.015em; }
+[data-chapter="1"] { --disp-wdth: 100; --disp-wght: 640; --disp-track: -.022em; }
+[data-chapter="2"] { --disp-wdth: 112; --disp-wght: 600; --disp-track: -.028em; }
+[data-chapter="3"] { --disp-wdth: 122; --disp-wght: 560; --disp-track: -.032em; }
+[data-chapter="4"] { --disp-wdth: 92;  --disp-wght: 800; --disp-track: -.012em; }
+[data-chapter="5"] { --disp-wdth: 106; --disp-wght: 520; --disp-track: -.018em; }
+[data-chapter="6"] { --disp-wdth: 118; --disp-wght: 760; --disp-track: -.035em; }
 
-/* --- phone: overrides must sit after the base rules they replace --- */
-@media (max-width: 899px) {
-  .stage { left: 0; width: 100vw; height: 42svh; border-bottom: var(--rule-weight) solid var(--rule); }
-  .doc { padding: 0; }
-  .ch-body { padding-inline: var(--gutter); }
+/* ===========================================================================
+   ≥ 600px — small tablet / large phone in landscape
+   =========================================================================== */
+@media (min-width: 600px) {
+  .cards.work { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .logos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .logos li:nth-child(-n+2) { border-top: var(--rule-weight) solid var(--rule); }
+  .logos li:nth-child(2n+1) { border-left: var(--rule-weight) solid var(--rule); }
+  .logos li:nth-child(-n+3) { border-top: 0; }
+  .logos li:nth-child(3n+1) { border-left: 0; }
+  .team { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .chapter h1, .chapter h2 { font-size: clamp(2.4rem, 6.2vw, 3.6rem); }
+}
 
-  /* There is no room for a full inspection readout over a 42svh stage, and it
-     lands on the brand. Keep one line of it and drop the rest. */
-  .hud { padding: .8rem; }
-  .hud .corner, .hud .gizmo { display: none; }
-  .hud-bot { text-align: left; justify-content: flex-start; }
+/* ===========================================================================
+   ≥ 900px — the model comes out from behind the copy and stands beside it
+   =========================================================================== */
+@media (min-width: 900px) {
+  .rail { display: flex; }
+  .hud { display: grid; }
 
-  /* The rail is a convenience on a pointer device; on a phone it sits on top
-     of the copy and scrolling is the navigation anyway. */
-  .rail { display: none; }
+  .chapter { min-height: 182svh; }
+  .ch-body { position: sticky; top: 0; height: 100svh; min-height: 0;
+    padding-block: clamp(4.5rem, 13svh, 8rem) clamp(2.5rem, 7svh, 5rem); }
 
-  .chapter { min-height: 170svh; }
-  .chapter:last-of-type { min-height: 100svh; }
-  .ch-body { top: 42svh; height: 58svh; padding-block: clamp(1.5rem, 4vh, 3rem);
-    gap: clamp(1rem, 3vw, 1.75rem); }
-  #c0 h1 { font-size: clamp(2rem, 9vw, 3rem); }
-  .chapter h1, .chapter h2 { font-size: clamp(1.7rem, 7.6vw, 2.6rem); }
-  .figures { gap: 1.1rem 1.6rem; }
-  .figures dd { font-size: 1.15rem; }
+  /* .is-side: copy in one half of the container, model in the other. The
+     halves are of the *container*, not the viewport, which is what keeps a
+     3440px monitor from putting a paragraph and a model a metre apart —
+     js/app.js parks the model against the same box. */
+  .is-side .ch-col { width: 50%; }
+  .side-left .ch-col { margin-left: auto; }   /* model left  → copy right */
+  .side-right .ch-col { margin-right: auto; } /* model right → copy left  */
+
+  .chapter h1, .chapter h2 { font-size: clamp(2.4rem, 3.9vw, 4.4rem); max-width: 14ch; }
+  .is-full h2 { font-size: clamp(2.2rem, 3.4vw, 3.8rem); max-width: 18ch; }
+  #c0 h1 { font-size: clamp(2.6rem, 4.5vw, 5.2rem); max-width: 12ch; }
+  .is-side .ch-col { width: 50%; gap: clamp(.9rem, 1.9vw, 1.7rem); }
+
+  .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .logos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  /* :nth-child(n) rather than a bare `.logos li`, which would be (0,1,1) and
+     lose to the 2- and 3-column rules above it at (0,2,1) — that left the
+     fourth cell without its divider. Same shape, later in the sheet, wins. */
+  .logos li:nth-child(n) { border-top: 0; border-left: var(--rule-weight) solid var(--rule); }
+  .logos li:first-child { border-left: 0; }
+
+  /* On the full-width sections the head and the grid sit side by side rather
+     than stacked, which is what keeps them inside one screen. */
+  .is-full .ch-col { gap: clamp(1.5rem, 3vw, 2.75rem); }
+  .head { max-width: 46ch; }
+}
+
+@media (min-width: 1100px) {
+  /* Title left, standfirst right, both sitting on the same baseline as the
+     grid below them — a narrow column of head over a full-width row of cards
+     leaves the right half of the screen empty and the section top-heavy. */
+  .is-full .head {
+    max-width: none;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    column-gap: clamp(2rem, 5vw, 5.5rem);
+  }
+  .is-full .head .marker { grid-column: 1; grid-row: 1; }
+  .is-full .head h2 { grid-column: 1; grid-row: 2; }
+  .is-full .head .head-p { grid-column: 2; grid-row: 1 / span 2; align-self: end; }
+}
+
+/* ===========================================================================
+   ≥ 1400px — desktop, and the point where the copy stops growing
+   =========================================================================== */
+@media (min-width: 1200px) { .is-side .ch-col { width: 46%; } }
+
+@media (min-width: 1400px) {
+  .chapter p { font-size: 1.0625rem; }
+  .chapter .lede { font-size: 1.45rem; }
+  .is-side .ch-col { width: 44%; }
+  .quote blockquote { max-width: 68ch; }
+}
+
+/* ===========================================================================
+   Large desktop. --maxw already caps the container; this stops type from
+   looking undersized inside it and gives the grids more air.
+   =========================================================================== */
+@media (min-width: 1800px) {
+  :root { --gutter: 4.5rem; }
+  .cards { gap: 1.25rem; }
+  .card, .person { padding: 1.6rem; }
+}
+
+/* Past ~2000px, capping the container alone leaves the page marooned in the
+   middle of the screen at laptop type sizes. The container widens and the root
+   scales with it — as a percentage, not a pixel size, so a reader who has set
+   a larger browser default keeps it. */
+@media (min-width: 2000px) {
+  html { font-size: 106.25%; }
+  :root { --maxw: 1920px; }
+}
+@media (min-width: 2600px) {
+  html { font-size: 118.75%; }
+  :root { --maxw: 2160px; }
+}
+
+/* ===========================================================================
+   Short viewports — a laptop at 1280×720, or a phone in landscape. Every
+   section still has to fit one screen, so the air goes first.
+   =========================================================================== */
+@media (max-height: 760px) and (min-width: 900px) {
+  .ch-body { padding-block: 5rem 2.5rem; }
+  .is-full .ch-col { gap: 1.25rem; }
+  .chapter h1, .chapter h2 { font-size: clamp(2rem, 3.4vw, 3.2rem); }
+  #c0 h1 { font-size: clamp(2.4rem, 4.2vw, 4rem); }
+  .card, .person { padding: .9rem 1rem; }
+  .quote blockquote { font-size: 1.0625rem; }
+  .svc li { padding: .45rem 0; }
+  .chapter .svc p { font-size: .8125rem; }
+  .trust { padding-top: .7rem; }
+  .is-side .ch-col { gap: .9rem; }
+}
+
+/* Narrow screens keep every word: nothing is pinned below 900px, so a long
+   section simply scrolls and there is no height to buy back by truncating a
+   sentence or dropping a bio. */
+@media (max-width: 479px) {
+  .chapter .lede { font-size: 1.0625rem; }
+  .card, .person { padding: .8rem .9rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.reveals-armed .rv { opacity: 1; transform: none; transition: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
+  .cta:hover { transform: none; }
 }
 
-/* Flipping light/dark is a genuine step change, unlike the hue, which JS
-   already interpolates frame by frame. The toggle adds .theming for the
-   length of the fade and removes it again, so nothing transitions during
+/* Flipping light/dark is a genuine step change. The toggle adds .theming for
+   the length of the fade and removes it again, so nothing transitions during
    ordinary scrolling. */
 html.theming, html.theming body, html.theming .btn, html.theming .cta,
 html.theming .marker, html.theming .marker i, html.theming .chapter h1,
-html.theming .chapter h2, html.theming .figures dd, html.theming .figures dd b,
-html.theming .brand b, html.theming .rail button, html.theming .rail button i,
-html.theming .hud, html.theming .hud b, html.theming .colophon {
+html.theming .chapter h2, html.theming .chapter h3, html.theming .figures dd,
+html.theming .figures dd b, html.theming .brand b, html.theming .rail button,
+html.theming .rail button i, html.theming .hud, html.theming .hud b,
+html.theming .colophon, html.theming .card, html.theming .person,
+html.theming .logos, html.theming .logos li, html.theming .avatar {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
 }
@@ -284,7 +607,7 @@ html.theming .hud, html.theming .hud b, html.theming .colophon {
 
 /* ===========================================================================
    Section rhythm. Every other chapter sits on a soft wash of the primary, so
-   scrolling alternates between the airy ground and a tinted one. One tint,
+   scrolling alternates between the paper ground and a tinted one. One tint,
    not one per chapter — the alternation is the rhythm, the colour is constant.
    =========================================================================== */
 #c1 .band, #c3 .band, #c5 .band {

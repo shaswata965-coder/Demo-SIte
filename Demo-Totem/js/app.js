@@ -5,12 +5,18 @@
    is derived from it:
 
      · which arrangement the model holds, and how far it has turned
-     · the page's hue and saturation, lerped continuously
-     · the chapter's discrete aesthetic (type width, texture, side, radius),
+     · where the model sits across the viewport, how large it is drawn, and
+       how far forward it comes — three numbers written into the field
+     · the chapter's discrete aesthetic (type width, weight, tracking),
        stamped as data-chapter and transitioned by CSS
 
-   JS owns the hue rather than CSS so that the page and the canvas are painted
-   from the identical value on the identical frame. Two sources would drift.
+   The canvas is fixed at viewport size and never moves. A section that needs
+   the whole screen does not push the canvas anywhere; it pulls the model to
+   the middle, opens the zoom and drops the opacity, so the copy sits on top
+   of it. A section that can live in half a screen parks the model in the
+   other half. Both are the same three numbers, lerped on the same ease as the
+   morph, which is why the two kinds of section transition into each other
+   instead of cutting.
 
    Rule this file follows: the copy is the page. `armReveals` runs after the
    model is built, so a failure there leaves a readable static page and the
@@ -22,48 +28,48 @@
 
   var root = document.documentElement;
 
-  /* Hue walks the spectrum in one direction across the chapters, so a change
-     never sweeps backwards through colours you have already passed. The last
-     is negative so the wrap to magenta is a short move, not a long one. */
-  /* The model alternates sides every chapter and the copy alternates with it.
-     `side` is which side the MODEL sits on; the copy takes the other one.
-     Colour is not per chapter: one palette runs the whole page. */
+  /* One entry per section, in order. `x` is where the model sits across the
+     viewport: 'right' and 'left' park it in the half the copy is not using,
+     measured against the content container rather than the raw viewport so a
+     3440px monitor does not put the two a metre apart. A number is a literal
+     fraction, used by the full-bleed sections — they keep drifting rather
+     than sitting dead centre for four chapters in a row, so the model is
+     still travelling even when it is only a backdrop.
+
+     `dim` is the stage's opacity at rest and `zoom` how large the model is
+     drawn. Behind a full screen of copy it is bigger and much fainter; beside
+     the copy it is smaller and at full strength. The four backdrop values are
+     not equal because the arrangements are not equally dense — the globe still
+     reads at 0.28 where the flat ledger plane has vanished by 0.30. */
   var CHAPTERS = [
-    { id: 'seed',   label: 'Dormant',    side: 'right' },
-    { id: 'bloom',  label: 'Ingest',     side: 'left' },
-    { id: 'infer',  label: 'Inference',  side: 'right' },
-    { id: 'settle', label: 'Settlement', side: 'left' },
-    { id: 'vault',  label: 'Assurance',  side: 'right' },
-    { id: 'ledger', label: 'Proof',      side: 'left' },
-    { id: 'core',   label: 'Begin',      side: 'right' }
+    { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82 },
+    { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82 },
+    { id: 'infer',  label: 'Method',   x: 0.63,    dim: 0.34, zoom: 1.30 },
+    { id: 'settle', label: 'Work',     x: 0.35,    dim: 0.28, zoom: 1.34 },
+    { id: 'vault',  label: 'Team',     x: 0.65,    dim: 0.32, zoom: 1.30 },
+    { id: 'ledger', label: 'Partners', x: 0.37,    dim: 0.38, zoom: 1.26 },
+    { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88 }
   ];
 
-  /* How far the model rolls while crossing from one side to the other. It
-     rolls in the direction it is being pulled, so a move left turns it left. */
-  var SPIN_PER_CROSSING = 0.78;
+  /* Narrow screens have no half to park anything in: the model is a backdrop
+     for the whole page, centred, larger relative to the screen and faint
+     enough to read a paragraph through. It still morphs and still turns with
+     the scroll — that is the part worth keeping on a phone. */
+  var PHONE = { x: 0.5, dim: 0.42, zoom: 1.42 };
 
-  /* Cumulative spin at each chapter, signed by the direction of travel. */
-  var SPIN_AT = (function () {
-    var out = [0];
-    for (var i = 1; i < CHAPTERS.length; i++) {
-      var dir = CHAPTERS[i].side === 'right' ? 1 : -1;
-      out.push(out[i - 1] + dir * SPIN_PER_CROSSING);
-    }
-    return out;
-  }());
+  /* How far the model rolls per full width of travel. A side-to-side swap is
+     ~0.47 of the viewport, so this reproduces the 0.78 roll the page had when
+     crossing was the only kind of movement; the smaller drifts of the
+     full-bleed sections get a proportionally smaller roll. */
+  var SPIN_PER_WIDTH = 1.66;
 
   var sections = [];
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function smoothstep(t) { return t * t * (3 - 2 * t); }
-
-  /* Where the stage sits, in px from the left edge of the viewport, for a
-     given side. Mirrors the widths in css/main.css. */
-  function anchorX(side) {
-    var vw = innerWidth;
-    return side === 'right' ? vw * 0.51 : vw * 0.03;
-  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function wide() { return innerWidth >= 900; }
 
   function boot() {
     /* The artifact host wraps this file in its own document, so attributes
@@ -74,9 +80,44 @@
 
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas = $('field');
-    var stage = document.querySelector('.stage');
+    var stage = $('stage');
     var texture = document.querySelector('.texture');
-    var bodies = sections.map(function (el) { return el.querySelector('.ch-body'); });
+    var bodies = sections.map(function (el) { return el.querySelector('.ch-col'); });
+
+    /* ---- where the content container actually is --------------------------
+       Measured rather than recomputed from the CSS clamps, so the model and
+       the copy can never disagree about where the halfway line is. */
+    var innerL = 0, innerW = innerWidth;
+    function measure() {
+      var el = document.querySelector('.ch-inner');
+      if (!el) { innerL = 0; innerW = innerWidth; return; }
+      var r = el.getBoundingClientRect();
+      innerW = r.width || innerWidth;
+      innerL = r.left;
+    }
+
+    /* Centre of the half the copy is not using, as a fraction of the
+       viewport. The copy column is 46% of the container (see .is-side in
+       css/main.css), so the model centres in the remaining 54%. */
+    function anchor(x) {
+      if (!wide()) return PHONE.x;
+      if (typeof x === 'number') return x;
+      var f = x === 'right' ? 0.73 : 0.27;
+      return (innerL + innerW * f) / Math.max(1, innerWidth);
+    }
+    function dimOf(i) { return wide() ? CHAPTERS[i].dim : PHONE.dim; }
+    function zoomOf(i) { return wide() ? CHAPTERS[i].zoom : PHONE.zoom; }
+
+    /* Cumulative roll, signed by the direction of travel: the model turns the
+       way it is being pulled. Recomputed on resize because the anchors are. */
+    var SPIN_AT = [];
+    function computeSpin() {
+      SPIN_AT = [0];
+      for (var i = 1; i < CHAPTERS.length; i++) {
+        SPIN_AT.push(SPIN_AT[i - 1]
+          + (anchor(CHAPTERS[i].x) - anchor(CHAPTERS[i - 1].x)) * SPIN_PER_WIDTH);
+      }
+    }
 
     /* ---- theme ----------------------------------------------------------- */
     var systemDark = matchMedia('(prefers-color-scheme: dark)');
@@ -121,9 +162,10 @@
     syncThemeButton();
 
     /* ---- palette: read once from the stylesheet -------------------------- */
-    /* The six accents, the ink and the muted tone all live in css/tokens.css.
-       Reading them means the model and the page can never disagree, and there
-       is no colour arithmetic duplicated in two languages. */
+    /* The three accents, the ink and the muted tone all live in
+       css/tokens.css. Reading them means the model and the page can never
+       disagree, and there is no colour arithmetic duplicated in two
+       languages. */
     var PAL_VARS = ['--c-primary', '--c-second', '--c-signal'];
     function palette() {
       var cs = getComputedStyle(root);
@@ -147,13 +189,13 @@
     });
     field.start();
 
-    /* ---- chapter rail ----------------------------------------------------- */
+    /* ---- section rail ----------------------------------------------------- */
     var rail = $('rail');
     var buttons = CHAPTERS.map(function (c, i) {
       var b = document.createElement('button');
       b.type = 'button';
       b.innerHTML = '<em>' + c.label + '</em><i></i>';
-      b.setAttribute('aria-label', 'Chapter ' + i + ', ' + c.label);
+      b.setAttribute('aria-label', 'Section ' + i + ', ' + c.label);
       b.addEventListener('click', function () { scrollToSection(i); });
       rail.appendChild(b);
       return b;
@@ -193,7 +235,7 @@
         shiftedCopy = idx;
       }
       if (bodies[idx]) {
-        bodies[idx].style.transform = 'translate3d(0,' + (-f * 26).toFixed(1) + 'px,0)';
+        bodies[idx].style.transform = 'translate3d(0,' + (-f * 22).toFixed(1) + 'px,0)';
       }
     }
 
@@ -207,29 +249,40 @@
         field.setTheme(dark ? 'glow' : 'ink', palette());
       }
 
-      /* Travel, roll and morph all run off the same eased fraction, so the
-         model crosses the page, turns and reconfigures as one movement. */
+      /* Travel, roll, zoom and morph all run off the same eased fraction, so
+         the model crosses the page, turns, resizes and reconfigures as one
+         movement rather than four. */
       var e = NeuralField.dragEase(t);
       field.scrollSpin = SPIN_AT[lo] + (SPIN_AT[hi] - SPIN_AT[lo]) * e;
 
-      /* While it is crossing, the model recedes — it passes behind the copy
+      /* While it is travelling, the model recedes — it passes behind the copy
          column and would otherwise sit on top of the text it is meant to be
          illustrating. Full strength only once it has arrived and settled.
          Plateaus in the middle rather than easing through, so the screen is
          clean for the whole crossing, not just its midpoint. */
       var crossing = smoothstep(clamp(e / 0.16, 0, 1)) * smoothstep(clamp((1 - e) / 0.16, 0, 1));
       if (lo === hi) crossing = 0;
-      stage.style.opacity = (1 - 0.78 * crossing).toFixed(3);
 
-      if (wide()) {
-        var x = anchorX(CHAPTERS[lo].side)
-              + (anchorX(CHAPTERS[hi].side) - anchorX(CHAPTERS[lo].side)) * e;
-        /* Receding reads as depth, not just fade: it shrinks as it crosses. */
-        var depth = 1 - 0.12 * crossing;
-        stage.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0) scale(' + depth.toFixed(4) + ')';
-      } else if (stage.style.transform) {
-        stage.style.transform = '';
-      }
+      var x = lerp(anchor(CHAPTERS[lo].x), anchor(CHAPTERS[hi].x), e);
+      var base = lerp(dimOf(lo), dimOf(hi), e);
+      field.originX = x;
+      /* Receding reads as depth, not just fade: it shrinks as it travels. */
+      field.zoom = lerp(zoomOf(lo), zoomOf(hi), e) * (1 - 0.10 * crossing);
+
+      /* A dimmed backdrop does not need every edge: at 28% opacity the
+         faintest are below the threshold of visible, and edge fill area is
+         the whole frame cost — without this, a full-bleed section at zoom
+         1.34 halved the frame rate. */
+      field.detail = clamp(0.34 + base * 0.66, 0, 1);
+
+      stage.style.opacity = (base * (1 - 0.72 * crossing)).toFixed(3);
+      /* On .stage, not on :root. Both would work — .hud is a descendant — but
+         a custom property written to the root every frame dirties style for
+         the whole document, and this one is read by exactly one element. */
+      stage.style.setProperty('--model-x', x.toFixed(4));
+      /* The readout belongs to a model you are inspecting, not to one lying
+         behind a screen of copy — it goes with the dimming. */
+      stage.style.setProperty('--hud-a', clamp((base - 0.55) / 0.45, 0, 1).toFixed(3));
 
       /* Parallax. The dot grid drifts slower than the page — modulo its own
          30px pitch, so the loop is seamless — and the pinned copy lifts a
@@ -256,9 +309,9 @@
               : field.spinBase + p * field.cfg.spinPerChapter;
       var cy = Math.cos(yaw), sy = Math.sin(yaw);
       var cp = Math.cos(field.pitch), sp = Math.sin(field.pitch);
-      function ax(el, x, y, z) {
-        var x1 = x * cy - z * sy, z1 = x * sy + z * cy;
-        var y1 = y * cp - z1 * sp;
+      function ax(el, ax0, ay0, az0) {
+        var x1 = ax0 * cy - az0 * sy, z1 = ax0 * sy + az0 * cy;
+        var y1 = ay0 * cp - z1 * sp;
         el.setAttribute('x2', (x1 * 14).toFixed(1));
         el.setAttribute('y2', (-y1 * 14).toFixed(1));
       }
@@ -295,7 +348,18 @@
     /* Handle for diagnostics in the console: __axon.field.stop() etc. */
     window.__axon = { field: field, chapters: CHAPTERS };
 
-    $('cta').addEventListener('click', function () { scrollToSection(0); });
+    /* Every call to action on the page routes through one handler. The one in
+       the contact section is a real mailto: link and needs none of this. */
+    var goers = document.querySelectorAll('[data-goto]');
+    for (var g = 0; g < goers.length; g++) {
+      (function (el) {
+        el.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          scrollToSection(clamp(parseInt(el.getAttribute('data-goto'), 10) || 0,
+                                0, sections.length - 1));
+        });
+      }(goers[g]));
+    }
 
     /* ---- fluid scroll -----------------------------------------------------
        The wheel moves a target; the real scroll position chases it every
@@ -327,8 +391,8 @@
     }
 
     function settleFor(y) {
-      var base = window.scrollY;
-      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + base; });
+      var b = window.scrollY;
+      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + b; });
       var i = 0;
       for (var k = 0; k < tops.length; k++) if (y >= tops[k] - 2) i = k;
       if (i + 1 >= tops.length) return null;
@@ -371,17 +435,24 @@
       restPending = false;
     }
 
+    /* A phone rotating, or a desktop window being dragged wider, changes which
+       half the model belongs in and how far it rolls getting there — so the
+       anchors and the roll are both remeasured, not just the canvas. */
+    var resizeTimer;
     addEventListener('resize', function () {
       field.resize();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () { measure(); computeSpin(); paint(true); }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
       paint(true);
     }, { passive: true });
 
+    measure();
+    computeSpin();
+    field.originY = 0.5;
     paint(true);
     requestAnimationFrame(frame);
   }
-
-  function wide() { return innerWidth >= 900; }
 
   /* ---- reveals ------------------------------------------------------------ */
   /* Copy is visible in the stylesheet and hidden only once this runs. Calling
@@ -399,7 +470,7 @@
     }, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
     for (var i = 0; i < rv.length; i++) io.observe(rv[i]);
 
-    /* The opening chapter is above the fold on every viewport — never make the
+    /* The opening section is above the fold on every viewport — never make the
        first painted frame wait on an observer. */
     var hero = document.querySelectorAll('#c0 .rv');
     for (var h = 0; h < hero.length; h++) hero[h].classList.add('in');
