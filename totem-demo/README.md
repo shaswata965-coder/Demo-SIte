@@ -119,13 +119,25 @@ be looking at nothing. Pinning the copy removes the ceiling entirely.
 `dragEase` settles for the first 30% of the chapter, then travels the remaining
 70%, landing exactly as the next chapter's copy arrives.
 
-**The page comes to rest on a section, never part-way into a transition.** CSS
-scroll-snap could not do this job: `mandatory` turns every wheel notch into a
+**The scroll itself is driven from the frame loop.** The wheel moves a target;
+the real scroll position chases it every frame with a ~0.26s time constant.
+
+Two things about that are deliberate:
+
+- It moves the **actual scroll position**, not a transform. A transform-based
+  smooth scroller is the usual approach and it would break `position: sticky`,
+  which the pinned copy this whole layout depends on.
+- The **settle is folded into the same target** rather than being a separate
+  `scrollTo` fired after a timer. Two competing motions is what made the scroll
+  feel like it stopped and then started again. There is one value now, eased
+  continuously, so coming to rest on a section is the same motion as scrolling
+  rather than a jump tacked onto its end.
+
+CSS scroll-snap cannot do this job: `mandatory` turns every wheel notch into a
 committed 1600px jump across a chapter this tall, and `proximity` did not engage
-at all — a flick came to rest 180px in. So the settle runs in `app.js`: once
-scrolling stops, if you are less than `SETTLE_AT` (32%) of the way into a
-chapter you are returned to where you started, and beyond that you are carried
-the rest of the way. Measured behaviour at 1440×900, chapter = 1620px:
+at all — a flick came to rest 180px in. So the rule lives in `settleFor()`: once
+input stops, under `SETTLE_AT` (32%) of the way into a chapter returns you, past
+it carries you the rest of the way. Measured at 1440×900, chapter = 1620px:
 
 | gesture | result |
 |---|---|
@@ -133,17 +145,33 @@ the rest of the way. Measured behaviour at 1440×900, chapter = 1620px:
 | 500px scroll | returns to the section |
 | 1700px scroll | lands exactly on the next section |
 
-Fine pointers only — on touch this fights momentum scrolling, which is worse
-than the problem it solves.
+Fine pointers only — on touch, native momentum is better than anything
+reimplemented on top of it, so the wheel handler and the settle are both off
+there and the page scrolls natively.
 
-Weight comes from one number: `field.progress` chases the scroll with a time
-constant of about half a second (`dt * 1.9` in `neural.js`). Travel, roll and
-morph all read off that damped value, so they all gain the same flowing lag
-rather than tracking the wheel rigidly.
+Weight comes from two stages in series: the scroll eases toward its target
+(~0.26s), and `field.progress` then chases the scroll (`dt * 1.9` in
+`neural.js`, ~0.5s). Travel, roll and morph all read off that second value, so
+the model never tracks the wheel rigidly.
 
 To retime the piece, change `.chapter { min-height }`. To change how much is
 settle versus travel, change the two numbers in `dragEase`. To change how
-willing the page is to advance, change `SETTLE_AT`.
+willing the page is to advance, change `SETTLE_AT`. To change how much glide
+the scroll has, change `SCROLL_TAU`.
+
+## Depth while crossing
+
+The model passes across the copy column, and at full strength it sat on top of
+the text it is meant to be illustrating. While it crosses it now **recedes** —
+down to 22% opacity and 88% scale — and returns to full only once it has
+arrived and settled. The curve plateaus through the middle rather than easing
+smoothly through it, so the screen is clean for the whole crossing rather than
+just its midpoint.
+
+Two parallax layers give the crossing depth: the dot grid drifts at 7% of scroll
+speed (modulo its own 30px pitch, so the loop is seamless) and the pinned copy
+lifts 26px through its chapter. Only the chapter you are in carries an offset —
+two style writes a frame at most.
 
 ## Section rhythm
 

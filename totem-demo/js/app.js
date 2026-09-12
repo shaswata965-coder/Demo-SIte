@@ -56,6 +56,7 @@
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function smoothstep(t) { return t * t * (3 - 2 * t); }
 
   /* Where the stage sits, in px from the left edge of the viewport, for a
      given side. Mirrors the widths in css/main.css. */
@@ -74,6 +75,8 @@
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas = $('field');
     var stage = document.querySelector('.stage');
+    var texture = document.querySelector('.texture');
+    var bodies = sections.map(function (el) { return el.querySelector('.ch-body'); });
 
     /* ---- theme ----------------------------------------------------------- */
     var systemDark = matchMedia('(prefers-color-scheme: dark)');
@@ -151,11 +154,7 @@
       b.type = 'button';
       b.innerHTML = '<em>' + c.label + '</em><i></i>';
       b.setAttribute('aria-label', 'Chapter ' + i + ', ' + c.label);
-      b.addEventListener('click', function () {
-        /* scrollIntoView works whatever element is doing the scrolling — the
-           window, or a host container this page is embedded in. */
-        sections[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-      });
+      b.addEventListener('click', function () { scrollToSection(i); });
       rail.appendChild(b);
       return b;
     });
@@ -184,7 +183,19 @@
     var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
-    var lastChapter = -1, themedDark = null;
+    var lastChapter = -1, themedDark = null, shiftedCopy = -1;
+
+    /* Only the chapter you are in carries a parallax offset; the previous one
+       is cleared as you leave it. Two style writes a frame at most. */
+    function shiftCopy(idx, f) {
+      if (shiftedCopy !== idx) {
+        if (shiftedCopy >= 0 && bodies[shiftedCopy]) bodies[shiftedCopy].style.transform = '';
+        shiftedCopy = idx;
+      }
+      if (bodies[idx]) {
+        bodies[idx].style.transform = 'translate3d(0,' + (-f * 26).toFixed(1) + 'px,0)';
+      }
+    }
 
     function paint(force) {
       var p = field.progress;
@@ -201,15 +212,32 @@
       var e = NeuralField.dragEase(t);
       field.scrollSpin = SPIN_AT[lo] + (SPIN_AT[hi] - SPIN_AT[lo]) * e;
 
+      /* While it is crossing, the model recedes — it passes behind the copy
+         column and would otherwise sit on top of the text it is meant to be
+         illustrating. Full strength only once it has arrived and settled.
+         Plateaus in the middle rather than easing through, so the screen is
+         clean for the whole crossing, not just its midpoint. */
+      var crossing = smoothstep(clamp(e / 0.16, 0, 1)) * smoothstep(clamp((1 - e) / 0.16, 0, 1));
+      if (lo === hi) crossing = 0;
+      stage.style.opacity = (1 - 0.78 * crossing).toFixed(3);
+
       if (wide()) {
         var x = anchorX(CHAPTERS[lo].side)
               + (anchorX(CHAPTERS[hi].side) - anchorX(CHAPTERS[lo].side)) * e;
-        /* A shallow dip in scale mid-crossing reads as weight being pulled. */
-        var dip = 1 - 0.06 * Math.sin(e * Math.PI) * (lo === hi ? 0 : 1);
-        stage.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0) scale(' + dip.toFixed(4) + ')';
+        /* Receding reads as depth, not just fade: it shrinks as it crosses. */
+        var depth = 1 - 0.12 * crossing;
+        stage.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0) scale(' + depth.toFixed(4) + ')';
       } else if (stage.style.transform) {
         stage.style.transform = '';
       }
+
+      /* Parallax. The dot grid drifts slower than the page — modulo its own
+         30px pitch, so the loop is seamless — and the pinned copy lifts a
+         little through its chapter, which gives the layers separation while
+         the model does the travelling. */
+      texture.style.transform =
+        'translate3d(0,' + (-(sCurrent * 0.07) % 30).toFixed(1) + 'px,0)';
+      shiftCopy(lo, t);
 
       var idx = Math.min(CHAPTERS.length - 1, Math.floor(p + 0.3));
       if (idx !== lastChapter || force) {
@@ -237,7 +265,28 @@
       ax(axX, 1, 0, 0); ax(axY, 0, 1, 0); ax(axZ, 0, 0, 1);
     }
 
-    function frame() {
+    var lastFrame = performance.now();
+    function frame(now) {
+      now = now || performance.now();
+      var dt = Math.min(0.05, (now - lastFrame) / 1000);
+      lastFrame = now;
+
+      if (fluid) {
+        if (restPending && now - lastInput > REST_AFTER) {
+          var rest = settleFor(sTarget);
+          if (rest !== null) sTarget = rest;
+          restPending = false;
+        }
+        sCurrent += (sTarget - sCurrent) * (1 - Math.exp(-dt / SCROLL_TAU));
+        if (Math.abs(sTarget - sCurrent) < 0.4) sCurrent = sTarget;
+        if (Math.abs(sCurrent - sWritten) >= 0.5) {
+          sWritten = sCurrent;
+          window.scrollTo(0, sCurrent);
+        }
+      } else {
+        sCurrent = window.scrollY;
+      }
+
       field.setProgress(progress());
       paint(false);
       requestAnimationFrame(frame);
@@ -246,27 +295,40 @@
     /* Handle for diagnostics in the console: __axon.field.stop() etc. */
     window.__axon = { field: field, chapters: CHAPTERS };
 
-    $('cta').addEventListener('click', function () {
-      sections[0].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-    });
+    $('cta').addEventListener('click', function () { scrollToSection(0); });
 
-    /* ---- settle ----------------------------------------------------------
-       The page comes to rest on a section, never part-way into a transition.
-       CSS scroll-snap could not do this: `mandatory` turns every wheel notch
-       into a committed 1600px jump across a 1.8-viewport chapter, and
-       `proximity` simply did not engage — a flick came to rest 180px in.
+    /* ---- fluid scroll -----------------------------------------------------
+       The wheel moves a target; the real scroll position chases it every
+       frame. Two things matter about that.
 
-       So: once scrolling stops, if you are less than a third of the way into
-       a chapter you are returned to where you started, and beyond that you
-       are carried the rest of the way. Small gestures are resisted, committed
-       ones complete. Fine pointers only — on touch this fights momentum
-       scrolling, which is worse than the problem it solves. */
-    var SETTLE_AT = 0.32;
-    var settleTimer, releaseTimer, settling = false;
+       First, we move the actual scroll position rather than a transform. A
+       transform-based smooth scroller is the usual approach and it would break
+       `position: sticky`, which the pinned copy this whole layout depends on.
 
-    function settleTarget() {
-      var y = window.scrollY;
-      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + y; });
+       Second, the settle is folded into the same target instead of being a
+       separate scrollTo fired after a timer. That is what made it feel like
+       the scroll stopped and then started again: two motions competing. Now
+       there is one value, eased continuously, and coming to rest on a section
+       is the same motion as scrolling rather than a jump tacked onto its end.
+
+       Fine pointers only — on touch, native momentum is better than anything
+       reimplemented on top of it. */
+    var SETTLE_AT = 0.32;       /* how far into a chapter before it carries on */
+    var SCROLL_TAU = 0.26;      /* seconds for the scroll to catch its target  */
+    var REST_AFTER = 110;       /* ms of quiet before the page settles         */
+
+    var coarse = matchMedia('(pointer: coarse)').matches;
+    var fluid = !coarse && !reduced;
+    var sTarget = window.scrollY, sCurrent = sTarget;
+    var lastInput = -1e9, restPending = false, sWritten = -1;
+
+    function maxScroll() {
+      return Math.max(0, document.documentElement.scrollHeight - innerHeight);
+    }
+
+    function settleFor(y) {
+      var base = window.scrollY;
+      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + base; });
       var i = 0;
       for (var k = 0; k < tops.length; k++) if (y >= tops[k] - 2) i = k;
       if (i + 1 >= tops.length) return null;
@@ -274,29 +336,46 @@
       if (span < 1) return null;
       var frac = (y - tops[i]) / span;
       if (frac < 0.015 || frac > 0.985) return null;      /* already at rest */
-      var want = frac < SETTLE_AT ? tops[i] : tops[i + 1];
-      var maxY = document.documentElement.scrollHeight - innerHeight;
-      return Math.max(0, Math.min(maxY, Math.round(want)));
+      return clamp(Math.round(frac < SETTLE_AT ? tops[i] : tops[i + 1]), 0, maxScroll());
     }
 
-    function onScrollRest() {
-      if (settling || reduced) return;
-      var target = settleTarget();
-      if (target === null || Math.abs(target - window.scrollY) < 3) return;
-      settling = true;
-      window.scrollTo({ top: target, behavior: 'smooth' });
-      clearTimeout(releaseTimer);
-      releaseTimer = setTimeout(function () { settling = false; }, 1000);
-    }
+    if (fluid) {
+      addEventListener('wheel', function (e) {
+        if (e.ctrlKey) return;                        /* leave pinch-zoom alone */
+        e.preventDefault();
+        var d = e.deltaY;
+        if (e.deltaMode === 1) d *= 16;               /* lines */
+        else if (e.deltaMode === 2) d *= innerHeight; /* pages */
+        sTarget = clamp(sTarget + d, 0, maxScroll());
+        lastInput = performance.now();
+        restPending = true;
+      }, { passive: false });
 
-    if (!matchMedia('(pointer: coarse)').matches) {
+      /* Keyboard, scrollbar drag, find-in-page — anything that moves the real
+         scroll behind our back. Only resync when it was not our own write. */
       addEventListener('scroll', function () {
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(onScrollRest, 170);
+        if (Math.abs(window.scrollY - sCurrent) > 3) {
+          sCurrent = sTarget = sWritten = window.scrollY;
+          lastInput = performance.now();
+          restPending = true;
+        }
       }, { passive: true });
     }
 
-    addEventListener('resize', function () { field.resize(); paint(true); }, { passive: true });
+    function scrollToSection(i) {
+      if (!fluid) {
+        sections[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        return;
+      }
+      sTarget = clamp(Math.round(sections[i].getBoundingClientRect().top + window.scrollY), 0, maxScroll());
+      restPending = false;
+    }
+
+    addEventListener('resize', function () {
+      field.resize();
+      sTarget = sCurrent = sWritten = window.scrollY;
+      paint(true);
+    }, { passive: true });
 
     paint(true);
     requestAnimationFrame(frame);
