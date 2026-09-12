@@ -9,12 +9,12 @@ brand.
 
 ## The demo
 
-**[`totem-demo/`](totem-demo/)** — plain HTML, CSS and JS. No build step, no
-dependencies. Start there; its [README](totem-demo/README.md) explains how it
+**[`Demo-Totem/`](Demo-Totem/)** — plain HTML, CSS and JS. No build step, no
+dependencies. Start there; its [README](Demo-Totem/README.md) explains how it
 works and how it ports to React.
 
 ```sh
-python3 -m http.server 8000 --directory totem-demo
+python3 -m http.server 8000 --directory Demo-Totem
 ```
 
 - Light and dark, toggled top right. Light takes a saturated ground that
@@ -39,13 +39,13 @@ python3 -m http.server 8000 --directory totem-demo
 
 **Next.js 15 + React Three Fiber + GSAP/ScrollTrigger + Lenis + Tailwind v4 +
 Sanity, on Vercel.** Reasoning in [docs/01-STACK.md](docs/01-STACK.md).
-`totem-demo/` is written so each file maps onto one piece of that — see
-[Porting](totem-demo/README.md#porting-to-nextjs--react).
+`Demo-Totem/` is written so each file maps onto one piece of that — see
+[Porting](Demo-Totem/README.md#porting-to-nextjs--react).
 
 ## History
 
 An earlier first-pass prototype and a separate blueprint deck lived in `site/`
-and `design/`. `totem-demo/` supersedes both — it carries a different token
+and `design/`. `Demo-Totem/` supersedes both — it carries a different token
 system, so keeping both in the tree would have meant two contradictory sources
 of truth. They remain in git history and on the `claude/sweet-rubin-b5hi8c`
 branch.

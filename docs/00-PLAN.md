@@ -85,9 +85,9 @@ experience is spent where it converts.
 
 | Path | What it is |
 |---|---|
-| `totem-demo/` | The working demo. Plain HTML/CSS/JS, no build step. See its own README. |
-| `totem-demo/css/tokens.css` | Design tokens, single source of truth for both themes. |
-| `totem-demo/js/neural.js` | The model: arrangements, edge families, rendering. |
+| `Demo-Totem/` | The working demo. Plain HTML/CSS/JS, no build step. See its own README. |
+| `Demo-Totem/css/tokens.css` | Design tokens, single source of truth for both themes. |
+| `Demo-Totem/js/neural.js` | The model: arrangements, edge families, rendering. |
 | `docs/01-STACK.md` | Stack recommendation and the alternatives considered. |
 | `docs/02-MOTION.md` | Scroll choreography spec, frame by frame. |
 | `docs/03-CONTENT-MODEL.md` | CMS schemas. |

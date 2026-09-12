@@ -68,6 +68,6 @@ short version:
 4. **The 3D bundle is lazy.** A visitor who lands on a legal page or a blog post
    never downloads Three.js.
 
-The prototype in `totem-demo/` demonstrates the same governor in miniature: it runs on
+The prototype in `Demo-Totem/` demonstrates the same governor in miniature: it runs on
 a hand-projected 2D canvas with no dependencies, precisely so it can be opened
 on the client's own phone during the pitch without a WebGL context in sight.

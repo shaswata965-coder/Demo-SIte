@@ -60,7 +60,7 @@ Then a **frame-time governor** runs continuously: a rolling count of frames over
 A tier that oscillates looks far worse than a tier that is simply lower, and
 users notice the oscillation more than the resolution.
 
-The prototype in `totem-demo/js/neural.js` implements this governor in miniature — see
+The prototype in `Demo-Totem/js/neural.js` implements this governor in miniature — see
 `NeuralField.prototype.start`.
 
 ## Techniques that carry the budget

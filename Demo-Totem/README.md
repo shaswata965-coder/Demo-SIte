@@ -1,4 +1,4 @@
-# totem-demo
+# Demo-Totem
 
 A scroll-driven demo page: one neural model, on one side of the content,
 turning through seven arrangements while the page's entire aesthetic transforms
@@ -9,7 +9,7 @@ Built to be ported to Next.js / React later; see "Porting" below.
 ## Run it
 
 ```sh
-python3 -m http.server 8000 --directory totem-demo
+python3 -m http.server 8000 --directory Demo-Totem
 # http://localhost:8000
 ```
 
