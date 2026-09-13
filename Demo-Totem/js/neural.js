@@ -82,14 +82,15 @@
   /* Index order is load-bearing: C_SIGNAL must stay 2, because the traced
      inference and the output terminals reach for PAL[C_SIGNAL] directly. */
   var C_PRIMARY = 0, C_SECOND = 1, C_SIGNAL = 2, C_THIRD = 3;
+  /* Spread across all four, one family at a time, rather than clustered two
+     and two. Orange still leads — it holds the coil and the risers, which are
+     the families that dominate the opening and closing arrangements — but no
+     single arrangement is now built out of one hue, which is what made the
+     whole page read as monochrome however the page's own palette was set. */
   var FAM_COLOR = {
-    /* Two kinds of structure, not one: the coil and the proximity mesh are the
-       body of the model, the lattice and the risers are the frames it is held
-       in. Giving them separate hues is what stops the model reading as a
-       single-colour cloud. */
-    helix: C_PRIMARY, prox: C_PRIMARY,
-    lattice: C_THIRD, riser: C_THIRD,
-    layer: C_SECOND, spoke: C_SECOND, ring: C_SECOND, arc: C_SECOND
+    helix: C_PRIMARY, riser: C_PRIMARY,
+    prox: C_SECOND, layer: C_SECOND, ring: C_SECOND,
+    lattice: C_THIRD, spoke: C_THIRD, arc: C_THIRD
   };
 
   /*        seed  bloom  infer  settle  vault  ledger  core  */
@@ -859,10 +860,11 @@
        a path per colour and depth bucket and filled in one call apiece. */
     var n = this.cfg.nodes, ty = this.meta.type;
     var NB = 3;
-    /* Hidden units cycle through four of the six; inputs and outputs keep the
-       two the copy uses for "in" and "out" so the ends of the model are
-       readable at a glance. */
-    var DOT = [PAL[C_PRIMARY], PAL[C_SECOND]];
+    /* Hidden units cycle three hues by layer rather than alternating two, so
+       a layered arrangement banded in one colour now bands in three. Inputs
+       and outputs keep the two the copy uses for "in" and "out", so the ends
+       of the model stay readable at a glance. */
+    var DOT = [PAL[C_PRIMARY], PAL[C_SECOND], PAL[C_THIRD]];
     var RING = [PAL[C_PRIMARY], PAL[C_SIGNAL]];
     var dots = [], rings = [], bias = new Path2D();
     for (var ci = 0; ci < DOT.length; ci++) {
@@ -874,7 +876,7 @@
       for (bb = 0; bb < NB; bb++) rings[ci].push(new Path2D());
     }
     var halo = [];   /* flat x, y, r, colourIndex, alpha — no per-unit objects */
-    var dotUsed = [0, 0];
+    var dotUsed = [0, 0, 0];
 
     for (var i = 0; i < n; i++) {
       var i4 = i * 4, d = P[i4 + 2];
@@ -896,7 +898,7 @@
         var sq = r * 1.7;
         bias.rect(nx - sq / 2, ny - sq / 2, sq, sq);
       } else {
-        var ci2 = this.meta.layerOf[i] & 1;
+        var ci2 = this.meta.layerOf[i] % 3;
         dotUsed[ci2] = 1;
         var dp = dots[ci2][bk];
         dp.moveTo(nx + r, ny);

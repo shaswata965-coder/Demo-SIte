@@ -62,16 +62,17 @@ pose:
 | 1 | Services | side left | `bloom` | Two nested shells — an outer sensor surface, an inner core, spokes between |
 | 2 | Method | side right | `infer` | Six layers, each a ring, fanned forward layer to layer |
 | 3 | Selected work | **full** | `settle` | A globe banded into latitude corridors, with bowed long-haul arcs |
-| 4 | Team | **full** | `vault` | A hollow cube — lattice on the faces, small solid core inside |
-| 5 | Collaborations | side left | `ledger` | A ledger plane with risers standing off it |
+| 4 | Team | side left | `vault` | A hollow cube — lattice on the faces, small solid core inside |
+| 5 | Collaborations | **full** | `ledger` | A ledger plane with risers standing off it |
 | 6 | Contact | side right | `core` | Collapse to a core, one orbital ring still holding |
 
-**Two backdrops, not four.** An earlier pass put Method and Collaborations
-behind the copy as well. Four consecutive dimmed screens read as the model
-having been switched off rather than as a change of register — the effect only
-means something if the model comes back out in front. So the run is two,
-bracketed by full-strength sections on both sides, and even inside the pair the
-model crosses the screen (0.62 → 0.36) rather than sitting still.
+**Two backdrops, and they are not adjacent.** An earlier pass had four in a
+row. Consecutive dimmed screens read as the model having been switched off
+rather than as a change of register — the effect only means something if the
+model comes back out in front. Team sits between the two at full strength,
+which is what lets the partner wall take the whole viewport without the middle
+of the page going flat. Team earns its half-screen by being a roster of small
+round portraits rather than four large cards.
 
 **Edges fade, they never cut.** Every edge belongs to a family (`helix`,
 `prox`, `spoke`, `layer`, `ring`, `arc`, `lattice`, `riser`) and carries a
@@ -92,7 +93,7 @@ face and fitting its frame. These are tuned against the page's spin table
 
 ## Colour
 
-**Four colours, split-complementary around the orange.**
+**Four colours, split-complementary around the orange, on a neutral ground.**
 
 | | Role |
 |---|---|
@@ -101,14 +102,28 @@ face and fitting its frame. These are tuned against the page's spin table
 | `--c-third` | Indigo. Things being counted — every figure on the page — and the frames the model is held in, the lattice and the risers. |
 | `--c-signal` | Gold. Reserved for what is **live**: the traced inference, the pulses, the output terminals, the instrument readout. |
 
-An earlier pass ran three, two of which were orange and amber, and gave
-`--accent` every job on the page: rules, eyebrows, numbers, labels, buttons.
-An accent that appears on everything is not an accent, and the page read as
-monochrome orange. Orange is now the loudest voice and the most rationed;
-teal does the volume work. Splitting the model's edge families across primary
-and a third hue is the same fix applied to the canvas — the coil and the mesh
-are the body, the lattice and the risers are the frame, and they are no longer
-the same colour.
+Getting this to actually read as more than one colour took three passes, and
+the first two under-did it in instructive ways.
+
+1. Three hues, two of them orange and amber, with `--accent` holding every job
+   on the page: rules, eyebrows, numbers, labels, buttons. An accent that
+   appears on everything is not an accent.
+2. Four hues assigned by role — better, but still monotonous, for two reasons
+   that were not in the palette at all. The **ground** was warm, so every
+   surface including the white was already on the orange side; and the
+   **model** was mostly orange, because its two dominant edge families were
+   both primary, so the largest coloured object on the screen was single-hue
+   whatever the type did.
+3. So: the ground moves to near-neutral paper, which is what lets the orange be
+   the warm thing rather than one warm thing among many. The model's eight edge
+   families spread one at a time across all four hues instead of clustering
+   two and two, and its hidden units cycle three hues by layer instead of
+   alternating two. The alternating section wash becomes two washes, teal and
+   indigo, so consecutive tinted screens are not the same colour, and the
+   closing section takes a warm one that ties to the call to action on it.
+
+Orange is still the loudest voice and the most rationed. Teal does the volume
+work.
 
 The rule is that colour is assigned by *role*, never by position: the same
 thing is the same colour on every chapter. `<em>` names the thing in primary,
@@ -242,11 +257,17 @@ and no pinned section taller than its viewport. Method is the tightest — four
 steps two-up inside half a screen — and on a short laptop the space to fit it
 comes out of padding and step density, not out of the copy.
 
-## Placeholder imagery
+The partner wall is hairlined by `gap` over a background rather than by borders
+on each cell. The nth-child arithmetic that per-cell borders needs has to be
+rewritten for every column count, and it broke twice — once dropping the fourth
+cell's divider on desktop, once silently leaving the wall at two columns when a
+breakpoint rewrite missed. One `gap` works at every column count.
 
-The project cards and the team carry generated art rather than photographs:
-three abstract thumbnails and four stand-in portraits, hand-authored as inline
-SVG. Inline rather than image files for three reasons — it themes from the same
+## Placeholder imagery and the partner wall
+
+The project cards, the team and the partner wall carry generated art rather
+than photographs or logos: three abstract thumbnails, four stand-in portraits
+and twelve geometric marks, hand-authored as inline SVG. Inline rather than image files for three reasons — it themes from the same
 tokens as everything else, it costs no request, and the Artifact CSP blocks
 images from every external host, so a linked stock photo would render as a
 blank box wherever the demo is embedded.
@@ -262,6 +283,16 @@ tiles switched off. The portraits vary by tone, build, tilt and halo count so
 four people read as four people. All of it is labelled as generated on the page
 itself, in each section's standfirst and again in the colophon; none of it is
 passed off as a photograph of anyone.
+
+**The partner wall carries real company names as placeholders**, which needs
+saying out loud. The twelve marks are neutral geometry in this page's own
+palette — deliberately *not* reproductions of anyone's logo — and the section
+carries a disclaimer on the page, not buried in the colophon: names are there
+to size the layout, no affiliation or endorsement is implied, and AXON is
+fictional. Swap the names before this goes anywhere public. The testimonial
+moved to the closing section for the same reason: attributing an invented quote
+to a real company would have been a fabricated endorsement, so it stays with
+its invented one, marked fictional in the caption.
 
 ## Micro-animation
 

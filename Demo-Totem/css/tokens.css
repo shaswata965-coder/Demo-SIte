@@ -28,15 +28,19 @@
 
 :root {
   /* ---- light: warm paper ---------------------------------------------- */
-  --bg:        #FAF7F3;
-  --bg-2:      #FFFEFC;
-  --bg-sunk:   #EFEAE2;
-  --ink:       #1C1815;
-  --ink-2:     #524A43;
-  --faint:     #8E837A;
-  --rule:      rgba(28, 24, 21, 0.12);
-  --rule-hi:   rgba(28, 24, 21, 0.24);
-  --tex-ink:   rgba(28, 24, 21, 0.055);
+  /* Near-neutral paper, not a warm one. A warm ground under a warm accent was
+     half of why the page read as one colour however the accents were set —
+     everything, including the white, was on the orange side. Pulling the
+     ground to neutral is what lets the orange be the warm thing. */
+  --bg:        #F8F7F5;
+  --bg-2:      #FFFFFE;
+  --bg-sunk:   #ECEAE6;
+  --ink:       #1A1A19;
+  --ink-2:     #4E4E4D;
+  --faint:     #8A8987;
+  --rule:      rgba(26, 26, 25, 0.13);
+  --rule-hi:   rgba(26, 26, 25, 0.25);
+  --tex-ink:   rgba(26, 26, 25, 0.055);
 
   --c-primary: #C25E2A;
   --c-second:  #2E6B72;
@@ -48,8 +52,8 @@
   --data:     var(--c-third);
 
   --on-accent: #FFFFFF;
-  --surface:   rgba(255, 254, 252, 0.74);
-  --surface-2: rgba(255, 254, 252, 0.94);
+  --surface:   rgba(255, 255, 254, 0.74);
+  --surface-2: rgba(255, 255, 254, 0.94);
   --dim:       var(--ink-2);
   --canvas-mode: ink;
   color-scheme: light;
@@ -57,48 +61,48 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:      #100D0B;
-    --bg-2:    #1A1613;
-    --bg-sunk: #080606;
-    --ink:     #F5F0EA;
-    --ink-2:   #BBB0A6;
-    --faint:   #7F756C;
-    --rule:    rgba(245, 240, 234, 0.13);
-    --rule-hi: rgba(245, 240, 234, 0.26);
-    --tex-ink: rgba(245, 240, 234, 0.05);
+    --bg:      #0E0E0F;
+    --bg-2:    #17171A;
+    --bg-sunk: #070708;
+    --ink:     #F2F1EF;
+    --ink-2:   #B2B1AF;
+    --faint:   #79787A;
+    --rule:    rgba(242, 241, 239, 0.13);
+    --rule-hi: rgba(242, 241, 239, 0.26);
+    --tex-ink: rgba(242, 241, 239, 0.05);
 
     --c-primary: #EE8347;
     --c-second:  #5FAEB6;
     --c-third:   #8C95E0;
     --c-signal:  #E8B355;
 
-    --on-accent: #17100B;
-    --surface:   rgba(26, 22, 19, 0.66);
-    --surface-2: rgba(26, 22, 19, 0.92);
+    --on-accent: #14100C;
+    --surface:   rgba(23, 23, 26, 0.66);
+    --surface-2: rgba(23, 23, 26, 0.92);
     --canvas-mode: glow;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg:      #100D0B;
-  --bg-2:    #1A1613;
-  --bg-sunk: #080606;
-  --ink:     #F5F0EA;
-  --ink-2:   #BBB0A6;
-  --faint:   #7F756C;
-  --rule:    rgba(245, 240, 234, 0.13);
-  --rule-hi: rgba(245, 240, 234, 0.26);
-  --tex-ink: rgba(245, 240, 234, 0.05);
+  --bg:      #0E0E0F;
+  --bg-2:    #17171A;
+  --bg-sunk: #070708;
+  --ink:     #F2F1EF;
+  --ink-2:   #B2B1AF;
+  --faint:   #79787A;
+  --rule:    rgba(242, 241, 239, 0.13);
+  --rule-hi: rgba(242, 241, 239, 0.26);
+  --tex-ink: rgba(242, 241, 239, 0.05);
 
   --c-primary: #EE8347;
   --c-second:  #5FAEB6;
   --c-third:   #8C95E0;
   --c-signal:  #E8B355;
 
-  --on-accent: #17100B;
-  --surface:   rgba(26, 22, 19, 0.66);
-  --surface-2: rgba(26, 22, 19, 0.92);
+  --on-accent: #14100C;
+  --surface:   rgba(23, 23, 26, 0.66);
+  --surface-2: rgba(23, 23, 26, 0.92);
   --canvas-mode: glow;
   color-scheme: dark;
 }

@@ -373,47 +373,68 @@ img, canvas { max-width: 100%; }
 .g-s { fill: var(--c-signal); }  .k-s { stroke: var(--c-signal); }
 .k-f { stroke: var(--faint); }
 
-/* team */
-.team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.person {
-  display: grid; gap: .4rem; align-content: start;
-  padding: clamp(.9rem, 1.4vw, 1.3rem);
-  background: var(--surface);
-  border: var(--rule-weight) solid var(--rule);
-  border-radius: var(--card-radius);
-  transition: border-color var(--d-base) var(--e-out);
+/* team — a roster beside the model, not a grid of cards behind it.
+   Four big portrait cards needed the whole screen; four small round ones fit
+   half of it, which is what lets this section keep the model out in front. */
+.roster { list-style: none; margin: 0; padding: 0;
+  display: grid; gap: clamp(.55rem, 1.2vw, .95rem); }
+.roster li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(.7rem, 1.4vw, 1.15rem); align-items: start;
+  padding-top: clamp(.55rem, 1.2vw, .95rem);
+  border-top: var(--rule-weight) solid var(--rule);
 }
-.person:hover { border-color: color-mix(in srgb, var(--contrast) 45%, var(--rule)); }
+.roster li:first-child { border-top: 0; padding-top: 0; }
+.roster li > div { display: grid; gap: .18rem; }
+.portrait.sm { width: clamp(46px, 4.8vw, 66px); aspect-ratio: 1; border-radius: 50%; }
 .chapter .role { max-width: none;
   font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .13em;
   text-transform: uppercase; color: var(--contrast); }
-.chapter .bio { font-size: clamp(.75rem, .88vw, .875rem); line-height: 1.45; color: var(--ink-2); max-width: none; }
+.chapter .bio { font-size: clamp(.75rem, .88vw, .875rem); line-height: 1.45;
+  color: var(--ink-2); max-width: 52ch; }
 
-/* collaborations */
+/* collaborations — a full-viewport wall, hairlines from the grid gap rather
+   than from per-cell borders, which is what the nth-child arithmetic used to
+   be for and what kept breaking when the column count changed. */
 .logos {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: var(--rule-weight) solid var(--rule); border-radius: var(--card-radius);
-  overflow: hidden; background: var(--surface);
+  gap: var(--rule-weight);
+  background: var(--rule);
+  border: var(--rule-weight) solid var(--rule);
+  border-radius: var(--card-radius);
+  overflow: hidden;
 }
 .logos li {
-  display: grid; gap: .3rem; align-content: center;
-  padding: clamp(.8rem, 1.6vw, 1.35rem) clamp(.7rem, 1.4vw, 1.2rem);
-  border-top: var(--rule-weight) solid var(--rule);
-  border-left: var(--rule-weight) solid var(--rule);
+  display: grid; gap: .35rem; justify-items: start; align-content: start;
+  padding: clamp(.75rem, 1.5vw, 1.25rem);
+  background: var(--surface);
+  background-color: var(--bg-2);                                  /* fallback */
   transition: background-color var(--d-base) var(--e-out);
 }
-.logos li:nth-child(-n+2) { border-top: 0; }
-.logos li:nth-child(2n+1) { border-left: 0; }
-.logos li:hover { background: color-mix(in srgb, var(--contrast) 6%, transparent); }
-.logos span {
-  font-family: var(--f-display); font-variation-settings: 'wdth' 92, 'wght' 750;
-  font-size: clamp(.8125rem, 1.15vw, 1.0625rem); letter-spacing: .04em;
-  text-transform: uppercase; color: var(--ink); line-height: 1.1;
+.logos li:hover { background: color-mix(in srgb, var(--contrast) 8%, var(--bg-2)); }
+.mark { display: block; width: clamp(22px, 2.1vw, 30px); aspect-ratio: 1; margin-bottom: .1rem; }
+.mark svg { display: block; width: 100%; height: 100%; }
+.wm {
+  font-family: var(--f-display); font-variation-settings: 'wdth' 96, 'wght' 700;
+  font-size: clamp(.8125rem, 1.05vw, 1.0625rem); line-height: 1.15;
+  color: var(--ink); letter-spacing: .005em;
 }
-.logos em { font-style: normal; color: var(--contrast); }
 .logos small { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .14em;
   text-transform: uppercase; color: var(--faint); }
+
+/* The placeholder disclaimer. It is on the page rather than only in the
+   colophon because a wall of recognisable names is exactly the thing someone
+   would otherwise read as a client list. */
+.chapter .note {
+  max-width: 96ch;
+  font-family: var(--f-mono); font-size: clamp(.5625rem, .64vw, .6875rem);
+  letter-spacing: .06em; line-height: 1.7; color: var(--faint);
+  border-left: 2px solid color-mix(in srgb, var(--c-signal) 65%, transparent);
+  padding: .1rem 0 .1rem .85rem;
+}
+.chapter .note b { color: var(--ink-2); font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; }
 
 .quote {
   margin: 0; display: grid; gap: .8rem;
@@ -478,10 +499,6 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
 @media (min-width: 600px) {
   .cards.work { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .logos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .logos li:nth-child(-n+2) { border-top: var(--rule-weight) solid var(--rule); }
-  .logos li:nth-child(2n+1) { border-left: var(--rule-weight) solid var(--rule); }
-  .logos li:nth-child(-n+3) { border-top: 0; }
-  .logos li:nth-child(3n+1) { border-left: 0; }
   .chapter h1, .chapter h2 { font-size: clamp(2.4rem, 6.2vw, 3.6rem); }
 }
 
@@ -494,7 +511,6 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   /* The two full-bleed sections get the whole container, so their grids open
      out here and nowhere else. */
   .cards.work { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .team { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   .chapter { min-height: 182svh; }
   .ch-body { position: sticky; top: 0; height: 100svh; min-height: 0;
@@ -516,20 +532,17 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   #c0 h1 { font-size: clamp(2.6rem, 4.5vw, 5.2rem); max-width: 12ch; }
   .is-side .ch-col { width: 50%; gap: clamp(.9rem, 1.9vw, 1.7rem); }
 
-  /* Method and Collaborations sit beside the model, not behind it, so their
-     grids stay at two columns inside the copy column rather than opening out
-     to four and six across the screen. Only Work and Team go full width. */
-  /* Four steps two-up inside half a screen is the tightest grid on the page,
+  /* Method sits beside the model, not behind it, so its
+     grid stays two-up inside the copy column. The wall is full width and opens
+     out to four across, three rows.
+
+     Four steps two-up inside half a screen is the tightest grid on the page,
      so it runs on its own smaller scale rather than the shared card one. */
   .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .steps .card { padding: .8rem .9rem; gap: .35rem; }
   .chapter .steps p { font-size: .875rem; line-height: 1.42; }
   .steps .step-out { padding-top: .45rem; }
-  .logos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .logos li:nth-child(n) { border-top: var(--rule-weight) solid var(--rule);
-    border-left: var(--rule-weight) solid var(--rule); }
-  .logos li:nth-child(-n+2) { border-top: 0; }
-  .logos li:nth-child(2n+1) { border-left: 0; }
+  .logos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   /* On the full-width sections the head and the grid sit side by side rather
      than stacked, which is what keeps them inside one screen. */
@@ -570,7 +583,7 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
 @media (min-width: 1800px) {
   :root { --gutter: 4.5rem; }
   .cards { gap: 1.25rem; }
-  .card, .person { padding: 1.6rem; }
+  .card { padding: 1.6rem; }
 }
 
 /* Past ~2000px, capping the container alone leaves the page marooned in the
@@ -600,7 +613,7 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .is-full .ch-col { gap: 1.25rem; }
   .chapter h1, .chapter h2 { font-size: clamp(2rem, 3.4vw, 3.2rem); }
   #c0 h1 { font-size: clamp(2.4rem, 4.2vw, 4rem); }
-  .card, .person { padding: .9rem 1rem; }
+  .card { padding: .9rem 1rem; }
   .quote blockquote { font-size: 1.0625rem; }
   .svc li { padding: .45rem 0; }
   .chapter .svc p { font-size: .8125rem; }
@@ -616,7 +629,7 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
    sentence or dropping a bio. */
 @media (max-width: 479px) {
   .chapter .lede { font-size: 1.0625rem; }
-  .card, .person { padding: .8rem .9rem; }
+  .card { padding: .8rem .9rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -633,8 +646,9 @@ html.theming .marker, html.theming .marker i, html.theming .chapter h1,
 html.theming .chapter h2, html.theming .chapter h3, html.theming .figures dd,
 html.theming .figures dd b, html.theming .brand b, html.theming .rail button,
 html.theming .rail button i, html.theming .hud, html.theming .hud b,
-html.theming .colophon, html.theming .card, html.theming .person,
-html.theming .logos, html.theming .logos li, html.theming .thumb, html.theming .portrait {
+html.theming .colophon, html.theming .card,
+html.theming .logos, html.theming .logos li, html.theming .thumb,
+html.theming .portrait, html.theming .roster li {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
 }
@@ -645,11 +659,19 @@ html.theming .logos, html.theming .logos li, html.theming .thumb, html.theming .
    scrolling alternates between the paper ground and a tinted one. One tint,
    not one per chapter — the alternation is the rhythm, the colour is constant.
    =========================================================================== */
-#c1 .band, #c3 .band, #c5 .band {
+/* Two washes, not one. The tinted sections alternate between the teal and the
+   indigo, and the closing section takes a warm one that ties to the call to
+   action sitting on it. One repeated tint was the other half of the monotony:
+   every other screen was the same colour as the last one. */
+#c1 .band, #c5 .band {
   background: var(--bg-sunk);                                     /* fallback */
-  background: color-mix(in srgb, var(--c-second) 7%, var(--bg));
+  background: color-mix(in srgb, var(--c-second) 8%, var(--bg));
+}
+#c3 .band {
+  background: var(--bg-sunk);
+  background: color-mix(in srgb, var(--c-third) 7%, var(--bg));
 }
 #c6 .band {
   background: var(--bg-sunk);
-  background: color-mix(in srgb, var(--c-second) 4%, var(--bg));
+  background: color-mix(in srgb, var(--c-primary) 5%, var(--bg));
 }

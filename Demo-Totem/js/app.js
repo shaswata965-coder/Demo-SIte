@@ -40,19 +40,20 @@
      drawn. Behind a full screen of copy it is bigger and much fainter; beside
      the copy it is smaller and at full strength.
 
-     Only Work and Team are backdrops. An earlier pass had four of these in a
-     row, and four consecutive screens of dimmed model reads as the model
-     having been switched off rather than as a deliberate change of register —
-     the effect needs the model to come back out in front to mean anything. So
-     the run is two, bracketed by full-strength sections on both sides, and
-     the pair still crosses the screen (0.62 to 0.36) while it is back there. */
+     Only Work and Collaborations are backdrops, and they are not adjacent —
+     Team sits between them with the model back out in front. An earlier pass
+     had four of these in a row, and consecutive screens of dimmed model read
+     as the model having been switched off rather than as a deliberate change
+     of register; the effect needs the model to come back to mean anything.
+     Separating them is what lets the wall have the whole viewport without the
+     middle of the page going flat. */
   var CHAPTERS = [
     { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82 },
     { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82 },
     { id: 'infer',  label: 'Method',   x: 'right', dim: 1.00, zoom: 0.76 },
-    { id: 'settle', label: 'Work',     x: 0.62,    dim: 0.30, zoom: 1.30 },
-    { id: 'vault',  label: 'Team',     x: 0.36,    dim: 0.32, zoom: 1.28 },
-    { id: 'ledger', label: 'Partners', x: 'left',  dim: 1.00, zoom: 0.80 },
+    { id: 'settle', label: 'Work',     x: 0.60,    dim: 0.34, zoom: 1.38 },
+    { id: 'vault',  label: 'Team',     x: 'left',  dim: 1.00, zoom: 0.80 },
+    { id: 'ledger', label: 'Partners', x: 0.44,    dim: 0.42, zoom: 1.50 },
     { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88 }
   ];
 
@@ -276,11 +277,14 @@
       /* Receding reads as depth, not just fade: it shrinks as it travels. */
       field.zoom = lerp(zoomOf(lo), zoomOf(hi), e) * (1 - 0.10 * crossing);
 
-      /* A dimmed backdrop does not need every edge: at 28% opacity the
-         faintest are below the threshold of visible, and edge fill area is
-         the whole frame cost — without this, a full-bleed section at zoom
-         1.34 halved the frame rate. */
-      field.detail = clamp(0.34 + base * 0.66, 0, 1);
+      /* A dimmed backdrop does not need every edge: at 30% opacity the
+         faintest are below the threshold of visible, and edge fill area is the
+         whole frame cost — without this, a full-bleed section halved the frame
+         rate. Zoom is in the formula as well as opacity because the cost is
+         area, not count: a model drawn at 1.5 has edges half again as long, so
+         pushing the backdrop larger has to buy that back by dropping more of
+         what is already invisible at that opacity. */
+      field.detail = clamp(0.30 + base * 0.62 - (field.zoom - 1) * 0.30, 0, 1);
 
       stage.style.opacity = (base * (1 - 0.72 * crossing)).toFixed(3);
       /* On .stage, not on :root. Both would work — .hud is a descendant — but
