@@ -336,11 +336,6 @@
       lastFrame = now;
 
       if (fluid) {
-        if (restPending && now - lastInput > REST_AFTER) {
-          var rest = settleFor(sTarget);
-          if (rest !== null) sTarget = rest;
-          restPending = false;
-        }
         sCurrent += (sTarget - sCurrent) * (1 - Math.exp(-dt / SCROLL_TAU));
         if (Math.abs(sTarget - sCurrent) < 0.4) sCurrent = sTarget;
         if (Math.abs(sCurrent - sWritten) >= 0.5) {
@@ -374,44 +369,38 @@
 
     /* ---- fluid scroll -----------------------------------------------------
        The wheel moves a target; the real scroll position chases it every
-       frame. Two things matter about that.
+       frame with a time constant. That is the whole mechanism, and it is
+       deliberately the whole mechanism.
 
-       First, we move the actual scroll position rather than a transform. A
+       We move the actual scroll position rather than a transform. A
        transform-based smooth scroller is the usual approach and it would break
-       `position: sticky`, which the pinned copy this whole layout depends on.
+       `position: sticky`, which the pinned copy this layout depends on.
 
-       Second, the settle is folded into the same target instead of being a
-       separate scrollTo fired after a timer. That is what made it feel like
-       the scroll stopped and then started again: two motions competing. Now
-       there is one value, eased continuously, and coming to rest on a section
-       is the same motion as scrolling rather than a jump tacked onto its end.
+       **There is no snapping.** An earlier version pulled you to the nearest
+       section boundary once input stopped — back if you were less than a third
+       of the way in, forward if you were past it. On paper that keeps every
+       rest position tidy. In practice it is the page arguing with you, and
+       worst in the direction you least expect: scroll *up* into the previous
+       section, pause, and the forward rule would throw you back down to where
+       you started. That is the opposite of flowing, so it is gone. You stop
+       where you stopped.
+
+       The reason it could go is that the copy is `position: sticky` for the
+       full height of its chapter, so there is no dead zone between sections to
+       protect the reader from — every scroll position shows a chapter's copy.
+       Snapping was solving a problem the pinning had already solved.
 
        Fine pointers only — on touch, native momentum is better than anything
        reimplemented on top of it. */
-    var SETTLE_AT = 0.32;       /* how far into a chapter before it carries on */
-    var SCROLL_TAU = 0.26;      /* seconds for the scroll to catch its target  */
-    var REST_AFTER = 110;       /* ms of quiet before the page settles         */
+    var SCROLL_TAU = 0.20;      /* seconds for the scroll to catch its target  */
+    var WHEEL_GAIN = 1.2;       /* a notch should feel like it carries         */
 
     var coarse = matchMedia('(pointer: coarse)').matches;
     var fluid = !coarse && !reduced;
-    var sTarget = window.scrollY, sCurrent = sTarget;
-    var lastInput = -1e9, restPending = false, sWritten = -1;
+    var sTarget = window.scrollY, sCurrent = sTarget, sWritten = -1;
 
     function maxScroll() {
       return Math.max(0, document.documentElement.scrollHeight - innerHeight);
-    }
-
-    function settleFor(y) {
-      var b = window.scrollY;
-      var tops = sections.map(function (el) { return el.getBoundingClientRect().top + b; });
-      var i = 0;
-      for (var k = 0; k < tops.length; k++) if (y >= tops[k] - 2) i = k;
-      if (i + 1 >= tops.length) return null;
-      var span = tops[i + 1] - tops[i];
-      if (span < 1) return null;
-      var frac = (y - tops[i]) / span;
-      if (frac < 0.015 || frac > 0.985) return null;      /* already at rest */
-      return clamp(Math.round(frac < SETTLE_AT ? tops[i] : tops[i + 1]), 0, maxScroll());
     }
 
     if (fluid) {
@@ -421,9 +410,7 @@
         var d = e.deltaY;
         if (e.deltaMode === 1) d *= 16;               /* lines */
         else if (e.deltaMode === 2) d *= innerHeight; /* pages */
-        sTarget = clamp(sTarget + d, 0, maxScroll());
-        lastInput = performance.now();
-        restPending = true;
+        sTarget = clamp(sTarget + d * WHEEL_GAIN, 0, maxScroll());
       }, { passive: false });
 
       /* Keyboard, scrollbar drag, find-in-page — anything that moves the real
@@ -431,8 +418,6 @@
       addEventListener('scroll', function () {
         if (Math.abs(window.scrollY - sCurrent) > 3) {
           sCurrent = sTarget = sWritten = window.scrollY;
-          lastInput = performance.now();
-          restPending = true;
         }
       }, { passive: true });
     }
@@ -443,7 +428,6 @@
         return;
       }
       sTarget = clamp(Math.round(sections[i].getBoundingClientRect().top + window.scrollY), 0, maxScroll());
-      restPending = false;
     }
 
     /* A phone rotating, or a desktop window being dragged wider, changes which

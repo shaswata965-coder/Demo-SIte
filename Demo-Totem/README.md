@@ -143,11 +143,12 @@ component rule written as a bare class — `.card-tag`, `.role`, `.marker` — l
 to it and is silently overridden. Component paragraph rules are written
 `.chapter .card-tag` for that reason.
 
-## Pacing, resistance, and why the copy is pinned
+## Pacing, glide, and why the copy is pinned
 
 A chapter is **1.82 viewports** of scroll and `.ch-body` is `position: sticky`,
 so the copy is on screen for all of it — **from 900px up**. Below that it is in
-flow; see "Narrow screens".
+flow; see "Narrow screens". That pinning is also what lets the scroll be free:
+with no dead zone to fall into, nothing has to drag you out of one.
 
 That stickiness is not a style choice, it is what makes the pacing possible.
 With the copy free-flowing, an empty screen becomes reachable the moment a
@@ -159,44 +160,54 @@ be looking at nothing. Pinning the copy removes the ceiling entirely.
 70%, landing exactly as the next chapter's copy arrives.
 
 **The scroll itself is driven from the frame loop.** The wheel moves a target;
-the real scroll position chases it every frame with a ~0.26s time constant.
+the real scroll position chases it every frame with a ~0.20s time constant.
+Measured: a notch travels 90% of its distance in about 570ms, monotonically,
+decelerating the whole way.
 
-Two things about that are deliberate:
+It moves the **actual scroll position**, not a transform. A transform-based
+smooth scroller is the usual approach and it would break `position: sticky`,
+which the pinned copy this whole layout depends on.
 
-- It moves the **actual scroll position**, not a transform. A transform-based
-  smooth scroller is the usual approach and it would break `position: sticky`,
-  which the pinned copy this whole layout depends on.
-- The **settle is folded into the same target** rather than being a separate
-  `scrollTo` fired after a timer. Two competing motions is what made the scroll
-  feel like it stopped and then started again. There is one value now, eased
-  continuously, so coming to rest on a section is the same motion as scrolling
-  rather than a jump tacked onto its end.
+### There is no snapping, and removing it was the point
 
-CSS scroll-snap cannot do this job: `mandatory` turns every wheel notch into a
-committed 1600px jump across a chapter this tall, and `proximity` did not engage
-at all — a flick came to rest 180px in. So the rule lives in `settleFor()`: once
-input stops, under `SETTLE_AT` (32%) of the way into a chapter returns you, past
-it carries you the rest of the way. Measured at 1440×900, chapter = 1620px:
+An earlier version pulled you to the nearest section boundary once input
+stopped: back if you were less than a third of the way in, forward if you were
+past it. On paper that keeps every rest position tidy. In practice it is the
+page arguing with you.
 
-| gesture | result |
+It was worst in the direction you would least expect. Scroll *up* into the
+previous section, pause, and the forward rule threw you back down to where you
+started — a whole section of scrolling undone by letting go. A screen recording
+of exactly that is what killed it: six seconds of scrolling up to reach the
+partner wall, then a pause, then the page put itself back at the bottom of the
+contact section.
+
+The reason it could go at all is that `.ch-body` is `position: sticky` for the
+full height of its chapter, so **there is no dead zone between sections** —
+every scroll position shows some chapter's copy. Snapping was solving a problem
+the pinning had already solved. What is left is a target and an exponential
+chase, and you stop where you stopped.
+
+The difference shows up in the numbers, not just the feel. Sampling model
+progress through one long wheel-driven scroll, before and after:
+
+| | progress samples |
 |---|---|
-| 180px flick | returns to the section |
-| 500px scroll | returns to the section |
-| 1700px scroll | lands exactly on the next section |
+| snapping | 0.11 0.53 1.22 2.07 2.96 3.92 4.90 5.46 … |
+| flowing | 0.08 0.36 0.76 1.21 1.71 2.21 2.71 3.16 … |
 
-Fine pointers only — on touch, native momentum is better than anything
-reimplemented on top of it, so the wheel handler and the settle are both off
-there and the page scrolls natively.
+The first is the page being thrown from section to section. The second is a
+glide.
+
+To retime the piece, change `.chapter { min-height }`. To change how much of a
+chapter is settle versus travel, change the two numbers in `dragEase`. To
+change how much glide the scroll has, change `SCROLL_TAU`; `WHEEL_GAIN` sets
+how far one notch carries.
 
 Weight comes from two stages in series: the scroll eases toward its target
 (~0.26s), and `field.progress` then chases the scroll (`dt * 1.9` in
 `neural.js`, ~0.5s). Travel, roll and morph all read off that second value, so
 the model never tracks the wheel rigidly.
-
-To retime the piece, change `.chapter { min-height }`. To change how much is
-settle versus travel, change the two numbers in `dragEase`. To change how
-willing the page is to advance, change `SETTLE_AT`. To change how much glide
-the scroll has, change `SCROLL_TAU`.
 
 ## Depth while crossing
 
