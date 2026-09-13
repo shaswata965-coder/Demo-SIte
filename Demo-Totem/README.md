@@ -294,6 +294,39 @@ moved to the closing section for the same reason: attributing an invented quote
 to a real company would have been a fabricated endorsement, so it stays with
 its invented one, marked fictional in the caption.
 
+### The wall drifts
+
+The wall was a bordered grid and is now three rows of mark-and-name moving past
+in alternating directions. The cells were doing two jobs badly: separating
+twelve items that space separates perfectly well, and framing marks that are
+not photographs and did not need a frame.
+
+Three things make it work:
+
+- **The loop is seamless because the arithmetic is exact.** Each row holds the
+  twelve marks twice, the second run `aria-hidden`, and the belt animates
+  `translateX(-50%)`. That lands on the start of the copy *only* if the two
+  halves are the same width — so spacing is symmetric `padding-inline` on every
+  item and the belt has no `gap` of its own. A `gap` would leave the seam half
+  a gap short and the loop would visibly hitch once a minute. Measured: both
+  halves 1971px at 1440.
+- **The strip is always wider than the row.** A half-belt narrower than its
+  container leaves a hole that scrolls past. Twelve items per row is enough at
+  every width tested, 3440 included, where the half-belt is 2565px against a
+  2331px row.
+- **It stops when nobody is watching.** `html:not([data-chapter="5"])` pauses
+  all three belts, so off-section they are not competing with the canvas for
+  frames. Hover pauses too, which is also what makes the hover state on an
+  item reachable.
+
+Under `prefers-reduced-motion` a paused marquee would show four of the twelve
+and clip the rest, so the strip becomes a static wrapped set instead and the
+duplicate run is hidden.
+
+The glyphs are a `<symbol>` sprite used 72 times rather than 72 inline SVGs —
+the same drawing repeated at full length would have added most of a hundred
+kilobytes to the embed build for nothing.
+
 ## Micro-animation
 
 With ambient rotation off, a stationary model looked frozen between chapters.

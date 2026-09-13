@@ -393,35 +393,67 @@ img, canvas { max-width: 100%; }
 .chapter .bio { font-size: clamp(.75rem, .88vw, .875rem); line-height: 1.45;
   color: var(--ink-2); max-width: 52ch; }
 
-/* collaborations — a full-viewport wall, hairlines from the grid gap rather
-   than from per-cell borders, which is what the nth-child arithmetic used to
-   be for and what kept breaking when the column count changed. */
-.logos {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--rule-weight);
-  background: var(--rule);
-  border: var(--rule-weight) solid var(--rule);
-  border-radius: var(--card-radius);
+/* collaborations — three rows of marks drifting past, no boxes.
+   The cells were doing two jobs badly: separating twelve items that a bit of
+   space separates perfectly well, and framing marks that are not photographs
+   and did not need a frame. What is left is the glyph, the name, and the room
+   between them — and because the row is now a strip rather than a table, it
+   can move.
+
+   Seamless loop: every item carries its spacing as symmetric padding-inline
+   and the belt has no gap of its own, so the belt's width is exactly twice the
+   run and translating it -50% lands on the start of the copy. A `gap` here
+   instead would leave the seam half a gap short and the loop would visibly
+   hitch once a minute. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.wall {
+  display: grid; gap: clamp(.8rem, 2.1vw, 1.9rem);
+  /* Out to the padding edge — a strip that stops short of it reads as a table
+     again. Not 100vw: that counts the scrollbar and reintroduces sideways
+     scroll on desktop. */
+  margin-inline: calc(-1 * var(--gutter));
+}
+.wall-row {
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
 }
-.logos li {
-  display: grid; gap: .35rem; justify-items: start; align-content: start;
-  padding: clamp(.75rem, 1.5vw, 1.25rem);
-  background: var(--surface);
-  background-color: var(--bg-2);                                  /* fallback */
-  transition: background-color var(--d-base) var(--e-out);
+.wall-belt {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; width: max-content;
+  animation: wall-drift var(--dur, 64s) linear infinite;
 }
-.logos li:hover { background: color-mix(in srgb, var(--contrast) 8%, var(--bg-2)); }
-.mark { display: block; width: clamp(22px, 2.1vw, 30px); aspect-ratio: 1; margin-bottom: .1rem; }
-.mark svg { display: block; width: 100%; height: 100%; }
-.wm {
-  font-family: var(--f-display); font-variation-settings: 'wdth' 96, 'wght' 700;
-  font-size: clamp(.8125rem, 1.05vw, 1.0625rem); line-height: 1.15;
-  color: var(--ink); letter-spacing: .005em;
+.wall-belt.rev { animation-direction: reverse; }
+@keyframes wall-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
 }
-.logos small { font-family: var(--f-mono); font-size: .5rem; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--faint); }
+/* Off-section it is three animations nobody is looking at, competing with the
+   canvas for the same frame. data-chapter already tracks where the reader is. */
+html:not([data-chapter="5"]) .wall-belt { animation-play-state: paused; }
+.wall-row:hover .wall-belt { animation-play-state: paused; }
+
+.wall-belt li {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: clamp(.45rem, .85vw, .7rem);
+  padding-block: clamp(.8rem, 1.7vw, 1.45rem);
+  padding-inline: clamp(1rem, 2.4vw, 2.4rem);
+}
+.wall .mark {
+  display: block; flex: none;
+  width: clamp(19px, 1.8vw, 25px); height: clamp(19px, 1.8vw, 25px);
+  opacity: .92;
+  transition: opacity var(--d-base) var(--e-out), transform var(--d-base) var(--e-out);
+}
+.wall .wm {
+  font-family: var(--f-display); font-variation-settings: 'wdth' 96, 'wght' 680;
+  font-size: clamp(.9375rem, 1.2vw, 1.3rem); line-height: 1;
+  color: var(--ink); letter-spacing: .004em; white-space: nowrap;
+  transition: color var(--d-base) var(--e-out);
+}
+.wall-belt li:hover .mark { opacity: 1; transform: scale(1.12); }
+.wall-belt li:hover .wm { color: var(--accent); }
 
 /* The placeholder disclaimer. It is on the page rather than only in the
    colophon because a wall of recognisable names is exactly the thing someone
@@ -498,7 +530,6 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
    =========================================================================== */
 @media (min-width: 600px) {
   .cards.work { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .logos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .chapter h1, .chapter h2 { font-size: clamp(2.4rem, 6.2vw, 3.6rem); }
 }
 
@@ -533,8 +564,7 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .is-side .ch-col { width: 50%; gap: clamp(.9rem, 1.9vw, 1.7rem); }
 
   /* Method sits beside the model, not behind it, so its
-     grid stays two-up inside the copy column. The wall is full width and opens
-     out to four across, three rows.
+     grid stays two-up inside the copy column.
 
      Four steps two-up inside half a screen is the tightest grid on the page,
      so it runs on its own smaller scale rather than the shared card one. */
@@ -542,7 +572,6 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .steps .card { padding: .8rem .9rem; gap: .35rem; }
   .chapter .steps p { font-size: .875rem; line-height: 1.42; }
   .steps .step-out { padding-top: .45rem; }
-  .logos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
   /* On the full-width sections the head and the grid sit side by side rather
      than stacked, which is what keeps them inside one screen. */
@@ -633,6 +662,12 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* A paused marquee would show four of the twelve and clip the rest, so the
+     strip becomes a static wrapped set and the duplicate run goes away. */
+  .wall-belt { animation: none; width: auto; flex-wrap: wrap; justify-content: center; }
+  .wall-belt li.dup { display: none; }
+  .wall-row { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .wall { margin-inline: 0; }
   html.reveals-armed .rv { opacity: 1; transform: none; transition: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
   .cta:hover { transform: none; }
@@ -647,7 +682,7 @@ html.theming .chapter h2, html.theming .chapter h3, html.theming .figures dd,
 html.theming .figures dd b, html.theming .brand b, html.theming .rail button,
 html.theming .rail button i, html.theming .hud, html.theming .hud b,
 html.theming .colophon, html.theming .card,
-html.theming .logos, html.theming .logos li, html.theming .thumb,
+html.theming .wall .wm, html.theming .thumb,
 html.theming .portrait, html.theming .roster li {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
