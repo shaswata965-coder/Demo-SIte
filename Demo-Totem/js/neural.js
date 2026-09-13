@@ -79,9 +79,16 @@
 
   /* 0 primary — the structure itself. 1 secondary — wiring that runs between
      structures. 2 signal — reserved for what is live, nothing else. */
-  var C_PRIMARY = 0, C_SECOND = 1, C_SIGNAL = 2;
+  /* Index order is load-bearing: C_SIGNAL must stay 2, because the traced
+     inference and the output terminals reach for PAL[C_SIGNAL] directly. */
+  var C_PRIMARY = 0, C_SECOND = 1, C_SIGNAL = 2, C_THIRD = 3;
   var FAM_COLOR = {
-    helix: C_PRIMARY, prox: C_PRIMARY, lattice: C_PRIMARY, riser: C_PRIMARY,
+    /* Two kinds of structure, not one: the coil and the proximity mesh are the
+       body of the model, the lattice and the risers are the frames it is held
+       in. Giving them separate hues is what stops the model reading as a
+       single-colour cloud. */
+    helix: C_PRIMARY, prox: C_PRIMARY,
+    lattice: C_THIRD, riser: C_THIRD,
     layer: C_SECOND, spoke: C_SECOND, ring: C_SECOND, arc: C_SECOND
   };
 
@@ -177,6 +184,8 @@
     this.originX = 0.5;
     this.originY = 0.5;
     this.zoom = 1;
+    /* Residual centring, carried between frames. See _project. */
+    this._corrX = 0; this._corrY = 0;
     /* 1 draws every edge the arrangement has; below that the faintest are
        dropped. The page turns this down when the model is a dimmed backdrop —
        an edge at 12% alpha behind a stage at 28% opacity is not visible, and
@@ -270,6 +279,29 @@
       this._settle(n, rng(44)), this._vault(n, rng(55)), this._ledger(n, rng(66)),
       this._core(n, rng(77))
     ];
+
+    /* Each arrangement is centred on its own robust bounding box before it is
+       ever projected. They are not written centred and several are markedly
+       not: the ledger is a plane at y -0.75 with a third of its units standing
+       off it, so it drew 57px below the origin the page had put it on, and the
+       collapsed core drew 31px above. Measured at 1440x900, before this:
+       seed +22y, vault +21x/-16y, infer -13x, core -31y, ledger +57y.
+
+       Percentiles rather than min/max, so one stray unit cannot drag the whole
+       model sideways. Subtracting this in model space fixes two things at
+       once: the arrangement sits where the page put it, and it now spins about
+       its own middle instead of orbiting a point off to one side. */
+    this.centres = this.shapes.map(function (shape) {
+      var c = [0, 0, 0];
+      for (var ax = 0; ax < 3; ax++) {
+        var v = new Float64Array(n);
+        for (var i = 0; i < n; i++) v[i] = shape[i * 3 + ax];
+        v.sort();
+        var loI = Math.floor(n * 0.02), hiI = Math.min(n - 1, Math.ceil(n * 0.98));
+        c[ax] = (v[loI] + v[hiI]) * 0.5;
+      }
+      return c;
+    });
 
     this.pos = new Float32Array(n * 3);
     this.proj = new Float32Array(n * 4);   /* sx, sy, depth, visible */
@@ -667,7 +699,22 @@
     var cy = Math.cos(yaw), sy = Math.sin(yaw);
     var cp = Math.cos(pitch), sp = Math.sin(pitch);
     var fov = this.cfg.fov;
-    var ox = this.w * this.originX, oy = this.h * this.originY;
+    /* Where the page asked for the model, plus the correction measured last
+       frame. Centring the geometry in model space is not enough on its own:
+       the projection is perspective, so a shape that is symmetric in 3D still
+       lands off-centre once one side of it is nearer the camera, and each
+       arrangement's pose pitch tilts it further. Measured at 1440x900 with
+       the geometry already centred, the residual ran from 13px (infer) to
+       81px (ledger) — enough to read as "the model is not in its slot".
+
+       So the residual is measured from the drawn result and fed back, rather
+       than solved for: project, compare the bounding box centre with the
+       target, and take a fraction of the difference into the next frame. It
+       converges in a few frames, costs one subtraction per point, and follows
+       the pose continuously instead of needing a constant per arrangement. */
+    var tgtX = this.w * this.originX, tgtY = this.h * this.originY;
+    var ox = tgtX + this._corrX, oy = tgtY + this._corrY;
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
     var R = this.radius * this.zoom * lerp(POSE_SCALE[lo], POSE_SCALE[hi], t);
     /* Marks track the model, not the canvas, so a backgrounded model at zoom
        1.4 draws heavier nodes and the thing stays one object rather than a
@@ -675,10 +722,17 @@
        uses uBase — see the lineWidth note in render(). */
     this.u = clamp(this.radius * this.zoom / 220, 0.7, 2.4);
 
+    /* Blended with the morph, so the model stays centred through a transition
+       rather than sliding as one arrangement's offset gives way to the next. */
+    var CA = this.centres[lo], CB = this.centres[hi];
+    var kx = lerp(CA[0], CB[0], t), ky = lerp(CA[1], CB[1], t), kz = lerp(CA[2], CB[2], t);
+
     var T = this.t;
     for (var i = 0; i < n; i++) {
       var i3 = i * 3, i4 = i * 4;
-      var x = lerp(A[i3], B[i3], t), y = lerp(A[i3 + 1], B[i3 + 1], t), z = lerp(A[i3 + 2], B[i3 + 2], t);
+      var x = lerp(A[i3], B[i3], t) - kx,
+          y = lerp(A[i3 + 1], B[i3 + 1], t) - ky,
+          z = lerp(A[i3 + 2], B[i3 + 2], t) - kz;
       /* Two incommensurate sines per axis so the wander never loops visibly. */
       var ph = this.phase[i];
       x += Math.sin(T * 0.53 + ph) * 0.016;
@@ -687,11 +741,25 @@
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy;
       var y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var d = fov / (fov + z2);
-      this.proj[i4] = ox + x1 * R * d;
-      this.proj[i4 + 1] = oy + y1 * R * d;
+      var px = ox + x1 * R * d, py = oy + y1 * R * d;
+      if (px < minX) minX = px; if (px > maxX) maxX = px;
+      if (py < minY) minY = py; if (py > maxY) maxY = py;
+      this.proj[i4] = px;
+      this.proj[i4 + 1] = py;
       this.proj[i4 + 2] = d;
       this.proj[i4 + 3] = z2;
     }
+
+    /* Feed the residual back. A quarter of it per frame settles inside about
+       eight frames — fast enough to be invisible, slow enough that the idle
+       wander cannot make the model swim. A large residual means the pose just
+       jumped (first paint, a resize, a chapter skipped via the rail), so that
+       one is taken whole rather than crawled towards over half a second. */
+    var resX = tgtX - (minX + maxX) * 0.5, resY = tgtY - (minY + maxY) * 0.5;
+    var snap = (Math.abs(resX) > 150 || Math.abs(resY) > 150) ? 1 : 0.25;
+    this._corrX += resX * snap;
+    this._corrY += resY * snap;
+
     this._lo = lo; this._hi = hi; this._t = t;
   };
 

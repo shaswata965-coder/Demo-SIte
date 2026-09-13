@@ -5,10 +5,10 @@ consultancy: one neural model turning through seven arrangements while the page
 transforms with it. Plain HTML, CSS and JS — no build step, no dependencies.
 
 Seven sections — intro, services, method, selected work, team, collaborations,
-contact. Three of them keep the model **beside** the copy; four of them are
-grids of real components (project cards, people, a partner wall) that need the
-whole screen, so the model drops **behind** them instead. Both are the same
-three numbers, lerped on one curve — see "Two layout modes" below.
+contact. Five keep the model **beside** the copy; two — the ones that are grids
+of real components with imagery in them — need the whole screen, so the model
+drops **behind** them instead. Both are the same three numbers, lerped on one
+curve; see "Two layout modes" below.
 
 Built to be ported to Next.js / React later; see "Porting" below.
 
@@ -58,13 +58,20 @@ pose:
 
 | # | Section | Layout | Arrangement | What it is |
 |---|---|---|---|---|
-| 0 | Intro | side | `seed` | A twisted double helix column, rungs across the strands |
-| 1 | Services | side | `bloom` | Two nested shells — an outer sensor surface, an inner core, spokes between |
-| 2 | Method | full | `infer` | Six layers, each a ring, fanned forward layer to layer |
-| 3 | Selected work | full | `settle` | A globe banded into latitude corridors, with bowed long-haul arcs |
-| 4 | Team | full | `vault` | A hollow cube — lattice on the faces, small solid core inside |
-| 5 | Collaborations | full | `ledger` | A ledger plane with risers standing off it |
-| 6 | Contact | side | `core` | Collapse to a core, one orbital ring still holding |
+| 0 | Intro | side right | `seed` | A twisted double helix column, rungs across the strands |
+| 1 | Services | side left | `bloom` | Two nested shells — an outer sensor surface, an inner core, spokes between |
+| 2 | Method | side right | `infer` | Six layers, each a ring, fanned forward layer to layer |
+| 3 | Selected work | **full** | `settle` | A globe banded into latitude corridors, with bowed long-haul arcs |
+| 4 | Team | **full** | `vault` | A hollow cube — lattice on the faces, small solid core inside |
+| 5 | Collaborations | side left | `ledger` | A ledger plane with risers standing off it |
+| 6 | Contact | side right | `core` | Collapse to a core, one orbital ring still holding |
+
+**Two backdrops, not four.** An earlier pass put Method and Collaborations
+behind the copy as well. Four consecutive dimmed screens read as the model
+having been switched off rather than as a change of register — the effect only
+means something if the model comes back out in front. So the run is two,
+bracketed by full-strength sections on both sides, and even inside the pair the
+model crosses the screen (0.62 → 0.36) rather than sitting still.
 
 **Edges fade, they never cut.** Every edge belongs to a family (`helix`,
 `prox`, `spoke`, `layer`, `ring`, `arc`, `lattice`, `riser`) and carries a
@@ -85,22 +92,28 @@ face and fitting its frame. These are tuned against the page's spin table
 
 ## Colour
 
-**Three colours. That is the whole palette.**
+**Four colours, split-complementary around the orange.**
 
 | | Role |
 |---|---|
-| `--c-primary` | The structure you are looking at — the shell, the lattice, the coil, the ledger grid, and every piece of interface chrome. |
-| `--c-second` | Wiring that runs *between* structures — the layer fan, the spokes, the corridor rings and arcs. |
-| `--c-signal` | Reserved for what is **live**: the traced inference, the pulses, the output terminals, and the one claim in each sentence. Nothing else may use it. |
+| `--c-primary` | Burnt orange. Action, and only action: the call to action, the focus ring, `<em>`, the arrangement's own body — the coil and the proximity mesh. |
+| `--c-second` | Deep teal. The workhorse: markers, eyebrows, role labels, partner marks, `<strong>`, the section wash, and the wiring that runs *between* structures. |
+| `--c-third` | Indigo. Things being counted — every figure on the page — and the frames the model is held in, the lattice and the risers. |
+| `--c-signal` | Gold. Reserved for what is **live**: the traced inference, the pulses, the output terminals, the instrument readout. |
 
-An earlier pass ran six accents in the model and a different accent pair per
-chapter. It was not a palette, it was a swatch book — the page had no colour
-identity because every screen had a different one. The rule now is that colour
-is assigned by *role*, never by position: the same thing is the same colour on
-every chapter.
+An earlier pass ran three, two of which were orange and amber, and gave
+`--accent` every job on the page: rules, eyebrows, numbers, labels, buttons.
+An accent that appears on everything is not an accent, and the page read as
+monochrome orange. Orange is now the loudest voice and the most rationed;
+teal does the volume work. Splitting the model's edge families across primary
+and a third hue is the same fix applied to the canvas — the coil and the mesh
+are the body, the lattice and the risers are the frame, and they are no longer
+the same colour.
 
-`<em>` names the thing in primary, `<strong>` states the claim in signal, and
-that pairing is identical in all seven chapters.
+The rule is that colour is assigned by *role*, never by position: the same
+thing is the same colour on every chapter. `<em>` names the thing in primary,
+`<strong>` states the claim in second, and that pairing is identical in all
+seven sections.
 
 The palette is read out of the stylesheet once (`palette()` in `app.js`), so the
 model and the page cannot disagree and no colour maths is duplicated across two
@@ -109,12 +122,6 @@ languages. Nothing is written to the root per frame.
 Per chapter, the only things that step are the display type's width and weight
 (Archivo's `wdth` axis runs 84 → 122) and which side of the content the model
 sits on.
-
-The ground is **warm** — paper rather than a cool near-white, ink with brown in
-it — and the primary is a muted burnt orange. `--c-second`, the one cool hue, is
-there so the model has something to separate its two kinds of wiring with; it
-also carries `<strong>`, so the two levels of emphasis in the copy stay
-distinguishable instead of being two oranges.
 
 One trap worth knowing: `.chapter p` is a type-plus-class selector (0,1,1), so a
 component rule written as a bare class — `.card-tag`, `.role`, `.marker` — loses
@@ -229,9 +236,32 @@ by truncating a sentence or hiding a bio is paying for a pin with content, so
 the pin goes instead: the copy flows, the section is as tall as it needs to be
 with one screen as its floor, and the fixed model behind it carries the effect.
 
-Measured with `tools/`-adjacent Playwright runs at 360×640, 390×844, 834×1112,
-960×700, 1280×720, 1440×900, 2560×1400 and 3440×1440: no horizontal scroll at
-any width, and no pinned section taller than its viewport.
+Measured with Playwright at 320×568, 360×640, 390×844, 834×1112, 960×700,
+1280×720, 1440×900, 2560×1400 and 3440×1440: no horizontal scroll at any width,
+and no pinned section taller than its viewport. Method is the tightest — four
+steps two-up inside half a screen — and on a short laptop the space to fit it
+comes out of padding and step density, not out of the copy.
+
+## Placeholder imagery
+
+The project cards and the team carry generated art rather than photographs:
+three abstract thumbnails and four stand-in portraits, hand-authored as inline
+SVG. Inline rather than image files for three reasons — it themes from the same
+tokens as everything else, it costs no request, and the Artifact CSP blocks
+images from every external host, so a linked stock photo would render as a
+blank box wherever the demo is embedded.
+
+The whole interface is four hue classes: `.g-1/.k-1` through `.g-3/.k-3` plus
+`.g-s/.k-s`, fill and stroke. The markup picks a tone, the palette decides what
+that tone is, and both themes come out right for free.
+
+Each thumbnail is about its own project rather than being generic texture — a
+large sparse cluster distilling into a small dense one, a latency histogram
+falling and then flattening past a marker, a fleet grid with two thirds of its
+tiles switched off. The portraits vary by tone, build, tilt and halo count so
+four people read as four people. All of it is labelled as generated on the page
+itself, in each section's standfirst and again in the colophon; none of it is
+passed off as a photograph of anyone.
 
 ## Micro-animation
 
@@ -311,6 +341,35 @@ CSS clamps, so the model and the copy can never disagree about where the
 halfway line is — which is what keeps a 3440px monitor from putting a paragraph
 and a model a metre apart. `--maxw` (1680px) caps the container; the model is
 parked against that box, not the raw viewport.
+
+## Keeping the model in its slot
+
+The page tells the model where to sit; making it actually sit there took two
+separate fixes, because the arrangements were landing as much as 81px off the
+origin they had been given.
+
+**Model space.** Each arrangement is centred on its own robust bounding box
+(2nd–98th percentile per axis, so one stray unit cannot drag the whole model
+sideways) before it is ever projected. Only `ledger` was far off — its plane
+sits at y −0.75 with a third of its units standing off it — but the subtraction
+also gives every arrangement its own middle to spin about instead of orbiting a
+point off to one side.
+
+**Screen space.** That is not enough on its own, and measuring says so: with
+the geometry centred, the drawn result was still 13px off for `infer` and 81px
+for `ledger`. The projection is perspective, so a shape symmetric in 3D lands
+off-centre once one side is nearer the camera, and each arrangement's pose
+pitch tilts it further. So the residual is *measured from the drawn result and
+fed back*: project, compare the bounding-box centre with the target, take a
+quarter of the difference into the next frame. It settles in about eight
+frames, costs one subtraction per point, and follows the pose continuously
+instead of needing a hand-tuned constant per arrangement. A residual over 150px
+means the pose jumped — first paint, a resize, a section skipped via the rail —
+and is taken whole rather than crawled towards.
+
+All seven arrangements now measure 0px from their declared origin. The
+*centroid* offsets remain and should: `ledger` sits 123px low because it is a
+plane with things standing on it, which is the shape being what it is.
 
 Every mark is drawn in `u`, a unit derived from the model's own radius
 (`neural.js`, `resize`). Sizing dots, strokes and labels in fixed pixels holds

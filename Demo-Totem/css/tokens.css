@@ -9,38 +9,47 @@
    once, and in the handful of words each chapter needs to land. The ground,
    the type and the rules never move.
 
-   The palette is warm: a paper ground rather than a cool near-white, ink with
-   brown in it, and a burnt orange doing the work blue used to. "Muted" is the
-   whole point — the orange is desaturated far enough to sit under body copy
-   for a full screen without buzzing, and the one cool hue is there so the
-   model has something to separate its two kinds of wiring with.
+   The palette is warm — a paper ground rather than a cool near-white, ink with
+   brown in it — but it is not an orange palette. Orange is one voice of four,
+   and it is the loudest, so it is rationed to the things that are actually
+   live: the call to action, the focus ring, the figure a sentence is making.
+
+   Four hues, split-complementary around the orange:
+
+     primary   burnt orange   action, and the claim in a sentence
+     second    deep teal      structure and labelling — the page's workhorse
+     third     indigo         data and the things being counted
+     signal    gold           reserved for what is running: pulses, the trace
+
+   Teal is the one doing most of the work on the page. That is deliberate: an
+   accent that appears on every rule, eyebrow and number stops reading as an
+   accent, which is what happened when orange held all four of these jobs.
    ========================================================================= */
 
 :root {
   /* ---- light: warm paper ---------------------------------------------- */
-  --bg:        #FAF6F0;
-  --bg-2:      #FFFDFA;
-  --bg-sunk:   #F2E9DD;
-  --ink:       #1F1710;
-  --ink-2:     #574839;
-  --faint:     #978674;
-  --rule:      rgba(31, 23, 16, 0.12);
-  --rule-hi:   rgba(31, 23, 16, 0.24);
-  --tex-ink:   rgba(31, 23, 16, 0.055);
+  --bg:        #FAF7F3;
+  --bg-2:      #FFFEFC;
+  --bg-sunk:   #EFEAE2;
+  --ink:       #1C1815;
+  --ink-2:     #524A43;
+  --faint:     #8E837A;
+  --rule:      rgba(28, 24, 21, 0.12);
+  --rule-hi:   rgba(28, 24, 21, 0.24);
+  --tex-ink:   rgba(28, 24, 21, 0.055);
 
-  /* Three. Primary carries the structure, secondary separates one kind of
-     structure from another, signal is reserved for what is live — the traced
-     inference, the pulses, the claim in a sentence. Nothing else gets colour. */
-  --c-primary: #C05621;
-  --c-second:  #3F6E75;
-  --c-signal:  #E0982F;
+  --c-primary: #C25E2A;
+  --c-second:  #2E6B72;
+  --c-third:   #4B5391;
+  --c-signal:  #C98A22;
 
-  --accent:   var(--c-primary);
+  --accent:   var(--c-primary);   /* action, and only action */
   --contrast: var(--c-second);
+  --data:     var(--c-third);
 
   --on-accent: #FFFFFF;
-  --surface:   rgba(255, 253, 250, 0.72);
-  --surface-2: rgba(255, 253, 250, 0.94);
+  --surface:   rgba(255, 254, 252, 0.74);
+  --surface-2: rgba(255, 254, 252, 0.94);
   --dim:       var(--ink-2);
   --canvas-mode: ink;
   color-scheme: light;
@@ -48,46 +57,48 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:      #120C08;
-    --bg-2:    #1C130C;
-    --bg-sunk: #0A0604;
-    --ink:     #F7EFE5;
-    --ink-2:   #C0AC98;
-    --faint:   #857263;
-    --rule:    rgba(247, 239, 229, 0.13);
-    --rule-hi: rgba(247, 239, 229, 0.26);
-    --tex-ink: rgba(247, 239, 229, 0.05);
+    --bg:      #100D0B;
+    --bg-2:    #1A1613;
+    --bg-sunk: #080606;
+    --ink:     #F5F0EA;
+    --ink-2:   #BBB0A6;
+    --faint:   #7F756C;
+    --rule:    rgba(245, 240, 234, 0.13);
+    --rule-hi: rgba(245, 240, 234, 0.26);
+    --tex-ink: rgba(245, 240, 234, 0.05);
 
-    --c-primary: #F0864A;
-    --c-second:  #6FB3BC;
-    --c-signal:  #FFC06A;
+    --c-primary: #EE8347;
+    --c-second:  #5FAEB6;
+    --c-third:   #8C95E0;
+    --c-signal:  #E8B355;
 
-    --on-accent: #180F08;
-    --surface:   rgba(28, 19, 12, 0.66);
-    --surface-2: rgba(28, 19, 12, 0.92);
+    --on-accent: #17100B;
+    --surface:   rgba(26, 22, 19, 0.66);
+    --surface-2: rgba(26, 22, 19, 0.92);
     --canvas-mode: glow;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg:      #120C08;
-  --bg-2:    #1C130C;
-  --bg-sunk: #0A0604;
-  --ink:     #F7EFE5;
-  --ink-2:   #C0AC98;
-  --faint:   #857263;
-  --rule:    rgba(247, 239, 229, 0.13);
-  --rule-hi: rgba(247, 239, 229, 0.26);
-  --tex-ink: rgba(247, 239, 229, 0.05);
+  --bg:      #100D0B;
+  --bg-2:    #1A1613;
+  --bg-sunk: #080606;
+  --ink:     #F5F0EA;
+  --ink-2:   #BBB0A6;
+  --faint:   #7F756C;
+  --rule:    rgba(245, 240, 234, 0.13);
+  --rule-hi: rgba(245, 240, 234, 0.26);
+  --tex-ink: rgba(245, 240, 234, 0.05);
 
-  --c-primary: #F0864A;
-  --c-second:  #6FB3BC;
-  --c-signal:  #FFC06A;
+  --c-primary: #EE8347;
+  --c-second:  #5FAEB6;
+  --c-third:   #8C95E0;
+  --c-signal:  #E8B355;
 
-  --on-accent: #180F08;
-  --surface:   rgba(28, 19, 12, 0.66);
-  --surface-2: rgba(28, 19, 12, 0.92);
+  --on-accent: #17100B;
+  --surface:   rgba(26, 22, 19, 0.66);
+  --surface-2: rgba(26, 22, 19, 0.92);
   --canvas-mode: glow;
   color-scheme: dark;
 }

@@ -38,16 +38,21 @@
 
      `dim` is the stage's opacity at rest and `zoom` how large the model is
      drawn. Behind a full screen of copy it is bigger and much fainter; beside
-     the copy it is smaller and at full strength. The four backdrop values are
-     not equal because the arrangements are not equally dense — the globe still
-     reads at 0.28 where the flat ledger plane has vanished by 0.30. */
+     the copy it is smaller and at full strength.
+
+     Only Work and Team are backdrops. An earlier pass had four of these in a
+     row, and four consecutive screens of dimmed model reads as the model
+     having been switched off rather than as a deliberate change of register —
+     the effect needs the model to come back out in front to mean anything. So
+     the run is two, bracketed by full-strength sections on both sides, and
+     the pair still crosses the screen (0.62 to 0.36) while it is back there. */
   var CHAPTERS = [
     { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82 },
     { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82 },
-    { id: 'infer',  label: 'Method',   x: 0.63,    dim: 0.34, zoom: 1.30 },
-    { id: 'settle', label: 'Work',     x: 0.35,    dim: 0.28, zoom: 1.34 },
-    { id: 'vault',  label: 'Team',     x: 0.65,    dim: 0.32, zoom: 1.30 },
-    { id: 'ledger', label: 'Partners', x: 0.37,    dim: 0.38, zoom: 1.26 },
+    { id: 'infer',  label: 'Method',   x: 'right', dim: 1.00, zoom: 0.76 },
+    { id: 'settle', label: 'Work',     x: 0.62,    dim: 0.30, zoom: 1.30 },
+    { id: 'vault',  label: 'Team',     x: 0.36,    dim: 0.32, zoom: 1.28 },
+    { id: 'ledger', label: 'Partners', x: 'left',  dim: 1.00, zoom: 0.80 },
     { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88 }
   ];
 
@@ -162,11 +167,13 @@
     syncThemeButton();
 
     /* ---- palette: read once from the stylesheet -------------------------- */
-    /* The three accents, the ink and the muted tone all live in
+    /* The four accents, the ink and the muted tone all live in
        css/tokens.css. Reading them means the model and the page can never
        disagree, and there is no colour arithmetic duplicated in two
        languages. */
-    var PAL_VARS = ['--c-primary', '--c-second', '--c-signal'];
+    /* Order matters — js/neural.js indexes this array and reaches for
+       PAL[C_SIGNAL] by position for the traced inference. */
+    var PAL_VARS = ['--c-primary', '--c-second', '--c-signal', '--c-third'];
     function palette() {
       var cs = getComputedStyle(root);
       return {
