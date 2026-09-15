@@ -1,112 +1,225 @@
 /* ===========================================================================
    TOTEM DEMO — tokens
    ---------------------------------------------------------------------------
-   One palette, held constant across the whole page.
+   Five SKINS, not one palette.
 
-   An earlier pass rotated the page's hue per chapter, which repainted the
-   entire ground every section and read as seven different websites. The colour
-   now lives where colour belongs: in the model, which carries the palette at
-   once, and in the handful of words each chapter needs to land. The ground,
-   the type and the rules never move.
+   The previous pass held one warm paper ground for the whole page and tinted
+   every other section by 5–8% towards an accent. That is a wash, not a colour,
+   and the four hues under it were desaturated enough (a 64%-chroma orange, a
+   teal, an indigo, a gold) that the page read as grey with decoration on it.
 
-   The palette is warm — a paper ground rather than a cool near-white, ink with
-   brown in it — but it is not an orange palette. Orange is one voice of four,
-   and it is the loudest, so it is rationed to the things that are actually
-   live: the call to action, the focus ring, the figure a sentence is making.
+   A skin is the whole set at once: ground, panel, ink, the four hues, and
+   whether the model is drawn as plotted ink or as additive light. Sections own
+   a skin, so an alternate section is a differently-coloured room rather than a
+   stain on the same one:
 
-   Four hues, split-complementary around the orange:
+       paper    the near-white ground — Intro, Method, Team
+       violet   flooded violet, light ink, model as light  — Services
+       lemon    flooded electric yellow, dark ink          — Work
+       cyan     flooded electric cyan, dark ink            — Partners
+       ember    near-black violet for the close            — Contact
 
-     primary   burnt orange   action, and the claim in a sentence
-     second    deep teal      structure and labelling — the page's workhorse
-     third     indigo         data and the things being counted
-     signal    gold           reserved for what is running: pulses, the trace
+   No green anywhere: the teal that used to carry the page is gone, and the
+   two hues the flooded sections bring in are violet and yellow.
 
-   Teal is the one doing most of the work on the page. That is deliberate: an
-   accent that appears on every rule, eyebrow and number stops reading as an
-   accent, which is what happened when orange held all four of these jobs.
+   A skin lands in two places and both matter:
+     · on the <section>, as .skin.sk-<name> — paints its band and tones its
+       copy, so a section is legible against its own ground even mid-transition
+     · on :root, as data-skin, written by js/app.js from the active section —
+       which is where the model reads its colours, and what the topbar's scrim
+       is drawn from
+
+   Every value below is solved, not eyeballed. Each hue is taken to full chroma
+   and then to the lightness nearest the pure hue (L = 0.5) that still clears
+   4.5:1 against its own ground — and against its own panel on the skins that
+   carry cards. There are no sub-4.5 pairs in this file.
    ========================================================================= */
 
+/* ---------------------------------------------------------------------------
+   1. Skin colour tables. Raw values only; nothing consumes these directly.
+   Nine per skin — everything else is derived in §3.
+
+   acc is the accent as a FILL — the call to action, the marker rule, the
+   model. acc-ink is the same hue as TEXT. They differ because the fill orange
+   is now #FF5F0C: full chroma, and exactly 1.5x the relative luminance of the
+   #C25E2A it replaces. At that brightness it is an excellent ground and a poor
+   foreground, so text takes the same hue at the lightness the ground can
+   actually carry.
+   ------------------------------------------------------------------------- */
 :root {
-  /* ---- light: warm paper ---------------------------------------------- */
-  /* Near-neutral paper, not a warm one. A warm ground under a warm accent was
-     half of why the page read as one colour however the accents were set —
-     everything, including the white, was on the orange side. Pulling the
-     ground to neutral is what lets the orange be the warm thing. */
-  --bg:        #F8F7F5;
-  --bg-2:      #FFFFFE;
-  --bg-sunk:   #ECEAE6;
-  --ink:       #1A1A19;
-  --ink-2:     #4E4E4D;
-  --faint:     #8A8987;
-  --rule:      rgba(26, 26, 25, 0.13);
-  --rule-hi:   rgba(26, 26, 25, 0.25);
-  --tex-ink:   rgba(26, 26, 25, 0.055);
+  /* paper — near-white, faintly cool */
+  --k-paper-bg:  #F7F8FA;  --k-paper-panel: #FFFFFF;  --k-paper-ink: #0B0D14;
+  --k-paper-acc: #FF5F0C;  --k-paper-acc-ink: #CA4500; --k-paper-on-acc: #1A0A00;
+  --k-paper-con: #6600FF;  --k-paper-data: #0076C0;   --k-paper-sig: #DC0081;
+  --k-paper-canvas: ink;
 
-  --c-primary: #C25E2A;
-  --c-second:  #2E6B72;
-  --c-third:   #4B5391;
-  --c-signal:  #C98A22;
+  /* violet — flooded, ink inverts, the model becomes light */
+  --k-violet-bg:  #3F11BC;  --k-violet-panel: #5320E0;  --k-violet-ink: #F4EEFF;
+  --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+  --k-violet-con: #FF8C50;  --k-violet-data: #3AB4FF;   --k-violet-sig: #FF7EC9;
+  --k-violet-canvas: glow;
 
-  --accent:   var(--c-primary);   /* action, and only action */
-  --contrast: var(--c-second);
-  --data:     var(--c-third);
+  /* lemon — electric yellow, dark ink, near-white cards on top */
+  --k-lemon-bg:  #FFD82E;  --k-lemon-panel: #FFFEF5;  --k-lemon-ink: #1A1400;
+  --k-lemon-acc: #E04400;  --k-lemon-acc-ink: #AB3B00; --k-lemon-on-acc: #1A0A00;
+  --k-lemon-con: #6600FF;  --k-lemon-data: #0064A2;   --k-lemon-sig: #BC006D;
+  --k-lemon-canvas: ink;
 
-  --on-accent: #FFFFFF;
-  --surface:   rgba(255, 255, 254, 0.74);
-  --surface-2: rgba(255, 255, 254, 0.94);
-  --dim:       var(--ink-2);
-  --canvas-mode: ink;
+  /* cyan — electric, dark ink */
+  --k-cyan-bg:  #3FDDF5;  --k-cyan-panel: #F2FEFF;  --k-cyan-ink: #041820;
+  --k-cyan-acc: #D63500;  --k-cyan-acc-ink: #993400; --k-cyan-on-acc: #FFFFFF;
+  --k-cyan-con: #6200F6;  --k-cyan-data: #005991;   --k-cyan-sig: #A80062;
+  --k-cyan-canvas: ink;
+
+  /* ember — the close, where the call to action sits */
+  --k-ember-bg:  #160A30;  --k-ember-panel: #251349;  --k-ember-ink: #F7F2FF;
+  --k-ember-acc: #FF5F0C;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+  --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0496;
+  --k-ember-canvas: glow;
+
   color-scheme: light;
 }
 
+/* Dark is a second colour table, not a second stylesheet: every skin keeps its
+   identity, taken down to a ground that can carry light. The two blocks below
+   are identical on purpose — one answers the system preference, the other the
+   explicit toggle. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:      #0E0E0F;
-    --bg-2:    #17171A;
-    --bg-sunk: #070708;
-    --ink:     #F2F1EF;
-    --ink-2:   #B2B1AF;
-    --faint:   #79787A;
-    --rule:    rgba(242, 241, 239, 0.13);
-    --rule-hi: rgba(242, 241, 239, 0.26);
-    --tex-ink: rgba(242, 241, 239, 0.05);
+    --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
+    --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
+    --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
+    --k-paper-canvas: glow;
 
-    --c-primary: #EE8347;
-    --c-second:  #5FAEB6;
-    --c-third:   #8C95E0;
-    --c-signal:  #E8B355;
+    --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
+    --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+    --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
+    --k-violet-canvas: glow;
 
-    --on-accent: #14100C;
-    --surface:   rgba(23, 23, 26, 0.66);
-    --surface-2: rgba(23, 23, 26, 0.92);
-    --canvas-mode: glow;
+    --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
+    --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
+    --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
+    --k-lemon-canvas: glow;
+
+    --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
+    --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
+    --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
+    --k-cyan-canvas: glow;
+
+    --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
+    --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+    --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
+    --k-ember-canvas: glow;
+
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg:      #0E0E0F;
-  --bg-2:    #17171A;
-  --bg-sunk: #070708;
-  --ink:     #F2F1EF;
-  --ink-2:   #B2B1AF;
-  --faint:   #79787A;
-  --rule:    rgba(242, 241, 239, 0.13);
-  --rule-hi: rgba(242, 241, 239, 0.26);
-  --tex-ink: rgba(242, 241, 239, 0.05);
+  --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
+  --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
+  --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
+  --k-paper-canvas: glow;
 
-  --c-primary: #EE8347;
-  --c-second:  #5FAEB6;
-  --c-third:   #8C95E0;
-  --c-signal:  #E8B355;
+  --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
+  --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+  --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
+  --k-violet-canvas: glow;
 
-  --on-accent: #14100C;
-  --surface:   rgba(23, 23, 26, 0.66);
-  --surface-2: rgba(23, 23, 26, 0.92);
-  --canvas-mode: glow;
+  --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
+  --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
+  --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
+  --k-lemon-canvas: glow;
+
+  --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
+  --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
+  --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
+  --k-cyan-canvas: glow;
+
+  --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
+  --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+  --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
+  --k-ember-canvas: glow;
+
   color-scheme: dark;
 }
 
+/* ---------------------------------------------------------------------------
+   2. Wearing a skin. The same declarations serve a section (.sk-*) and the
+   root (data-skin), so one table drives both the band and the model.
+
+   Role assignment is held constant on the three paper sections — orange is
+   action, violet is structure, azure is data, magenta is what is running. A
+   flooded section recasts the two roles its own ground would swallow: on
+   violet, yellow takes action and orange takes structure.
+   ------------------------------------------------------------------------- */
+:root, .sk-paper, :root[data-skin="paper"] {
+  --bg: var(--k-paper-bg); --panel: var(--k-paper-panel); --ink: var(--k-paper-ink);
+  --accent: var(--k-paper-acc); --accent-ink: var(--k-paper-acc-ink);
+  --on-accent: var(--k-paper-on-acc);
+  --c-second: var(--k-paper-con); --c-third: var(--k-paper-data);
+  --c-signal: var(--k-paper-sig); --canvas-mode: var(--k-paper-canvas);
+}
+.sk-violet, :root[data-skin="violet"] {
+  --bg: var(--k-violet-bg); --panel: var(--k-violet-panel); --ink: var(--k-violet-ink);
+  --accent: var(--k-violet-acc); --accent-ink: var(--k-violet-acc-ink);
+  --on-accent: var(--k-violet-on-acc);
+  --c-second: var(--k-violet-con); --c-third: var(--k-violet-data);
+  --c-signal: var(--k-violet-sig); --canvas-mode: var(--k-violet-canvas);
+}
+.sk-lemon, :root[data-skin="lemon"] {
+  --bg: var(--k-lemon-bg); --panel: var(--k-lemon-panel); --ink: var(--k-lemon-ink);
+  --accent: var(--k-lemon-acc); --accent-ink: var(--k-lemon-acc-ink);
+  --on-accent: var(--k-lemon-on-acc);
+  --c-second: var(--k-lemon-con); --c-third: var(--k-lemon-data);
+  --c-signal: var(--k-lemon-sig); --canvas-mode: var(--k-lemon-canvas);
+}
+.sk-cyan, :root[data-skin="cyan"] {
+  --bg: var(--k-cyan-bg); --panel: var(--k-cyan-panel); --ink: var(--k-cyan-ink);
+  --accent: var(--k-cyan-acc); --accent-ink: var(--k-cyan-acc-ink);
+  --on-accent: var(--k-cyan-on-acc);
+  --c-second: var(--k-cyan-con); --c-third: var(--k-cyan-data);
+  --c-signal: var(--k-cyan-sig); --canvas-mode: var(--k-cyan-canvas);
+}
+.sk-ember, :root[data-skin="ember"] {
+  --bg: var(--k-ember-bg); --panel: var(--k-ember-panel); --ink: var(--k-ember-ink);
+  --accent: var(--k-ember-acc); --accent-ink: var(--k-ember-acc-ink);
+  --on-accent: var(--k-ember-on-acc);
+  --c-second: var(--k-ember-con); --c-third: var(--k-ember-data);
+  --c-signal: var(--k-ember-sig); --canvas-mode: var(--k-ember-canvas);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Derived from whichever skin is in force. These must be declared on the
+   same elements the skin is — a custom property computes where it is written,
+   so deriving them once on :root would freeze them at the root's skin and the
+   sections would inherit the wrong tone.
+   ------------------------------------------------------------------------- */
+:root, .skin {
+  --ink-2: color-mix(in srgb, var(--ink) 76%, var(--bg));
+  --faint: color-mix(in srgb, var(--ink) 66%, var(--bg));
+  --dim:   var(--ink-2);
+
+  /* A sunk well lives inside a card, not on the band, so it steps down from
+     the panel — on a flooded section, stepping down from the band would make
+     every thumbnail a darker patch of the flood. */
+  --bg-sunk: color-mix(in srgb, var(--ink) 7%, var(--panel));
+  --rule:    color-mix(in srgb, var(--ink) 14%, transparent);
+  --rule-hi: color-mix(in srgb, var(--ink) 28%, transparent);
+  --tex-ink: color-mix(in srgb, var(--ink) 6%, transparent);
+
+  /* Cards are translucent: the model is behind them and the point of putting
+     it there is that you can still see it. */
+  --surface:   color-mix(in srgb, var(--panel) 76%, transparent);
+  --surface-2: color-mix(in srgb, var(--panel) 94%, transparent);
+
+  /* The model's four hues are the page's four. Primary is the accent, so the
+     thing on the canvas and the words beside it are demonstrably one palette
+     rather than two that happen to sit together. */
+  --c-primary: var(--accent);
+  --contrast:  var(--c-second);
+  --data:      var(--c-third);
+}
 
 :root {
   --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
@@ -117,6 +230,7 @@
   --e-inout: cubic-bezier(.76, 0, .24, 1);
   --d-base: 420ms;
   --d-theme: 700ms;
+  --d-draw: 1500ms;          /* the schematics drawing themselves in */
 
   /* --maxw is the one number that makes a 3440px monitor behave: every band
      of content is centred inside it, and js/app.js parks the model against

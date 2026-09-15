@@ -11,8 +11,8 @@
 
    So this writes dist/index.html as ONE file: no doctype, no <html>, no <head>,
    no <body>, and every stylesheet and script inlined. Nothing left to fetch
-   except the webfont. app.js sets lang and data-chapter on the root itself, so
-   the embed build behaves identically to the standalone one.
+   except the webfont. app.js sets lang, data-chapter and data-skin on the root
+   itself, so the embed build behaves identically to the standalone one.
 
      node tools/make-embed.mjs
 */

@@ -17,13 +17,16 @@ works and how it ports to React.
 python3 -m http.server 8000 --directory Demo-Totem
 ```
 
-- Light and dark, toggled top right. Light takes a saturated ground that
-  changes with every chapter; dark keeps a near-black ground and lets only the
-  signal carry the colour.
-- The model lives on one side of the content, not behind it, and swaps sides
-  as the chapters progress.
-- Scroll turns and rewires it through seven arrangements while the page's type,
-  texture, colour and layout transform with it.
+- Seven sections wearing five **skins** — a skin is the whole colour set at
+  once, so an alternate section floods the screen with violet, electric yellow
+  or cyan rather than tinting it. Light and dark, toggled top right.
+- The model lives on one side of the content, not behind it, swaps sides as the
+  sections progress, and recolours with the skin — on the deep skins it flips
+  from plotted ink to additive light.
+- The sections that carry no flood colour carry a drawn schematic instead: an
+  instrument layer that traces itself in as the section arrives.
+- Scroll turns and rewires the model through seven arrangements while the
+  page's type, texture, colour and layout transform with it.
 
 ## Planning
 

@@ -25,7 +25,7 @@ Opening `index.html` directly from disk works too.
 
 ```
 index.html            markup and copy
-css/tokens.css        the colour system — light and dark, both derived from one hue
+css/tokens.css        the colour system — five skins, each in light and dark
 css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
 js/app.js             scroll → everything else
@@ -93,50 +93,69 @@ face and fitting its frame. These are tuned against the page's spin table
 
 ## Colour
 
-**Four colours, split-complementary around the orange, on a neutral ground.**
+**Five skins.** A skin is the whole colour set at once — ground, panel, ink,
+the four hues, and whether the model is drawn as plotted ink or as additive
+light. Sections own a skin, so an alternate section is a differently-coloured
+room rather than a stain on the same one.
+
+| Skin | Sections | Light | Dark |
+|---|---|---|---|
+| `paper` | Intro, Method, Team | near-white, faintly cool | near-black |
+| `violet` | Services | flooded violet, light ink, **model flips to light** | deeper violet |
+| `lemon` | Work | flooded electric yellow, dark ink, near-white cards | deep amber |
+| `cyan` | Partners | flooded electric cyan, dark ink | deep teal-blue |
+| `ember` | Contact | near-black violet, where the call to action sits | the same, darker |
+
+The pass before this one held one warm paper ground for the whole page and
+tinted every other section by 5–8% towards an accent. At that strength a
+"colour" is a change of paper, not a change of room, and three of them in a row
+read as one long grey page. The four hues under it were desaturated enough — a
+64%-chroma orange, a teal, an indigo, a gold — that the page read as grey with
+decoration on it.
+
+Within a skin, colour is still assigned by *role*, never by position:
 
 | | Role |
 |---|---|
-| `--c-primary` | Burnt orange. Action, and only action: the call to action, the focus ring, `<em>`, the arrangement's own body — the coil and the proximity mesh. |
-| `--c-second` | Deep teal. The workhorse: markers, eyebrows, role labels, partner marks, `<strong>`, the section wash, and the wiring that runs *between* structures. |
-| `--c-third` | Indigo. Things being counted — every figure on the page — and the frames the model is held in, the lattice and the risers. |
-| `--c-signal` | Gold. Reserved for what is **live**: the traced inference, the pulses, the output terminals, the instrument readout. |
+| `--accent` / `--c-primary` | Action: the call to action, the focus ring, the marker rule, `<em>`, and the arrangement's own body — the coil and the proximity mesh. |
+| `--c-second` → `--contrast` | The workhorse: eyebrows, role labels, step numbers, partner marks, `<strong>`, and the wiring that runs *between* structures. |
+| `--c-third` → `--data` | Things being counted — every figure on the page — and the frames the model is held in, the lattice and the risers. |
+| `--c-signal` | What is **live**: the traced inference, the pulses, the output terminals. |
 
-Getting this to actually read as more than one colour took three passes, and
-the first two under-did it in instructive ways.
+The three `paper` sections hold the assignment fixed — orange is action, violet
+is structure, azure is data, magenta is what is running. A flooded section
+recasts the two roles its own ground would swallow: on `violet`, yellow takes
+action and orange takes structure.
 
-1. Three hues, two of them orange and amber, with `--accent` holding every job
-   on the page: rules, eyebrows, numbers, labels, buttons. An accent that
-   appears on everything is not an accent.
-2. Four hues assigned by role — better, but still monotonous, for two reasons
-   that were not in the palette at all. The **ground** was warm, so every
-   surface including the white was already on the orange side; and the
-   **model** was mostly orange, because its two dominant edge families were
-   both primary, so the largest coloured object on the screen was single-hue
-   whatever the type did.
-3. So: the ground moves to near-neutral paper, which is what lets the orange be
-   the warm thing rather than one warm thing among many. The model's eight edge
-   families spread one at a time across all four hues instead of clustering
-   two and two, and its hidden units cycle three hues by layer instead of
-   alternating two. The alternating section wash becomes two washes, teal and
-   indigo, so consecutive tinted screens are not the same colour, and the
-   closing section takes a warm one that ties to the call to action on it.
+**The orange.** `--accent` is `#FF5F0C`: full chroma, and exactly 1.5x the
+relative luminance of the `#C25E2A` it replaces. At that brightness it is an
+excellent ground and a poor foreground, so there are two of it. `--accent` is
+the *fill* — the button, the rule, the model. `--accent-ink` is the same hue as
+*text*, at the lightness the ground can actually carry; `<em>`, `.btn:hover`
+and the rail's current section use that one. Mixing them up is how you get a
+2.9:1 paragraph.
 
-Orange is still the loudest voice and the most rationed. Teal does the volume
-work.
+Every value in `tokens.css` is solved, not eyeballed: each hue goes to full
+chroma and then to the lightness nearest the pure hue (L = 0.5) that still
+clears 4.5:1 against its own ground — and against its own panel on the skins
+that carry cards. There are no sub-4.5 pairs in the file.
 
-The rule is that colour is assigned by *role*, never by position: the same
-thing is the same colour on every chapter. `<em>` names the thing in primary,
-`<strong>` states the claim in second, and that pairing is identical in all
-seven sections.
+**A skin lands in two places.** On the `<section>` as `.skin.sk-<name>`, which
+paints its band and tones its copy — so a section stays readable against its
+own ground even mid-transition, when the section above it may be near-white and
+the one below deep violet. And on `:root` as `data-skin`, written by `paint()`
+from the active section, which is where the model reads its colours and where
+the topbar's scrim is drawn from. Nothing is written per frame: `readSkin()`
+runs once per skin or theme change, because `getComputedStyle` straight after
+an attribute write forces a style recalc.
 
-The palette is read out of the stylesheet once (`palette()` in `app.js`), so the
-model and the page cannot disagree and no colour maths is duplicated across two
-languages. Nothing is written to the root per frame.
+The persistent chrome is fixed while the bands slide under it, so at a boundary
+it can be over two very different grounds at once. The topbar scrim is what
+gives it one of its own — it carries the root's skin, which `app.js` keeps in
+step with the section the chrome is actually over.
 
-Per chapter, the only things that step are the display type's width and weight
-(Archivo's `wdth` axis runs 84 → 122) and which side of the content the model
-sits on.
+Per section, the only other things that step are the display type's width and
+weight (Archivo's `wdth` axis runs 84 → 122) and which side the model sits on.
 
 One trap worth knowing: `.chapter p` is a type-plus-class selector (0,1,1), so a
 component rule written as a bare class — `.card-tag`, `.role`, `.marker` — loses
@@ -160,7 +179,14 @@ be looking at nothing. Pinning the copy removes the ceiling entirely.
 70%, landing exactly as the next chapter's copy arrives.
 
 **The scroll itself is driven from the frame loop.** The wheel moves a target;
-the real scroll position chases it every frame with a ~0.20s time constant.
+the real scroll position chases it every frame with a **0.30s** time constant —
+half again the 0.20s it started at. Tau is the time to cover the first 63% of
+whatever distance is left, so raising it is exactly what "smoother" means here:
+the same gesture travels the same distance but arrives on a longer, flatter
+curve instead of snapping onto the target. `WHEEL_GAIN` is deliberately
+unchanged — a notch should still carry as far as it did, it should just take
+the journey more gently. Measured at 1440x900: 43% of a notch covered at 156ms,
+against 54% before.
 Measured: a notch travels 90% of its distance in about 570ms, monotonically,
 decelerating the whole way.
 
@@ -225,11 +251,16 @@ two style writes a frame at most.
 
 ## Section rhythm
 
-Every other chapter sits on a soft wash of the primary
-(`color-mix(in srgb, var(--c-primary) 7%, var(--bg))`), so scrolling alternates
-between the airy ground and a tinted one and the boundary crosses the screen as
-a hard edge. One tint, not one per chapter — the alternation is the rhythm, the
-colour stays put.
+Section rhythm lives in the markup: each `<section>` carries `.skin` plus a
+`.sk-*` class, and `.band` paints `var(--bg)` from it. There is nothing to
+override in CSS — a section's colour is chosen by naming its skin, and the
+band, the copy, the emphasis, the cards and the model all follow from that one
+name.
+
+This works because the copy and the incoming band move together. `.ch-body`
+unsticks at exactly the point the next band reaches the bottom of the viewport,
+so a section's copy is never left sitting on the next section's ground — which
+is what makes a near-white section legible right up against a deep violet one.
 
 Getting the band *behind* the model took a specific stacking arrangement, worth
 knowing before you touch it:
@@ -237,6 +268,7 @@ knowing before you touch it:
 ```
 body background
   .band              z-index: -1   full-bleed, sized to the chapter
+    .hitech          sticky inside it, on the three paper sections
   .texture           z-index:  0
   .stage (canvas)    z-index:  1
   .ch-body (copy)    z-index:  3
@@ -246,6 +278,43 @@ body background
 `transform`, no `opacity` on either — or the band cannot reach below the canvas
 and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
 wrapper rather than sitting directly in the section.
+
+## Schematics on the paper sections
+
+Intro, Method and Team carry no flood colour, so they get a drawn one instead:
+an instrument layer that traces itself in as the section arrives. `#c0` is a
+spine in the gutter, a bus off the baseline rail and an aperture around the
+model; `#c2` is the four levers as the stack the model is holding; `#c4` is the
+roster as a lattice under a seal, with a sweep reading down it — mirrored,
+because Team runs model-left.
+
+Each one lives inside `.band`, so it inherits that section's skin and sits under
+both the model and the copy, and it is `position: sticky` on the same 100svh
+rhythm as `.ch-body` — it holds still while the section is read and leaves with
+it.
+
+**Every stroked path carries `pathLength="1"`.** That is what lets a single CSS
+rule draw geometry of any length: dash and offset are both 1 unit, so a line is
+fully retracted at rest and fully drawn at 0 regardless of what it measures.
+`--dly` on a group staggers the trace. Two pieces stay live once drawn — a
+sweep down the lattice and a status lamp — so the layer reads as instrumentation
+rather than as a decal.
+
+**Where the geometry may go was measured, not guessed.** At 1280x720, 1440x900
+and 1920x1080 the copy column fills its half of the container from y=89 to
+y=851 in the 1600x900 viewBox, and reaches x=740 on the side-right sections and
+back to x=860 on the side-left one. There is no free strip above or below it, so
+the schematic lives in the model's half plus a spine in the far gutter and
+nothing crosses the middle. Move the copy and you have to re-measure.
+
+They get their **own** observer at `threshold: 0.62`, not the copy's `0.01`. The
+band is 1.82 viewports tall and starts intersecting while the previous section
+is still being read; at the copy's threshold they would trace themselves in
+behind text that has not arrived. Because the layer is sticky at 100svh, its
+visible fraction is a direct reading of how far its section has come up the
+screen — 0.62 fires about 80% through the section before, as this one lands.
+Like the copy reveals, the dash rules are armed only under `html.reveals-armed`,
+so a script failure leaves the schematic simply drawn.
 
 ## Narrow screens
 

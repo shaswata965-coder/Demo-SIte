@@ -46,15 +46,22 @@
      as the model having been switched off rather than as a deliberate change
      of register; the effect needs the model to come back to mean anything.
      Separating them is what lets the wall have the whole viewport without the
-     middle of the page going flat. */
+     middle of the page going flat.
+
+     `skin` names the section's whole colour set — see css/tokens.css. The
+     <section> wears it as a class so its band and copy are painted from it;
+     the root wears it as data-skin so the model, which reads its colours off
+     the root, and the topbar scrim, which is drawn from the root's ground,
+     both follow. The names here and the .sk-* classes in index.html have to
+     agree. */
   var CHAPTERS = [
-    { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82 },
-    { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82 },
-    { id: 'infer',  label: 'Method',   x: 'right', dim: 1.00, zoom: 0.76 },
-    { id: 'settle', label: 'Work',     x: 0.60,    dim: 0.34, zoom: 1.38 },
-    { id: 'vault',  label: 'Team',     x: 'left',  dim: 1.00, zoom: 0.80 },
-    { id: 'ledger', label: 'Partners', x: 0.44,    dim: 0.42, zoom: 1.50 },
-    { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88 }
+    { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper' },
+    { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82, skin: 'violet' },
+    { id: 'infer',  label: 'Method',   x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
+    { id: 'settle', label: 'Work',     x: 0.60,    dim: 0.34, zoom: 1.38, skin: 'lemon' },
+    { id: 'vault',  label: 'Team',     x: 'left',  dim: 1.00, zoom: 0.80, skin: 'paper' },
+    { id: 'ledger', label: 'Partners', x: 0.44,    dim: 0.42, zoom: 1.50, skin: 'cyan' },
+    { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88, skin: 'ember' }
   ];
 
   /* Narrow screens have no half to park anything in: the model is a backdrop
@@ -83,6 +90,7 @@
        they are what the per-chapter aesthetic hangs off. */
     if (!root.getAttribute('lang')) root.setAttribute('lang', 'en');
     if (!root.hasAttribute('data-chapter')) root.setAttribute('data-chapter', '0');
+    if (!root.hasAttribute('data-skin')) root.setAttribute('data-skin', CHAPTERS[0].skin);
 
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas = $('field');
@@ -167,20 +175,28 @@
     else if (systemDark.addListener) systemDark.addListener(onSystemChange);
     syncThemeButton();
 
-    /* ---- palette: read once from the stylesheet -------------------------- */
-    /* The four accents, the ink and the muted tone all live in
-       css/tokens.css. Reading them means the model and the page can never
-       disagree, and there is no colour arithmetic duplicated in two
-       languages. */
+    /* ---- skin: read off the root, never recomputed here ------------------ */
+    /* The four hues, the ink, the muted tone and whether the model is drawn as
+       plotted ink or as additive light all live in css/tokens.css, selected by
+       the root's data-skin. Reading them means the model and the page can
+       never disagree, and there is no colour arithmetic duplicated in two
+       languages.
+
+       One getComputedStyle per call, and it is called only when the skin or
+       the theme actually changes — not per frame. */
     /* Order matters — js/neural.js indexes this array and reaches for
        PAL[C_SIGNAL] by position for the traced inference. */
     var PAL_VARS = ['--c-primary', '--c-second', '--c-signal', '--c-third'];
-    function palette() {
+    function readSkin() {
       var cs = getComputedStyle(root);
+      var mode = cs.getPropertyValue('--canvas-mode').trim();
       return {
-        pal: PAL_VARS.map(function (v) { return cs.getPropertyValue(v).trim(); }),
-        ink: cs.getPropertyValue('--ink').trim(),
-        dim: cs.getPropertyValue('--faint').trim()
+        mode: (mode === 'ink' || mode === 'glow') ? mode : (isDark() ? 'glow' : 'ink'),
+        colors: {
+          pal: PAL_VARS.map(function (v) { return cs.getPropertyValue(v).trim(); }),
+          ink: cs.getPropertyValue('--ink').trim(),
+          dim: cs.getPropertyValue('--faint').trim()
+        }
       };
     }
 
@@ -189,11 +205,12 @@
        dragged it, never on its own. That is the whole feel being asked for,
        and it also keeps each arrangement's viewing pose reliable. The signal
        pulses keep it alive while it is standing still. */
+    var skin0 = readSkin();
     var field = new NeuralField(canvas, {
       interactive: true,
       autoRotate: 0,
-      mode: isDark() ? 'glow' : 'ink',
-      colors: palette()
+      mode: skin0.mode,
+      colors: skin0.colors
     });
     field.start();
 
@@ -233,7 +250,7 @@
     var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
-    var lastChapter = -1, themedDark = null, shiftedCopy = -1;
+    var lastChapter = -1, lastSkinKey = null, shiftedCopy = -1;
 
     /* Only the chapter you are in carries a parallax offset; the previous one
        is cleared as you leave it. Two style writes a frame at most. */
@@ -251,10 +268,32 @@
       var p = field.progress;
       var lo = Math.floor(p), hi = Math.min(CHAPTERS.length - 1, lo + 1), t = p - lo;
 
-      var dark = isDark();
-      if (force || dark !== themedDark) {
-        themedDark = dark;
-        field.setTheme(dark ? 'glow' : 'ink', palette());
+      /* Which section the page is dressed as. +0.3 rather than rounding, so
+         the change lands inside the crossing — while the model is faded back
+         and mid-travel, which is the one moment in a section where repainting
+         everything goes unnoticed. */
+      var idx = Math.min(CHAPTERS.length - 1, Math.floor(p + 0.3));
+      if (idx !== lastChapter || force) {
+        lastChapter = idx;
+        root.setAttribute('data-chapter', String(idx));
+        root.setAttribute('data-skin', CHAPTERS[idx].skin);
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
+        }
+        hudState.textContent = CHAPTERS[idx].id;
+        if (!force) field.pulse(0.6);
+      }
+
+      /* Recolour the model from whatever the root is now wearing. Keyed on
+         skin *and* theme, because either can change under the other, and read
+         only when the key moves — getComputedStyle right after writing an
+         attribute forces a style recalc, which is fine once a section and
+         ruinous once a frame. */
+      var skinKey = CHAPTERS[idx].skin + (isDark() ? '|dark' : '|light');
+      if (force || skinKey !== lastSkinKey) {
+        lastSkinKey = skinKey;
+        var sk = readSkin();
+        field.setTheme(sk.mode, sk.colors);
       }
 
       /* Travel, roll, zoom and morph all run off the same eased fraction, so
@@ -302,17 +341,6 @@
       texture.style.transform =
         'translate3d(0,' + (-(sCurrent * 0.07) % 30).toFixed(1) + 'px,0)';
       shiftCopy(lo, t);
-
-      var idx = Math.min(CHAPTERS.length - 1, Math.floor(p + 0.3));
-      if (idx !== lastChapter || force) {
-        lastChapter = idx;
-        root.setAttribute('data-chapter', String(idx));
-        for (var i = 0; i < buttons.length; i++) {
-          buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
-        }
-        hudState.textContent = CHAPTERS[idx].id;
-        if (!force) field.pulse(0.6);
-      }
 
       /* Axis gizmo, projected with the same yaw and pitch as the model — the
          one piece of readout kept, because it is a picture, not a number. */
@@ -392,8 +420,17 @@
 
        Fine pointers only — on touch, native momentum is better than anything
        reimplemented on top of it. */
-    var SCROLL_TAU = 0.20;      /* seconds for the scroll to catch its target  */
+    var SCROLL_TAU = 0.30;      /* seconds for the scroll to catch its target  */
     var WHEEL_GAIN = 1.2;       /* a notch should feel like it carries         */
+
+    /* SCROLL_TAU is the whole feel of the scroll: the position closes the gap
+       to its target exponentially, so tau is the time it takes to cover the
+       first 63% of whatever distance is left. It was 0.20s; it is 0.30s, half
+       again as long, which is what "smoother" means here — the same gesture
+       travels the same distance but arrives on a longer, flatter curve instead
+       of snapping onto the target. WHEEL_GAIN is deliberately unchanged: a
+       notch should still carry as far as it did, it should just take the
+       journey more gently. */
 
     var coarse = matchMedia('(pointer: coarse)').matches;
     var fluid = !coarse && !reduced;
@@ -465,9 +502,27 @@
     }, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
     for (var i = 0; i < rv.length; i++) io.observe(rv[i]);
 
+    /* The schematics get their own observer at a much higher threshold. They
+       live inside the band, which is 1.82 viewports tall and starts
+       intersecting while the previous section is still being read — at the
+       copy's 0.01 they would trace themselves in behind text that has not
+       arrived. Because the layer is sticky at 100svh, its visible fraction is
+       a direct reading of how far its section has come up the screen: 0.62
+       fires as the section lands, which is what "drawn in when we scroll to
+       that section" has to mean. */
+    var tech = document.querySelectorAll('.hitech');
+    if (tech.length) {
+      var ioTech = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add('in'); ioTech.unobserve(en.target); }
+        });
+      }, { threshold: 0.62 });
+      for (var k = 0; k < tech.length; k++) ioTech.observe(tech[k]);
+    }
+
     /* The opening section is above the fold on every viewport — never make the
        first painted frame wait on an observer. */
-    var hero = document.querySelectorAll('#c0 .rv');
+    var hero = document.querySelectorAll('#c0 .rv, #c0 .hitech');
     for (var h = 0; h < hero.length; h++) hero[h].classList.add('in');
   }
 

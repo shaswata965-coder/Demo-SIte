@@ -93,7 +93,7 @@ img, canvas { max-width: 100%; }
 }
 .hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; gap: .8rem;
   text-align: right; line-height: 1.8; }
-.hud b { color: var(--c-signal); font-weight: 500; font-variant-numeric: tabular-nums; }
+.hud b { color: var(--data); font-weight: 500; font-variant-numeric: tabular-nums; }
 .hud .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--rule-hi); }
 .hud .c3 { bottom: .7rem; left: .7rem; border-right: 0; border-top: 0; }
 .hud .c4 { bottom: .7rem; right: .7rem; border-left: 0; border-top: 0; }
@@ -107,7 +107,13 @@ img, canvas { max-width: 100%; }
   gap: .75rem;
   padding: clamp(.7rem, 2.4vw, 1.5rem) var(--gutter);
   pointer-events: none;
-  background: linear-gradient(to bottom, var(--bg) 22%, transparent);
+  /* The chrome is fixed while the bands slide under it, so at a section
+     boundary it may be sitting on two very different grounds at once. The
+     scrim is what gives it one of its own: it carries the root's skin, which
+     app.js keeps in step with the section the chrome is actually over. At the
+     old 22% it was a hint; against a flooded band it has to be a ground. */
+  background: linear-gradient(to bottom,
+    var(--bg) 58%, color-mix(in srgb, var(--bg) 55%, transparent) 82%, transparent);
 }
 .topbar > * { pointer-events: auto; }
 .brand {
@@ -133,7 +139,7 @@ img, canvas { max-width: 100%; }
   padding: .6rem .7rem; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
   transition: border-color var(--d-base) var(--e-out), color var(--d-base) var(--e-out);
 }
-.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 .btn svg { width: 13px; height: 13px; flex: none; }
 .btn span { display: none; }
 @media (min-width: 560px) { .btn span { display: inline; } }
@@ -160,7 +166,7 @@ img, canvas { max-width: 100%; }
   transition: width var(--d-base) var(--e-out);
 }
 .rail button:hover { color: var(--ink-2); }
-.rail button[aria-current="true"] { color: var(--accent); }
+.rail button[aria-current="true"] { color: var(--accent-ink); }
 .rail button[aria-current="true"] i { width: 34px; }
 .rail button em {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
@@ -180,8 +186,77 @@ img, canvas { max-width: 100%; }
 
 /* Full-bleed colour band, painted below the model. Negative z-index works
    because neither .doc nor .chapter creates a stacking context. Sized to the
-   chapter rather than to 100vw, so it never overflows past a scrollbar. */
+   chapter rather than to 100vw, so it never overflows past a scrollbar.
+
+   `var(--bg)` resolves against the section's own .sk-* skin, so a section
+   floods its band with its own ground and its copy is toned for that ground —
+   which is why the copy stays readable through a transition even when the two
+   sections either side of it are near-white and deep violet. */
 .band { position: absolute; inset: 0; z-index: -1; background: var(--bg); }
+
+/* --- schematics: the instrument layer on the uncoloured sections ----------
+   Intro, Method and Team carry no flood colour, so they get a drawn one: a
+   schematic that traces itself in as the section arrives. It lives inside the
+   band, so it inherits that section's skin and sits under both the model and
+   the copy, and it is sticky on the same 100svh rhythm as .ch-body — it holds
+   still while the section is read and leaves with it.
+
+   Every stroked path carries pathLength="1", which is what lets one dash rule
+   draw geometry of any length: the dash and the offset are both 1 unit, so the
+   line is fully retracted at rest and fully drawn at 0 regardless of what it
+   actually measures. --dly on a group staggers the trace.
+   ------------------------------------------------------------------------- */
+.hitech {
+  position: sticky; top: 0; display: block;
+  width: 100%; height: 100svh;
+  pointer-events: none;
+  fill: none; stroke-width: 1.25; stroke-linecap: square;
+  opacity: var(--ht-o, .55);
+}
+.hitech * { vector-effect: non-scaling-stroke; }
+.hitech .l1 { stroke: var(--accent); }
+.hitech .l2 { stroke: var(--contrast); }
+.hitech .l3 { stroke: var(--data); }
+.hitech .hair { stroke: var(--ink); opacity: .28; }
+.hitech .f1 { fill: var(--accent); stroke: none; }
+.hitech .f2 { fill: var(--c-signal); stroke: none; }
+.hitech .bold { stroke-width: 2.5; }
+.hitech text {
+  font-family: var(--f-mono); font-size: 13px; letter-spacing: .18em;
+  fill: var(--ink); stroke: none; opacity: .42;
+}
+
+/* Armed only once JS has an observer, on the same principle as the copy
+   reveals: if the script never runs, the schematic is simply drawn. */
+html.reveals-armed .hitech { opacity: 0; transition: opacity 800ms var(--e-out); }
+html.reveals-armed .hitech.in { opacity: var(--ht-o, .55); }
+html.reveals-armed .hitech [data-draw] {
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--d-draw) var(--e-out) var(--dly, 0s);
+}
+html.reveals-armed .hitech.in [data-draw] { stroke-dashoffset: 0; }
+html.reveals-armed .hitech [data-pop] {
+  opacity: 0; transition: opacity 520ms var(--e-out) var(--dly, 0s);
+}
+html.reveals-armed .hitech.in [data-pop] { opacity: 1; }
+
+/* Two pieces stay live once drawn, so the component reads as instrumentation
+   rather than as a decal: a sweep down the lattice and a status lamp. Both are
+   plainly visible when the reveals are not armed — the animation is the
+   enhancement, never what makes them exist. */
+.hitech .sweep, .hitech .lamp { opacity: .5; }
+.hitech .sweep { transform-box: view-box; transform-origin: 0 0; }
+html.reveals-armed .hitech .sweep, html.reveals-armed .hitech .lamp { opacity: 0; }
+.hitech.in .sweep { animation: ht-sweep 7s var(--e-inout) 1.2s infinite; }
+.hitech.in .lamp  { animation: ht-lamp 2.6s steps(1, end) 1.4s infinite; }
+@keyframes ht-sweep {
+  0%   { transform: translateY(0);                   opacity: 0; }
+  10%  {                                             opacity: .95; }
+  50%  { transform: translateY(var(--sweep, 420px)); opacity: .95; }
+  62%  { transform: translateY(var(--sweep, 420px)); opacity: 0; }
+  100% { transform: translateY(0);                   opacity: 0; }
+}
+@keyframes ht-lamp { 0%, 55% { opacity: 1; } 56%, 100% { opacity: .12; } }
 
 .ch-body {
   /* Narrow: in flow. A pinned block taller than the viewport hides its own
@@ -230,12 +305,23 @@ img, canvas { max-width: 100%; }
   line-height: 1.5; }
 
 /* Two levels of emphasis, both in colour, both carrying meaning rather than
-   decorating: <em> names the thing, <strong> states the claim. */
-.chapter em { font-style: normal; color: var(--accent); font-variation-settings: 'wght' 500; }
+   decorating: <em> names the thing, <strong> states the claim. The claim is a
+   filled highlight so it survives a flooded band, where a 14% wash of the
+   contrast hue under the text disappeared into the ground entirely. */
+/* --accent-ink, not --accent. The fill orange is #FF5F0C — full chroma and
+   exactly 1.5x the luminance of the #C25E2A it replaces — which is superb as a
+   ground and unreadable as 17px text on a near-white one. Inline emphasis takes
+   the same hue at the lightness the ground can carry; the button, the rule and
+   the model keep the bright one. */
+.chapter em { font-style: normal; color: var(--accent-ink); font-variation-settings: 'wght' 500; }
 .chapter strong {
-  font-weight: 400; color: var(--contrast);
+  font-weight: 400; color: var(--bg);
   font-variation-settings: 'wght' 500;
-  box-shadow: inset 0 -0.34em 0 color-mix(in srgb, var(--contrast) 14%, transparent);
+  background: var(--contrast);
+  box-shadow: 0 0 0 .16em var(--contrast);
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+          box-decoration-break: clone;
 }
 
 /* --- section head (used by the full-width sections) ----------------------- */
@@ -279,7 +365,7 @@ img, canvas { max-width: 100%; }
   border-bottom: 1px solid var(--rule-hi);
   transition: color var(--d-base) var(--e-out), border-color var(--d-base) var(--e-out);
 }
-.link-btn:hover { color: var(--accent); border-color: var(--accent); }
+.link-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
 
 /* --- hero trust strip ----------------------------------------------------- */
 .chapter .trust {
@@ -360,8 +446,10 @@ img, canvas { max-width: 100%; }
   display: block; width: 100%; overflow: hidden;
   border-radius: calc(var(--card-radius) - 3px);
   border: var(--rule-weight) solid var(--rule);
-  background: color-mix(in srgb, var(--c-second) 6%, var(--bg-2));
+  /* Fallback first: the shorthand below also sets background-color, so with
+     these two the other way round the color-mix never applied at all. */
   background-color: var(--bg-sunk);                               /* fallback */
+  background: color-mix(in srgb, var(--c-second) 8%, var(--panel));
 }
 .thumb { aspect-ratio: 320 / 140; }
 .portrait { aspect-ratio: 120 / 92; }
@@ -661,6 +749,14 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .card { padding: .8rem .9rem; }
 }
 
+/* The schematic is drawn for a wide frame; cropped to a phone it becomes a few
+   stray lines behind the copy. Keep the spine and the sweep, lose the detail,
+   and take the whole layer down so it never fights the text. */
+@media (max-width: 899px) {
+  .hitech { --ht-o: .38; }
+  .hitech .detail { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* A paused marquee would show four of the twelve and clip the rest, so the
      strip becomes a static wrapped set and the duplicate run goes away. */
@@ -671,6 +767,17 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   html.reveals-armed .rv { opacity: 1; transform: none; transition: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
   .cta:hover { transform: none; }
+
+  /* The schematic still appears — it just arrives rather than being traced. */
+  html.reveals-armed .hitech,
+  html.reveals-armed .hitech [data-draw],
+  html.reveals-armed .hitech [data-pop] { transition: none; }
+  html.reveals-armed .hitech { opacity: var(--ht-o, .55); }
+  html.reveals-armed .hitech [data-draw] { stroke-dashoffset: 0; }
+  html.reveals-armed .hitech [data-pop] { opacity: 1; }
+  .hitech .sweep, .hitech.in .sweep, .hitech .lamp, .hitech.in .lamp {
+    animation: none; opacity: .5;
+  }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
@@ -683,30 +790,21 @@ html.theming .figures dd b, html.theming .brand b, html.theming .rail button,
 html.theming .rail button i, html.theming .hud, html.theming .hud b,
 html.theming .colophon, html.theming .card,
 html.theming .wall .wm, html.theming .thumb,
-html.theming .portrait, html.theming .roster li {
+html.theming .portrait, html.theming .roster li,
+html.theming .band, html.theming .chapter strong {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
 }
 @media (prefers-reduced-motion: reduce) { html.theming * { transition: none !important; } }
 
 /* ===========================================================================
-   Section rhythm. Every other chapter sits on a soft wash of the primary, so
-   scrolling alternates between the paper ground and a tinted one. One tint,
-   not one per chapter — the alternation is the rhythm, the colour is constant.
+   Section rhythm now lives in the markup: each <section> carries .skin plus a
+   .sk-* class, and .band paints var(--bg) from it. There is nothing to
+   override here — a section's colour is chosen by naming its skin, and the
+   band, the copy, the emphasis, the cards and the model all follow from that
+   one name.
+
+   The washes this replaces were 5–8% mixes of an accent into the ground. At
+   that strength a "colour" is a change of paper, not a change of room, and
+   three of them in a row read as one long grey page.
    =========================================================================== */
-/* Two washes, not one. The tinted sections alternate between the teal and the
-   indigo, and the closing section takes a warm one that ties to the call to
-   action sitting on it. One repeated tint was the other half of the monotony:
-   every other screen was the same colour as the last one. */
-#c1 .band, #c5 .band {
-  background: var(--bg-sunk);                                     /* fallback */
-  background: color-mix(in srgb, var(--c-second) 8%, var(--bg));
-}
-#c3 .band {
-  background: var(--bg-sunk);
-  background: color-mix(in srgb, var(--c-third) 7%, var(--bg));
-}
-#c6 .band {
-  background: var(--bg-sunk);
-  background: color-mix(in srgb, var(--c-primary) 5%, var(--bg));
-}
