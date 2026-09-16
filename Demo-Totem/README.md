@@ -279,18 +279,48 @@ body background
 and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
 wrapper rather than sitting directly in the section.
 
-## The typed title, and the frame around the copy
+## The typed title, and the rig around the copy
 
 Each screen runs one sequence, and everything on it waits its turn:
 
 1. the eyebrow arrives — `.arming` on the `<section>`
 2. the title types, character by character, with a caret
-3. the caret stops, and the body copy and the instrument frame come in —
+3. the caret stops, and the body copy and the instrument rig come in —
    `.typed` on the `<section>`
 
-So a reveal is no longer a property of an element meeting the viewport; it is a
-property of its section having finished typing. `js/app.js` stamps the two
-classes and the stylesheet does the rest.
+### What fires it, and why it is not an observer
+
+The first version hung this off an `IntersectionObserver` on the heading, and
+it looked broken on almost every screen. Instrumenting it said why:
+
+```
+c1 ARMING y=418     ← typing starts while the section is still 418px below the fold
+c1 TYPED  y=-989    ← the reveal lands after the copy has scrolled off the top
+c3 ARMING y=409     ← c3 arms while c2 is still typing
+```
+
+A margin box is a poor proxy for "this screen has arrived" when the copy is
+`position: sticky` and the section is 1.82 viewports tall. So the sequence
+hangs off **`progress`** instead — the same number the model, the stage and the
+skins are built on, which says exactly where the copy is.
+
+One detail that is easy to get wrong and worth a full screen of lag: fire off
+the **scroll's** progress, not `field.progress`. The field chases the scroll
+with a ~0.5s time constant, which is exactly the weight the model wants and
+exactly half a screen of error for anything trying to fire as a screen lands.
+`frame()` writes `scrollP` and `paint()` gates on that.
+
+A screen arms at `progress = i − 0.08`, a short run-up so the title is mid-type
+as the screen settles rather than starting after it. Screens behind you are
+released outright — you have passed them, and scrolling back up should find
+copy, not a blank. Measured at the three speeds that matter, `local` being the
+fraction of the section scrolled past (its copy is pinned from 0 to 0.44):
+
+| scroll speed | arms at | completes at |
+|---|---|---|
+| ~600 px/s, reading | −0.08 | 0.07 – 0.19, copy pinned |
+| ~1100 px/s, moving | −0.08 | 0.12 – 0.32, copy pinned |
+| ~2700 px/s, a flick | −0.08 | 0.28 – 0.60, copy still on screen |
 
 ### Typing without reflow
 
@@ -316,38 +346,48 @@ than a timer per character, so it runs at the same speed on a 60Hz and a 120Hz
 screen. The per-character delay shortens as the title grows (`TYPE_PER` capped
 by `TYPE_MAX`), so a long title cannot outrun its own screen.
 
-The trigger is observed on the **heading**, not on the section. `.ch-body` is
-sticky and a screen tall, and on a narrow viewport it is *taller* than the
-viewport — an `intersectionRatio` threshold on it can never be met. A heading
-is small enough to reach full visibility on any screen, and it is also the
-thing whose arrival is being timed.
+### The rig
 
-### The frame
+The panel around the copy went through two wrong versions before this one. The
+first was a schematic in the model's half — which decorated the object that is
+already the most decorated thing on the screen. The second framed the copy but
+framed it with four brackets, a rule and a tick scale: right placement, far too
+quiet. A static line drawing reads as a border, not as instrumentation.
 
-The tech drawing is built around the **copy**, not around the model. An earlier
-pass put it in the model's half, which meant it was decorating the thing that is
-already the most decorated object on the screen. Over the text it does a job: it
-frames what you are meant to read, and it is what arrives when the title lands.
-
-It is sized to `.ch-col` rather than drawn in a fixed viewBox, so the same frame
-fits a hero, a four-item list and a three-card grid with no measuring and no
-per-breakpoint geometry. Straight lines and a tick gradient only — nothing in it
-has an aspect ratio to preserve:
+What makes a panel read as live is movement and small dense detail:
 
 | | |
 |---|---|
-| `.fr-c` ×4 | corner brackets, scaling in from each corner in turn |
-| `.fr-rail` | a ticked measurement rail down the side the model is *not* on, so it never sits between the copy and the thing beside it |
-| `.fr-bar` | the readout under the copy — a rule, a tick scale, and `fig.0N · <arrangement>` naming the model's current state |
-| `.fr-sweep` | one pass of the reader down the frame, once |
+| `.rig-grid` | a coarse measurement grid, radially masked — the panel's own surface |
+| `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read |
+| `.rig-reg` | registration crosshairs at the corners. A bracket says "border"; a crosshair says the panel has been aligned to something |
+| `.rig-bus` | a bus down the side the model is *not* on, with three pulses running it on a loop |
+| `.rig-strip` | a waveform, a readout and a segmented meter |
 
-`--fr-pitch` sets the tick spacing per section, so the scale is not identical
-seven times over. On a phone the rail is dropped: the copy column is the whole
-screen there, so the rail would sit in the 20px gutter and read as a stray line
-at the edge.
+**The readout is the model's actual state**, not decorative mono type: the
+arrangement it is holding, where the scroll is in `[0, 6]`, the yaw it has
+turned to, and a meter of how far through this screen you are. It is the same
+`progress` the rest of the page runs on, written every fifth frame for the live
+screen only.
 
-Under `prefers-reduced-motion` there is no typing, no caret and no sweep — the
-title is simply there and the frame arrives with it.
+Everything that moves is gated on **`.live`**, which `paint()` puts on the one
+screen you are looking at. Seven panels beaming and pulsing at once would
+compete with the canvas for the frame budget for no benefit — you can only see
+one. Measured: 3 running animations across all seven panels.
+
+The rig is sized to `.ch-col`, so the same panel fits a hero, a four-item list
+and a three-card grid with no per-breakpoint geometry.
+
+One trap to know before editing it: `.rig > i` is `(0,1,1)`, so a bare
+`.rig-bus { display: none }` in a media query **loses** to it. The phone and
+reduced-motion overrides are written `.rig > .rig-bus` for that reason — the
+first pass of both was silently doing nothing.
+
+On a phone the bus is dropped (the copy column is the whole screen there, so it
+would sit in the 20px gutter and read as a stray edge line) and the waveform
+goes with it. The beam stays. Under `prefers-reduced-motion` there is no
+typing, no caret, no beam and no pulses — the readout still updates, because it
+is information rather than animation and it only changes when you scroll.
 
 ## Narrow screens
 

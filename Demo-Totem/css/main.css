@@ -194,99 +194,152 @@ img, canvas { max-width: 100%; }
    sections either side of it are near-white and deep violet. */
 .band { position: absolute; inset: 0; z-index: -1; background: var(--bg); }
 
-/* --- the instrument frame -------------------------------------------------
-   The tech drawing is built around the COPY, not around the model. An earlier
-   pass put it in the model's half, which meant it was decorating the thing
-   that is already the most decorated object on the screen; over the text it
-   does a job — it frames what you are meant to read, and it is the thing that
-   arrives once the title has finished typing.
+/* --- the instrument rig ---------------------------------------------------
+   A live panel around the copy, not a drawing beside the model.
 
-   It is sized to .ch-col rather than drawn in a fixed viewBox, so it fits the
-   copy at every breakpoint with no measuring: the same frame wraps a hero, a
-   four-item list and a three-card grid. Straight lines and a tick gradient
-   only — nothing here has an aspect ratio to preserve.
+   Two passes got this wrong before. The first put a schematic in the model's
+   half, which decorated the object that is already the most decorated thing on
+   the screen. The second framed the copy but framed it with four brackets, a
+   rule and a tick scale — correct placement, and far too quiet: a static line
+   drawing reads as a border, not as instrumentation.
+
+   What makes a panel read as live is movement and small dense detail, so this
+   one has: a scanning beam that carries its own scanline texture, a bus down
+   the outer edge with pulses running along it, registration crosshairs rather
+   than plain corners, and a readout strip whose numbers are the model's actual
+   state — the arrangement it is holding, where the scroll is, how far through
+   this screen you are. Nothing in it is decorative typography pretending to be
+   data; it is the same `progress` the rest of the page is built on.
+
+   Sized to .ch-col, so the same panel fits a hero, a four-item list and a
+   three-card grid with no per-breakpoint geometry.
+
+   Everything that moves is gated on .live, which app.js puts on the one screen
+   you are actually looking at. Seven panels animating at once would compete
+   with the canvas for the frame budget for no benefit — you can only see one.
    ------------------------------------------------------------------------ */
 .ch-col { position: relative; }
-.ch-col > .frame {
+.ch-col > .rig {
   position: absolute; z-index: -1; pointer-events: none;
-  top: -1.1rem; bottom: -2.4rem; left: -1.1rem; right: -1.1rem;
+  top: -1.2rem; bottom: -2.5rem; left: -1.2rem; right: -1.2rem;
   color: var(--contrast);
+  opacity: 0; transition: opacity .5s var(--e-out);
 }
 @media (min-width: 900px) {
-  .ch-col > .frame { top: -1.5rem; bottom: -2.9rem; left: -1.7rem; right: -1.7rem; }
+  .ch-col > .rig { top: -1.6rem; bottom: -3rem; left: -1.8rem; right: -1.8rem; }
 }
-.frame i, .frame b { display: block; position: absolute; }
+.chapter.typed .rig { opacity: 1; }
+.rig > i { display: block; position: absolute; }
 
-/* corners */
-.frame .fr-c {
-  width: 15px; height: 15px; border: var(--rule-weight) solid currentColor;
-  opacity: 0; transform: scale(.4);
-  transition: opacity .5s var(--e-out), transform .5s var(--e-out);
+/* Instrument ground: a coarse measurement grid, the panel's own surface. */
+.rig-grid {
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(to right,  currentColor 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px 72px);
+  opacity: 0; transition: opacity .9s var(--e-out) .1s;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
+          mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
 }
-.frame .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; transform-origin: top left; }
-.frame .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; transform-origin: top right; }
-.frame .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; transform-origin: bottom left; }
-.frame .br { bottom: 0; right: 0; border-left: 0; border-top: 0; transform-origin: bottom right; }
+.chapter.typed .rig-grid { opacity: .16; }
 
-/* The measurement rail runs down the side the model is NOT on, so it never
-   sits between the copy and the thing it is standing next to. */
-.frame .fr-rail {
-  top: 26px; bottom: 34px; left: 0; width: 8px;
-  border-left: var(--rule-weight) solid var(--accent);
-  background-image: repeating-linear-gradient(to bottom,
-    currentColor 0 1px, transparent 1px var(--fr-pitch, 30px));
-  background-repeat: no-repeat; background-size: 6px 100%;
-  opacity: 0; transform: scaleY(0); transform-origin: top;
-  transition: opacity .45s var(--e-out), transform .8s var(--e-out);
+/* The beam. It carries the scanlines with it, so the fine texture exists only
+   where the scanner is — which is the difference between a screen that has a
+   scanline filter on it and a screen that is being read. */
+.rig-beam { inset: 0; overflow: hidden; }
+.rig-beam::before {
+  content: ''; position: absolute; left: 0; right: 0; top: -150px; height: 150px;
+  opacity: 0;
+  background-image:
+    repeating-linear-gradient(to bottom,
+      color-mix(in srgb, var(--accent) 26%, transparent) 0 1px, transparent 1px 4px),
+    linear-gradient(to bottom, transparent, color-mix(in srgb, var(--accent) 16%, transparent));
+  border-bottom: 1px solid var(--accent);
+  box-shadow: 0 6px 18px -6px var(--accent);
 }
-.side-left .frame .fr-rail {
-  left: auto; right: 0; border-left: 0;
-  border-right: var(--rule-weight) solid var(--accent);
-  background-position: right 0 top 0;
-}
-
-/* The bar under the copy is the readout: a rule, a tick scale and a label. */
-.frame .fr-bar {
-  left: 22px; right: 22px; bottom: 19px; height: 7px;
-  border-top: var(--rule-weight) solid var(--accent);
-  background-image: repeating-linear-gradient(to right,
-    currentColor 0 1px, transparent 1px var(--fr-pitch, 30px));
-  background-repeat: no-repeat; background-size: 100% 5px;
-  opacity: 0; transform: scaleX(0); transform-origin: left;
-  transition: opacity .45s var(--e-out), transform .9s var(--e-out);
-}
-.side-left .frame .fr-bar { transform-origin: right; }
-.frame .fr-tag {
-  bottom: 0; left: 22px;
-  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--faint); font-weight: 400;
-  opacity: 0; transform: translateY(4px);
-  transition: opacity .5s var(--e-out), transform .5s var(--e-out);
-}
-.side-left .frame .fr-tag { left: auto; right: 22px; }
-
-/* One pass of the reader down the frame, once, after the title lands. */
-.frame .fr-sweep { inset: 0; overflow: hidden; }
-.frame .fr-sweep i {
-  left: 0; right: 0; top: 0; height: 2px; opacity: 0;
-  background: linear-gradient(to right, transparent,
-    var(--accent) 30%, var(--accent) 70%, transparent);
-}
-
-/* Everything in the frame waits for the caret to stop. */
-.chapter.typed .frame .fr-c { opacity: .9; transform: scale(1); }
-.chapter.typed .frame .tr { transition-delay: .06s; }
-.chapter.typed .frame .bl { transition-delay: .12s; }
-.chapter.typed .frame .br { transition-delay: .18s; }
-.chapter.typed .frame .fr-rail { opacity: .75; transform: scaleY(1); transition-delay: .10s; }
-.chapter.typed .frame .fr-bar  { opacity: .75; transform: scaleX(1); transition-delay: .16s; }
-.chapter.typed .frame .fr-tag  { opacity: 1; transform: none; transition-delay: .46s; }
-.chapter.typed .frame .fr-sweep i { animation: fr-sweep 1.7s var(--e-inout) .3s 1 both; }
-@keyframes fr-sweep {
-  0%   { top: 0;    opacity: 0; }
-  14%  {            opacity: .8; }
-  86%  {            opacity: .8; }
+.chapter.live .rig-beam::before { animation: rig-beam 5.4s var(--e-inout) infinite; }
+@keyframes rig-beam {
+  0%   { top: -150px; opacity: 0; }
+  10%  { opacity: .9; }
+  86%  { opacity: .9; }
   100% { top: 100%; opacity: 0; }
+}
+
+/* Registration crosshairs. A bracket says "border"; a crosshair says the panel
+   has been aligned to something. */
+.rig-reg { width: 15px; height: 15px; opacity: 0; transform: scale(.3);
+  transition: opacity .45s var(--e-out), transform .45s var(--e-out); }
+.rig-reg::before, .rig-reg::after { content: ''; position: absolute; background: currentColor; }
+.rig-reg::before { left: 0; right: 0; top: 50%; height: 1px; }
+.rig-reg::after { top: 0; bottom: 0; left: 50%; width: 1px; }
+.rig-reg.tl { top: -7px; left: -7px; }
+.rig-reg.tr { top: -7px; right: -7px; }
+.rig-reg.bl { bottom: -7px; left: -7px; }
+.rig-reg.br { bottom: -7px; right: -7px; }
+.chapter.typed .rig-reg { opacity: .85; transform: scale(1); }
+.chapter.typed .rig-reg.tr { transition-delay: .05s; }
+.chapter.typed .rig-reg.bl { transition-delay: .10s; }
+.chapter.typed .rig-reg.br { transition-delay: .15s; }
+
+/* The bus runs down the side the model is NOT on, so it never sits between the
+   copy and the thing standing next to it. Three pulses travel it on a loop. */
+.rig-bus {
+  top: 22px; bottom: 40px; left: 0; width: 1px; background: currentColor;
+  opacity: 0; transform: scaleY(0); transform-origin: top;
+  transition: opacity .4s var(--e-out) .1s, transform .75s var(--e-out) .1s;
+}
+.side-left .rig-bus { left: auto; right: 0; }
+.chapter.typed .rig-bus { opacity: .55; transform: scaleY(1); }
+.rig-bus > i {
+  position: absolute; left: -2px; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent); opacity: 0;
+  box-shadow: 0 0 8px 1px var(--accent);
+}
+.chapter.live .rig-bus > i { animation: rig-pulse 3.2s linear infinite; }
+.chapter.live .rig-bus > i:nth-child(2) { animation-delay: 1.07s; }
+.chapter.live .rig-bus > i:nth-child(3) { animation-delay: 2.13s; }
+@keyframes rig-pulse {
+  0%   { top: 0;    opacity: 0; }
+  8%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* The readout. Live numbers off the model, not decorative mono type. */
+.rig-strip {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 20px;
+  display: flex; align-items: center; gap: .7rem;
+  opacity: 0; transform: translateY(5px);
+  transition: opacity .5s var(--e-out) .3s, transform .5s var(--e-out) .3s;
+}
+.side-left .rig-strip { flex-direction: row-reverse; }
+.chapter.typed .rig-strip { opacity: 1; transform: none; }
+.rig-wave {
+  flex: none; width: clamp(66px, 9vw, 132px); height: 20px;
+  fill: none; stroke: var(--accent); stroke-width: 1.25;
+  vector-effect: non-scaling-stroke; opacity: .8;
+}
+.rig-read {
+  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--faint); font-weight: 400;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.rig-meter { position: relative; flex: none; width: clamp(48px, 6vw, 82px); height: 7px; }
+.rig-meter::before, .rig-meter::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0;
+  background-image: repeating-linear-gradient(to right,
+    currentColor 0 3px, transparent 3px 7px);
+}
+.rig-meter::before { right: 0; opacity: .22; }
+.rig-meter::after {
+  width: calc(var(--fill, 0) * 100%);
+  background-image: repeating-linear-gradient(to right,
+    var(--accent) 0 3px, transparent 3px 7px);
+}
+/* The strip runs edge to edge; the rule between its parts is the last piece. */
+.rig-strip::after {
+  content: ''; position: absolute; left: 0; right: 0; top: -7px;
+  height: 1px; background: currentColor; opacity: .3;
 }
 
 /* --- the typed title -----------------------------------------------------
@@ -815,8 +868,11 @@ html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
    would sit in the 20px gutter and read as a stray line at the edge. Corners,
    bar and tag carry the idea on their own at that width. */
 @media (max-width: 899px) {
-  .frame .fr-rail { display: none; }
-  .frame .fr-c { width: 11px; height: 11px; }
+  /* .rig > i is (0,1,1), so a bare .rig-bus here would lose to it — these
+     have to be at least as specific to turn anything off. */
+  .rig > .rig-bus { display: none; }
+  .rig > .rig-reg { width: 11px; height: 11px; }
+  .rig .rig-wave { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -831,16 +887,18 @@ html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
   .cta:hover { transform: none; }
 
-  /* No typing and no sweep: the title is simply there, and the frame arrives
-     with it rather than being drawn. app.js also skips the caret entirely. */
+  /* No typing and nothing sweeping or pulsing: the title is simply there and
+     the panel is simply on. The readout still updates — it is information, not
+     animation, and it only changes when you scroll. */
   .tw-c { visibility: visible; }
   .tw-c.cursor::after { display: none; }
-  .frame i, .frame b { transition: none !important; }
-  .frame .fr-sweep { display: none; }
-  .chapter .frame .fr-c { opacity: .9; transform: none; }
-  .chapter .frame .fr-rail { opacity: .75; transform: none; }
-  .chapter .frame .fr-bar { opacity: .75; transform: none; }
-  .chapter .frame .fr-tag { opacity: 1; transform: none; }
+  .rig, .rig * { transition: none !important; }
+  .rig > .rig-beam, .rig .rig-bus > i { display: none; }
+  .chapter .rig { opacity: 1; }
+  .chapter .rig-grid { opacity: .16; }
+  .chapter .rig-reg { opacity: .85; transform: none; }
+  .chapter .rig-bus { opacity: .55; transform: none; }
+  .chapter .rig-strip { opacity: 1; transform: none; }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
@@ -854,8 +912,8 @@ html.theming .rail button i, html.theming .hud, html.theming .hud b,
 html.theming .colophon, html.theming .card,
 html.theming .wall .wm, html.theming .thumb,
 html.theming .portrait, html.theming .roster li,
-html.theming .band, html.theming .chapter strong, html.theming .frame i,
-html.theming .frame b {
+html.theming .band, html.theming .chapter strong, html.theming .rig,
+html.theming .rig i, html.theming .rig b {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
 }

@@ -18,6 +18,11 @@
    morph, which is why the two kinds of section transition into each other
    instead of cutting.
 
+   The reveal sequence hangs off that same number. Each screen runs: the
+   eyebrow arrives, the title types, then the body copy and the rig come in —
+   fired from paint() when `progress` says the copy has landed, not from an
+   IntersectionObserver watching a margin box.
+
    Rule this file follows: the copy is the page. `armReveals` runs after the
    model is built, so a failure there leaves a readable static page and the
    error reaches the console instead of being swallowed.
@@ -77,6 +82,11 @@
   var SPIN_PER_WIDTH = 1.66;
 
   var sections = [];
+
+  /* Set by armReveals() once every heading has been rebuilt; called from
+     paint() as the scroll reaches each screen. Null until then, which is why
+     paint() guards it — boot() paints one frame before reveals are armed. */
+  var arrive = null;
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -251,6 +261,28 @@
     hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
     var lastChapter = -1, lastSkinKey = null, shiftedCopy = -1;
+    var liveSec = -1, readTick = 0, scrollP = 0;
+
+    /* The rig's numbers are the model's, not decorative mono type: which
+       arrangement it is holding, where the scroll is in [0, 6], the yaw it has
+       turned to, and how far through this screen you are. Written only for the
+       live section and only every few frames — it is a readout, not an
+       animation, and at 60Hz nobody can read two digits of it anyway. */
+    function writeReadout(sec, i, p) {
+      if (!sec.rigRead && !sec.rigDone) {
+        sec.rigRead = sec.querySelector('.rig-read');
+        sec.rigMeter = sec.querySelector('.rig-meter');
+        sec.rigDone = true;
+      }
+      if (sec.rigRead) {
+        var yaw = Math.round(Math.abs(field.viewYaw || 0) * 1000) % 4096;
+        sec.rigRead.textContent = CHAPTERS[i].id + ' \u00b7 p ' + p.toFixed(2)
+          + ' \u00b7 0x' + ('00' + yaw.toString(16)).slice(-3).toUpperCase();
+      }
+      if (sec.rigMeter) {
+        sec.rigMeter.style.setProperty('--fill', clamp(p - i, 0, 1).toFixed(3));
+      }
+    }
 
     /* Only the chapter you are in carries a parallax offset; the previous one
        is cleared as you leave it. Two style writes a frame at most. */
@@ -294,6 +326,36 @@
         lastSkinKey = skinKey;
         var sk = readSkin();
         field.setTheme(sk.mode, sk.colors);
+      }
+
+      /* Which screen has arrived. This is deliberately NOT an
+         IntersectionObserver: the observer fired on a margin box roughly 400px
+         before the copy landed, so a title started typing while its section was
+         still below the fold and the body copy was released after the copy had
+         already scrolled off the top — on any normal scroll you saw neither
+         half. `progress` is the number the rest of the page is built on and it
+         says exactly where the copy is, so the sequence hangs off that instead.
+
+         reach is the screen whose copy is landing: p + 0.08 gives the title a
+         short run-up so it is mid-type as the screen settles rather than
+         starting after it. Screens behind you are released outright — you have
+         passed them, and scrolling back up should find copy, not a blank. */
+      if (arrive) {
+        var reach = clamp(Math.floor(scrollP + 0.08), 0, CHAPTERS.length - 1);
+        for (var a = 0; a < reach; a++) arrive(a, true);
+        arrive(reach, false);
+
+        /* Only the screen you are on animates. Seven panels beaming and
+           pulsing at once would compete with the canvas for the frame budget
+           and you can only ever see one of them. */
+        if (reach !== liveSec) {
+          if (liveSec >= 0 && sections[liveSec]) sections[liveSec].classList.remove('live');
+          liveSec = reach;
+          if (sections[liveSec]) sections[liveSec].classList.add('live');
+        }
+        if (sections[liveSec] && (force || ++readTick % 5 === 0)) {
+          writeReadout(sections[liveSec], liveSec, scrollP);
+        }
       }
 
       /* Travel, roll, zoom and morph all run off the same eased fraction, so
@@ -374,7 +436,12 @@
         sCurrent = window.scrollY;
       }
 
-      field.setProgress(progress());
+      /* The sequence gate needs where the SCROLL is, not where the model has
+         eased to. field.progress chases this value with a ~0.5s time constant,
+         which is exactly the weight the model wants and exactly half a screen
+         of lag for anything trying to fire as a screen arrives. */
+      scrollP = progress();
+      field.setProgress(scrollP);
       paint(false);
       requestAnimationFrame(frame);
     }
@@ -558,7 +625,7 @@
      is the same on a 60Hz and a 120Hz screen and a long title cannot outrun
      its own section. The per-character delay shortens as the title grows so
      the whole line always lands inside TYPE_MAX. */
-  var TYPE_PER = 34, TYPE_MAX = 900, TYPE_HOLD = 240;
+  var TYPE_PER = 30, TYPE_MAX = 620, TYPE_HOLD = 150;
 
   function typeHeading(chars, done) {
     var n = chars.length, per = Math.min(TYPE_PER, TYPE_MAX / n);
@@ -582,13 +649,15 @@
     }(performance.now()));
   }
 
+  /* Split every heading, then hand back a per-section runner that app.js can
+     fire from the scroll. Nothing here observes anything — see `arrive()` in
+     boot() for why, and for what fires it. */
   function armReveals() {
-    if (!('IntersectionObserver' in window)) return;
     var chapters = document.querySelectorAll('.chapter');
-    if (!chapters.length) return;
+    if (!chapters.length) return null;
 
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var heads = [], i;
+    var entries = [], i;
 
     /* Split first, arm second. If splitting throws we have changed nothing
        that matters and the page is still the page — so only once every
@@ -596,11 +665,10 @@
     try {
       for (i = 0; i < chapters.length; i++) {
         var h = chapters[i].querySelector('h1, h2');
-        heads.push(h ? { sec: chapters[i], h: h, chars: splitHeading(h) }
-                     : { sec: chapters[i], h: null, chars: null });
+        entries.push({ sec: chapters[i], h: h, chars: h ? splitHeading(h) : null, done: false });
       }
     } catch (e) {
-      for (i = 0; i < heads.length; i++) if (heads[i].chars) showAll(heads[i].chars);
+      for (i = 0; i < entries.length; i++) if (entries[i].chars) showAll(entries[i].chars);
       throw e;
     }
     root.classList.add('reveals-armed');
@@ -610,16 +678,17 @@
          :nth-child in CSS — the sections do not share a shape. */
       var rv = entry.sec.querySelectorAll('.rv');
       for (var k = 0; k < rv.length; k++) {
-        rv[k].style.transitionDelay = (k * 0.07).toFixed(2) + 's';
+        rv[k].style.transitionDelay = (k * 0.05).toFixed(2) + 's';
       }
       entry.sec.classList.add('typed');
     }
 
-    function run(entry) {
-      if (entry.done) return;
+    return function run(i, instant) {
+      var entry = entries[i];
+      if (!entry || entry.done) return;
       entry.done = true;
       entry.sec.classList.add('arming');
-      if (!entry.chars || reduced) {
+      if (!entry.chars || reduced || instant) {
         if (entry.chars) showAll(entry.chars);
         release(entry);
         return;
@@ -631,53 +700,13 @@
         release(entry);
         throw e;
       }
-    }
-
-    /* Observed on the heading, not on the section. .ch-body is sticky and a
-       screen tall, and on a narrow viewport it is taller than the viewport —
-       a ratio threshold on it can never be met. A heading is small enough to
-       reach full visibility on any screen, and it is also the thing whose
-       arrival we are actually timing. The bottom margin holds the trigger back
-       until the heading has cleared the lower quarter, so the title types as
-       its screen settles rather than while it is still sliding up. */
-    var byHead = [];
-    for (i = 0; i < heads.length; i++) if (heads[i].h) byHead.push(heads[i]);
-
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        io.unobserve(en.target);
-        for (var k = 0; k < byHead.length; k++) {
-          if (byHead[k].h === en.target) { run(byHead[k]); return; }
-        }
-      });
-    }, { rootMargin: '0px 0px -22% 0px', threshold: 0.75 });
-    for (i = 0; i < byHead.length; i++) io.observe(byHead[i].h);
-
-    /* The opening screen is above the fold on every viewport — never make the
-       first painted frame wait on an observer. */
-    for (i = 0; i < heads.length; i++) {
-      if (heads[i].sec.id === 'c0') { io.unobserve(heads[i].h); run(heads[i]); }
-    }
-
-    /* A section with no heading has nothing to type, so it opens on its own
-       when it arrives. */
-    var plain = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        plain.unobserve(en.target);
-        for (var k = 0; k < heads.length; k++) {
-          if (heads[k].sec === en.target) { run(heads[k]); return; }
-        }
-      });
-    }, { rootMargin: '0px 0px -25% 0px', threshold: 0.01 });
-    for (i = 0; i < heads.length; i++) if (!heads[i].h) plain.observe(heads[i].sec);
+    };
   }
 
   function init() {
     sections = CHAPTERS.map(function (_, i) { return $('c' + i); });
     boot();
-    armReveals();
+    arrive = armReveals();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
