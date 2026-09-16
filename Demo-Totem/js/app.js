@@ -486,44 +486,192 @@
     requestAnimationFrame(frame);
   }
 
-  /* ---- reveals ------------------------------------------------------------ */
-  /* Copy is visible in the stylesheet and hidden only once this runs. Calling
+  /* ---- reveals: type the title, then release the screen -------------------
+     One sequence per section, in this order:
+
+       1. the eyebrow arrives      (.arming on the <section>)
+       2. the title types, character by character
+       3. everything else and the frame come in   (.typed on the <section>)
+
+     Copy is visible in the stylesheet and hidden only once this runs. Calling
      it *after* boot is the whole trick: if the model fails to build, the
-     hiding never happens and the page is simply a readable static page. */
+     hiding never happens and the page is simply a readable static page. The
+     same rule holds one level down — every step below either completes or
+     hands the section back in its readable state.
+     ---------------------------------------------------------------------- */
+
+  /* Rebuild a heading as words of characters. Two details carry the whole
+     thing: every character is in the DOM from the start (merely invisible), so
+     the heading occupies its final box and nothing reflows as it types; and
+     the characters are wrapped a word at a time, because a bare span per
+     character lets the browser break a line in the middle of a word.
+
+     Returns the character spans in order, or null if there is nothing to do.
+     The heading's real text goes to an aria-label, so a screen reader is given
+     the sentence rather than a stream of single letters. */
+  function splitHeading(h) {
+    /* <br> is a deliberate line break in the copy, not whitespace — keep it as
+       a break for the eye and as a space for the label, since textContent
+       drops it entirely and would run the two lines together. */
+    var parts = [], nodes = h.childNodes;
+    for (var n = 0; n < nodes.length; n++) {
+      if (nodes[n].nodeName === 'BR') parts.push('\n');
+      else parts.push(nodes[n].textContent);
+    }
+
+    var text = parts.join(' ').replace(/\s+/g, ' ').trim();
+    if (!text) return null;
+    h.setAttribute('aria-label', text);
+    h.textContent = '';
+
+    var chars = [], frag = document.createDocumentFragment();
+    var words = parts.join('').split(/(\s+|\n)/);
+    for (var w = 0; w < words.length; w++) {
+      var word = words[w];
+      if (!word) continue;
+      if (word === '\n') { frag.appendChild(document.createElement('br')); continue; }
+      if (/^\s+$/.test(word)) { frag.appendChild(document.createTextNode(' ')); continue; }
+      var box = document.createElement('span');
+      box.className = 'tw-w';
+      box.setAttribute('aria-hidden', 'true');
+      for (var c = 0; c < word.length; c++) {
+        var ch = document.createElement('span');
+        ch.className = 'tw-c';
+        ch.textContent = word.charAt(c);
+        box.appendChild(ch);
+        chars.push(ch);
+      }
+      frag.appendChild(box);
+    }
+    h.appendChild(frag);
+    return chars.length ? chars : null;
+  }
+
+  function showAll(chars) {
+    for (var i = 0; i < chars.length; i++) {
+      chars[i].classList.add('on');
+      chars[i].classList.remove('cursor');
+    }
+  }
+
+  /* Driven off elapsed time rather than one timer per character, so the speed
+     is the same on a 60Hz and a 120Hz screen and a long title cannot outrun
+     its own section. The per-character delay shortens as the title grows so
+     the whole line always lands inside TYPE_MAX. */
+  var TYPE_PER = 34, TYPE_MAX = 900, TYPE_HOLD = 240;
+
+  function typeHeading(chars, done) {
+    var n = chars.length, per = Math.min(TYPE_PER, TYPE_MAX / n);
+    var t0 = performance.now(), i = 0;
+    (function step(now) {
+      var want = Math.min(n, Math.floor((now - t0) / per) + 1);
+      while (i < want) {
+        if (i > 0) chars[i - 1].classList.remove('cursor');
+        chars[i].classList.add('on');
+        chars[i].classList.add('cursor');
+        i++;
+      }
+      if (i < n) { requestAnimationFrame(step); return; }
+      /* The caret holds a beat on the last character before the screen opens —
+         without it the body copy arrives while the title is still being read
+         as unfinished. */
+      setTimeout(function () {
+        chars[n - 1].classList.remove('cursor');
+        done();
+      }, TYPE_HOLD);
+    }(performance.now()));
+  }
+
   function armReveals() {
-    var rv = document.querySelectorAll('.rv');
-    if (!('IntersectionObserver' in window) || !rv.length) return;
+    if (!('IntersectionObserver' in window)) return;
+    var chapters = document.querySelectorAll('.chapter');
+    if (!chapters.length) return;
+
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var heads = [], i;
+
+    /* Split first, arm second. If splitting throws we have changed nothing
+       that matters and the page is still the page — so only once every
+       heading is rebuilt do we let the stylesheet start hiding things. */
+    try {
+      for (i = 0; i < chapters.length; i++) {
+        var h = chapters[i].querySelector('h1, h2');
+        heads.push(h ? { sec: chapters[i], h: h, chars: splitHeading(h) }
+                     : { sec: chapters[i], h: null, chars: null });
+      }
+    } catch (e) {
+      for (i = 0; i < heads.length; i++) if (heads[i].chars) showAll(heads[i].chars);
+      throw e;
+    }
     root.classList.add('reveals-armed');
+
+    function release(entry) {
+      /* The stagger is written here, in DOM order, rather than matched with
+         :nth-child in CSS — the sections do not share a shape. */
+      var rv = entry.sec.querySelectorAll('.rv');
+      for (var k = 0; k < rv.length; k++) {
+        rv[k].style.transitionDelay = (k * 0.07).toFixed(2) + 's';
+      }
+      entry.sec.classList.add('typed');
+    }
+
+    function run(entry) {
+      if (entry.done) return;
+      entry.done = true;
+      entry.sec.classList.add('arming');
+      if (!entry.chars || reduced) {
+        if (entry.chars) showAll(entry.chars);
+        release(entry);
+        return;
+      }
+      try {
+        typeHeading(entry.chars, function () { release(entry); });
+      } catch (e) {
+        showAll(entry.chars);
+        release(entry);
+        throw e;
+      }
+    }
+
+    /* Observed on the heading, not on the section. .ch-body is sticky and a
+       screen tall, and on a narrow viewport it is taller than the viewport —
+       a ratio threshold on it can never be met. A heading is small enough to
+       reach full visibility on any screen, and it is also the thing whose
+       arrival we are actually timing. The bottom margin holds the trigger back
+       until the heading has cleared the lower quarter, so the title types as
+       its screen settles rather than while it is still sliding up. */
+    var byHead = [];
+    for (i = 0; i < heads.length; i++) if (heads[i].h) byHead.push(heads[i]);
 
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
-        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        for (var k = 0; k < byHead.length; k++) {
+          if (byHead[k].h === en.target) { run(byHead[k]); return; }
+        }
       });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
-    for (var i = 0; i < rv.length; i++) io.observe(rv[i]);
+    }, { rootMargin: '0px 0px -22% 0px', threshold: 0.75 });
+    for (i = 0; i < byHead.length; i++) io.observe(byHead[i].h);
 
-    /* The schematics get their own observer at a much higher threshold. They
-       live inside the band, which is 1.82 viewports tall and starts
-       intersecting while the previous section is still being read — at the
-       copy's 0.01 they would trace themselves in behind text that has not
-       arrived. Because the layer is sticky at 100svh, its visible fraction is
-       a direct reading of how far its section has come up the screen: 0.62
-       fires as the section lands, which is what "drawn in when we scroll to
-       that section" has to mean. */
-    var tech = document.querySelectorAll('.hitech');
-    if (tech.length) {
-      var ioTech = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting) { en.target.classList.add('in'); ioTech.unobserve(en.target); }
-        });
-      }, { threshold: 0.62 });
-      for (var k = 0; k < tech.length; k++) ioTech.observe(tech[k]);
+    /* The opening screen is above the fold on every viewport — never make the
+       first painted frame wait on an observer. */
+    for (i = 0; i < heads.length; i++) {
+      if (heads[i].sec.id === 'c0') { io.unobserve(heads[i].h); run(heads[i]); }
     }
 
-    /* The opening section is above the fold on every viewport — never make the
-       first painted frame wait on an observer. */
-    var hero = document.querySelectorAll('#c0 .rv, #c0 .hitech');
-    for (var h = 0; h < hero.length; h++) hero[h].classList.add('in');
+    /* A section with no heading has nothing to type, so it opens on its own
+       when it arrives. */
+    var plain = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        plain.unobserve(en.target);
+        for (var k = 0; k < heads.length; k++) {
+          if (heads[k].sec === en.target) { run(heads[k]); return; }
+        }
+      });
+    }, { rootMargin: '0px 0px -25% 0px', threshold: 0.01 });
+    for (i = 0; i < heads.length; i++) if (!heads[i].h) plain.observe(heads[i].sec);
   }
 
   function init() {

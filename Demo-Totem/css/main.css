@@ -194,69 +194,120 @@ img, canvas { max-width: 100%; }
    sections either side of it are near-white and deep violet. */
 .band { position: absolute; inset: 0; z-index: -1; background: var(--bg); }
 
-/* --- schematics: the instrument layer on the uncoloured sections ----------
-   Intro, Method and Team carry no flood colour, so they get a drawn one: a
-   schematic that traces itself in as the section arrives. It lives inside the
-   band, so it inherits that section's skin and sits under both the model and
-   the copy, and it is sticky on the same 100svh rhythm as .ch-body — it holds
-   still while the section is read and leaves with it.
+/* --- the instrument frame -------------------------------------------------
+   The tech drawing is built around the COPY, not around the model. An earlier
+   pass put it in the model's half, which meant it was decorating the thing
+   that is already the most decorated object on the screen; over the text it
+   does a job — it frames what you are meant to read, and it is the thing that
+   arrives once the title has finished typing.
 
-   Every stroked path carries pathLength="1", which is what lets one dash rule
-   draw geometry of any length: the dash and the offset are both 1 unit, so the
-   line is fully retracted at rest and fully drawn at 0 regardless of what it
-   actually measures. --dly on a group staggers the trace.
-   ------------------------------------------------------------------------- */
-.hitech {
-  position: sticky; top: 0; display: block;
-  width: 100%; height: 100svh;
-  pointer-events: none;
-  fill: none; stroke-width: 1.25; stroke-linecap: square;
-  opacity: var(--ht-o, .55);
+   It is sized to .ch-col rather than drawn in a fixed viewBox, so it fits the
+   copy at every breakpoint with no measuring: the same frame wraps a hero, a
+   four-item list and a three-card grid. Straight lines and a tick gradient
+   only — nothing here has an aspect ratio to preserve.
+   ------------------------------------------------------------------------ */
+.ch-col { position: relative; }
+.ch-col > .frame {
+  position: absolute; z-index: -1; pointer-events: none;
+  top: -1.1rem; bottom: -2.4rem; left: -1.1rem; right: -1.1rem;
+  color: var(--contrast);
 }
-.hitech * { vector-effect: non-scaling-stroke; }
-.hitech .l1 { stroke: var(--accent); }
-.hitech .l2 { stroke: var(--contrast); }
-.hitech .l3 { stroke: var(--data); }
-.hitech .hair { stroke: var(--ink); opacity: .28; }
-.hitech .f1 { fill: var(--accent); stroke: none; }
-.hitech .f2 { fill: var(--c-signal); stroke: none; }
-.hitech .bold { stroke-width: 2.5; }
-.hitech text {
-  font-family: var(--f-mono); font-size: 13px; letter-spacing: .18em;
-  fill: var(--ink); stroke: none; opacity: .42;
+@media (min-width: 900px) {
+  .ch-col > .frame { top: -1.5rem; bottom: -2.9rem; left: -1.7rem; right: -1.7rem; }
+}
+.frame i, .frame b { display: block; position: absolute; }
+
+/* corners */
+.frame .fr-c {
+  width: 15px; height: 15px; border: var(--rule-weight) solid currentColor;
+  opacity: 0; transform: scale(.4);
+  transition: opacity .5s var(--e-out), transform .5s var(--e-out);
+}
+.frame .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; transform-origin: top left; }
+.frame .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; transform-origin: top right; }
+.frame .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; transform-origin: bottom left; }
+.frame .br { bottom: 0; right: 0; border-left: 0; border-top: 0; transform-origin: bottom right; }
+
+/* The measurement rail runs down the side the model is NOT on, so it never
+   sits between the copy and the thing it is standing next to. */
+.frame .fr-rail {
+  top: 26px; bottom: 34px; left: 0; width: 8px;
+  border-left: var(--rule-weight) solid var(--accent);
+  background-image: repeating-linear-gradient(to bottom,
+    currentColor 0 1px, transparent 1px var(--fr-pitch, 30px));
+  background-repeat: no-repeat; background-size: 6px 100%;
+  opacity: 0; transform: scaleY(0); transform-origin: top;
+  transition: opacity .45s var(--e-out), transform .8s var(--e-out);
+}
+.side-left .frame .fr-rail {
+  left: auto; right: 0; border-left: 0;
+  border-right: var(--rule-weight) solid var(--accent);
+  background-position: right 0 top 0;
 }
 
-/* Armed only once JS has an observer, on the same principle as the copy
-   reveals: if the script never runs, the schematic is simply drawn. */
-html.reveals-armed .hitech { opacity: 0; transition: opacity 800ms var(--e-out); }
-html.reveals-armed .hitech.in { opacity: var(--ht-o, .55); }
-html.reveals-armed .hitech [data-draw] {
-  stroke-dasharray: 1; stroke-dashoffset: 1;
-  transition: stroke-dashoffset var(--d-draw) var(--e-out) var(--dly, 0s);
+/* The bar under the copy is the readout: a rule, a tick scale and a label. */
+.frame .fr-bar {
+  left: 22px; right: 22px; bottom: 19px; height: 7px;
+  border-top: var(--rule-weight) solid var(--accent);
+  background-image: repeating-linear-gradient(to right,
+    currentColor 0 1px, transparent 1px var(--fr-pitch, 30px));
+  background-repeat: no-repeat; background-size: 100% 5px;
+  opacity: 0; transform: scaleX(0); transform-origin: left;
+  transition: opacity .45s var(--e-out), transform .9s var(--e-out);
 }
-html.reveals-armed .hitech.in [data-draw] { stroke-dashoffset: 0; }
-html.reveals-armed .hitech [data-pop] {
-  opacity: 0; transition: opacity 520ms var(--e-out) var(--dly, 0s);
+.side-left .frame .fr-bar { transform-origin: right; }
+.frame .fr-tag {
+  bottom: 0; left: 22px;
+  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--faint); font-weight: 400;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .5s var(--e-out), transform .5s var(--e-out);
 }
-html.reveals-armed .hitech.in [data-pop] { opacity: 1; }
+.side-left .frame .fr-tag { left: auto; right: 22px; }
 
-/* Two pieces stay live once drawn, so the component reads as instrumentation
-   rather than as a decal: a sweep down the lattice and a status lamp. Both are
-   plainly visible when the reveals are not armed — the animation is the
-   enhancement, never what makes them exist. */
-.hitech .sweep, .hitech .lamp { opacity: .5; }
-.hitech .sweep { transform-box: view-box; transform-origin: 0 0; }
-html.reveals-armed .hitech .sweep, html.reveals-armed .hitech .lamp { opacity: 0; }
-.hitech.in .sweep { animation: ht-sweep 7s var(--e-inout) 1.2s infinite; }
-.hitech.in .lamp  { animation: ht-lamp 2.6s steps(1, end) 1.4s infinite; }
-@keyframes ht-sweep {
-  0%   { transform: translateY(0);                   opacity: 0; }
-  10%  {                                             opacity: .95; }
-  50%  { transform: translateY(var(--sweep, 420px)); opacity: .95; }
-  62%  { transform: translateY(var(--sweep, 420px)); opacity: 0; }
-  100% { transform: translateY(0);                   opacity: 0; }
+/* One pass of the reader down the frame, once, after the title lands. */
+.frame .fr-sweep { inset: 0; overflow: hidden; }
+.frame .fr-sweep i {
+  left: 0; right: 0; top: 0; height: 2px; opacity: 0;
+  background: linear-gradient(to right, transparent,
+    var(--accent) 30%, var(--accent) 70%, transparent);
 }
-@keyframes ht-lamp { 0%, 55% { opacity: 1; } 56%, 100% { opacity: .12; } }
+
+/* Everything in the frame waits for the caret to stop. */
+.chapter.typed .frame .fr-c { opacity: .9; transform: scale(1); }
+.chapter.typed .frame .tr { transition-delay: .06s; }
+.chapter.typed .frame .bl { transition-delay: .12s; }
+.chapter.typed .frame .br { transition-delay: .18s; }
+.chapter.typed .frame .fr-rail { opacity: .75; transform: scaleY(1); transition-delay: .10s; }
+.chapter.typed .frame .fr-bar  { opacity: .75; transform: scaleX(1); transition-delay: .16s; }
+.chapter.typed .frame .fr-tag  { opacity: 1; transform: none; transition-delay: .46s; }
+.chapter.typed .frame .fr-sweep i { animation: fr-sweep 1.7s var(--e-inout) .3s 1 both; }
+@keyframes fr-sweep {
+  0%   { top: 0;    opacity: 0; }
+  14%  {            opacity: .8; }
+  86%  {            opacity: .8; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* --- the typed title -----------------------------------------------------
+   Every character is in the DOM from the start and merely invisible, so the
+   heading occupies its final box before the first one lands: nothing reflows
+   as it types, and text-wrap: balance still gets the whole string to balance.
+   Words are inline-block so the browser cannot break a line between two
+   characters of the same word — which is what a bare span-per-character does.
+
+   The caret is an absolutely positioned ::after on whichever character was
+   typed last, so it costs no layout either.
+   ------------------------------------------------------------------------ */
+.tw-w { display: inline-block; white-space: nowrap; }
+.tw-c { position: relative; visibility: hidden; }
+.tw-c.on { visibility: visible; }
+.tw-c.cursor::after {
+  content: ''; position: absolute; right: -.07em; top: .1em; bottom: .16em;
+  width: .06em; background: var(--accent);
+  animation: tw-blink .82s steps(1, end) infinite;
+}
+@keyframes tw-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
 
 .ch-body {
   /* Narrow: in flow. A pinned block taller than the viewport hides its own
@@ -588,18 +639,29 @@ html:not([data-chapter="5"]) .wall-belt { animation-play-state: paused; }
 }
 
 /* --- reveals ------------------------------------------------------------- */
-/* Copy is visible here. It is hidden only while .reveals-armed is on the root,
+/* The sequence per screen is: the eyebrow arrives, the title types, and only
+   when the caret stops do the body copy and the frame come in. So a reveal is
+   no longer a property of the element meeting the viewport — it is a property
+   of its section having finished typing, and js/app.js stamps .arming and
+   .typed on the <section> to drive both halves.
+
+   Copy is visible here. It is hidden only while .reveals-armed is on the root,
    which JS adds after it has successfully set up an observer — and removes
    again from a failsafe timer or its own error handler. Nothing on this page
    may leave text invisible because a script did not finish. */
-html.reveals-armed .rv { opacity: 0; transform: translateY(16px);
+html.reveals-armed .rv,
+html.reveals-armed .rv-lead { opacity: 0; transform: translateY(16px);
   transition: opacity .85s var(--e-out), transform .85s var(--e-out); }
-html.reveals-armed .rv.in { opacity: 1; transform: none; }
-html.reveals-armed .rv:nth-child(2) { transition-delay: .06s; }
-html.reveals-armed .rv:nth-child(3) { transition-delay: .12s; }
-html.reveals-armed .rv:nth-child(4) { transition-delay: .18s; }
-html.reveals-armed .rv:nth-child(5) { transition-delay: .24s; }
-html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
+
+/* The eyebrow leads: it is the label on the thing about to be typed, so it is
+   already there when the caret starts. */
+html.reveals-armed .chapter.arming .rv-lead { opacity: 1; transform: none; }
+html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
+
+/* The stagger is written onto the elements by app.js in DOM order rather than
+   matched with :nth-child here — the sections do not share a shape, and after
+   the .head blocks were split the positional rules were counting the wrong
+   children. */
 
 /* ===========================================================================
    Per-chapter aesthetic. Everything discrete lives here so the whole look —
@@ -749,12 +811,12 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .card { padding: .8rem .9rem; }
 }
 
-/* The schematic is drawn for a wide frame; cropped to a phone it becomes a few
-   stray lines behind the copy. Keep the spine and the sweep, lose the detail,
-   and take the whole layer down so it never fights the text. */
+/* On a phone the copy column is the whole screen, so the frame's outer rail
+   would sit in the 20px gutter and read as a stray line at the edge. Corners,
+   bar and tag carry the idea on their own at that width. */
 @media (max-width: 899px) {
-  .hitech { --ht-o: .38; }
-  .hitech .detail { display: none; }
+  .frame .fr-rail { display: none; }
+  .frame .fr-c { width: 11px; height: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -764,20 +826,21 @@ html.reveals-armed .rv:nth-child(6) { transition-delay: .30s; }
   .wall-belt li.dup { display: none; }
   .wall-row { overflow: visible; -webkit-mask-image: none; mask-image: none; }
   .wall { margin-inline: 0; }
-  html.reveals-armed .rv { opacity: 1; transform: none; transition: none; }
+  html.reveals-armed .rv,
+  html.reveals-armed .rv-lead { opacity: 1; transform: none; transition: none; }
   .stage, .doc, .cta, .texture span { transition: none; }
   .cta:hover { transform: none; }
 
-  /* The schematic still appears — it just arrives rather than being traced. */
-  html.reveals-armed .hitech,
-  html.reveals-armed .hitech [data-draw],
-  html.reveals-armed .hitech [data-pop] { transition: none; }
-  html.reveals-armed .hitech { opacity: var(--ht-o, .55); }
-  html.reveals-armed .hitech [data-draw] { stroke-dashoffset: 0; }
-  html.reveals-armed .hitech [data-pop] { opacity: 1; }
-  .hitech .sweep, .hitech.in .sweep, .hitech .lamp, .hitech.in .lamp {
-    animation: none; opacity: .5;
-  }
+  /* No typing and no sweep: the title is simply there, and the frame arrives
+     with it rather than being drawn. app.js also skips the caret entirely. */
+  .tw-c { visibility: visible; }
+  .tw-c.cursor::after { display: none; }
+  .frame i, .frame b { transition: none !important; }
+  .frame .fr-sweep { display: none; }
+  .chapter .frame .fr-c { opacity: .9; transform: none; }
+  .chapter .frame .fr-rail { opacity: .75; transform: none; }
+  .chapter .frame .fr-bar { opacity: .75; transform: none; }
+  .chapter .frame .fr-tag { opacity: 1; transform: none; }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
@@ -791,7 +854,8 @@ html.theming .rail button i, html.theming .hud, html.theming .hud b,
 html.theming .colophon, html.theming .card,
 html.theming .wall .wm, html.theming .thumb,
 html.theming .portrait, html.theming .roster li,
-html.theming .band, html.theming .chapter strong {
+html.theming .band, html.theming .chapter strong, html.theming .frame i,
+html.theming .frame b {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;
 }

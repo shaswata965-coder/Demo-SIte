@@ -64,39 +64,18 @@
 
   <!-- ====================================================== 00 — intro -->
   <section class="chapter skin sk-paper is-side side-right" id="c0">
-    <span class="band" aria-hidden="true">
-      <!-- 00 — cold boot: a spine in the gutter, a bus off the rail, an
-           aperture round the model. Copy is the left half; nothing here
-           crosses x=740. -->
-      <svg class="hitech" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <g style="--dly:0s">
-          <path class="l1" data-draw pathLength="1" d="M32 128V822"/>
-          <path class="hair detail" data-draw pathLength="1" d="M32 190H48M32 266H44M32 342H48M32 418H44M32 494H48M32 570H44M32 646H48M32 722H44"/>
-        </g>
-        <g style="--dly:.16s">
-          <path class="hair" data-draw pathLength="1" d="M772 822H1568"/>
-          <path class="l3 detail" data-draw pathLength="1" d="M860 822V798M960 822V810M1060 822V798M1160 822V810M1260 822V798M1360 822V810"/>
-        </g>
-        <g class="detail" style="--dly:.34s">
-          <path class="l2" data-draw pathLength="1" d="M812 822V706H906"/>
-          <path class="l2" data-draw pathLength="1" d="M1470 822V666H1382"/>
-          <circle class="f2" data-pop style="--dly:1.15s" cx="906" cy="706" r="5.5"/>
-          <circle class="f2" data-pop style="--dly:1.25s" cx="1382" cy="666" r="5.5"/>
-        </g>
-        <g style="--dly:.5s">
-          <circle class="l1" data-draw pathLength="1" cx="1150" cy="446" r="308"/>
-          <circle class="l3 detail" data-draw pathLength="1" cx="1150" cy="446" r="372"/>
-          <path class="l1 bold" data-draw pathLength="1" d="M1150 104V156M1150 736V788M786 446H838M1462 446H1514"/>
-        </g>
-        <path class="hair detail" data-draw style="--dly:.68s" pathLength="1" d="M1478 104H1568V194"/>
-        <circle class="f1 lamp" cx="1556" cy="822" r="7"/>
-        <text class="detail" data-pop style="--dly:1.35s" x="1478" y="228">pwr</text>
-      </svg>
-    </span>
+    <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:30px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.00 &middot; seed</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <p class="marker rv"><i></i> 00 &mdash; Inference efficiency</p>
-      <h1 class="rv">Same model.<br>Half the bill.</h1>
+      <p class="marker rv-lead"><i></i> 00 &mdash; Inference efficiency</p>
+      <h1>Same model.<br>Half the bill.</h1>
       <p class="lede rv">AXON is a <em>four-person consultancy</em> that makes large
       language models cheaper to serve &mdash; rebuilding the path you actually run,
       <strong>measured against your p99 and your evals.</strong></p>
@@ -119,9 +98,16 @@
   <section class="chapter skin sk-violet is-side side-left" id="c1">
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:24px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.01 &middot; bloom</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <p class="marker rv"><i></i> 01 &mdash; Services</p>
-      <h2 class="rv">Four levers on the bill</h2>
+      <p class="marker rv-lead"><i></i> 01 &mdash; Services</p>
+      <h2>Four levers on the bill</h2>
       <p class="rv">Most teams pull <em>one</em> of these and could pull all four. We take
       the ones with headroom and <strong>leave the rest alone.</strong></p>
 
@@ -165,44 +151,20 @@
 
   <!-- ===================================================== 02 — method -->
   <section class="chapter skin sk-paper is-side side-right" id="c2">
-    <span class="band" aria-hidden="true">
-      <!-- 02 — the method as the stack the model is holding. Same half as the
-           model; the copy column is the left one. -->
-      <svg class="hitech" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <g style="--dly:0s">
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.00s" x="946" y="176" width="408" height="30"/>
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.09s" x="946" y="260" width="408" height="30"/>
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.18s" x="946" y="344" width="408" height="30"/>
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.27s" x="946" y="428" width="408" height="30"/>
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.36s" x="946" y="512" width="408" height="30"/>
-          <rect class="l1" data-draw pathLength="1" style="--dly:0.45s" x="946" y="596" width="408" height="30"/>
-        </g>
-        <path class="l3 detail" data-draw style="--dly:.56s" pathLength="1" d="M1008 206V260 M1104 206V260 M1200 206V260 M1296 206V260 M1008 290V344 M1104 290V344 M1200 290V344 M1296 290V344 M1008 374V428 M1104 374V428 M1200 374V428 M1296 374V428 M1008 458V512 M1104 458V512 M1200 458V512 M1296 458V512 M1008 542V596 M1104 542V596 M1200 542V596 M1296 542V596"/>
-        <g class="detail" style="--dly:.72s">
-          <path class="l2" data-draw pathLength="1" d="M1354 596H1452V446H1518"/>
-          <path class="l2" data-draw pathLength="1" d="M1354 191H1452V446"/>
-          <circle class="f2" data-pop style="--dly:1.5s" cx="1518" cy="446" r="7"/>
-        </g>
-        <g style="--dly:.2s">
-          <path class="l1" data-draw pathLength="1" d="M32 128V822"/>
-          <path class="hair detail" data-draw pathLength="1" d="M32 191H48M32 275H44M32 359H48M32 443H44M32 527H48M32 611H44"/>
-          <path class="hair" data-draw pathLength="1" d="M772 822H1568"/>
-        </g>
-        <g class="detail" style="--dly:.86s">
-          <path class="l3" data-draw pathLength="1" d="M846 822V770H946"/>
-          <text data-pop style="--dly:1.6s" x="846" y="756">p99 path</text>
-          <text data-pop style="--dly:1.7s" x="946" y="154">levers 04</text>
-        </g>
-        <circle class="f1 lamp" cx="1556" cy="822" r="7"/>
-        <text class="detail" data-pop style="--dly:1.35s" x="1478" y="228">trace</text>
-      </svg>
-    </span>
+    <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:34px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.02 &middot; infer</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <div class="head rv">
-        <p class="marker"><i></i> 02 &mdash; Method</p>
+      <div class="head">
+        <p class="marker rv-lead"><i></i> 02 &mdash; Method</p>
         <h2>Four weeks, measure to shipped</h2>
-        <p class="head-p">One engagement, one fixed shape. The numbers land in week
+        <p class="head-p rv">One engagement, one fixed shape. The numbers land in week
         one, so <strong>you can stop after it if they are boring.</strong></p>
       </div>
 
@@ -244,11 +206,18 @@
   <section class="chapter skin sk-lemon is-full" id="c3">
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:27px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.03 &middot; settle</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <div class="head rv">
-        <p class="marker"><i></i> 03 &mdash; Selected work</p>
+      <div class="head">
+        <p class="marker rv-lead"><i></i> 03 &mdash; Selected work</p>
         <h2>Projects</h2>
-        <p class="head-p">Three of the last twelve. Every figure is the client's own
+        <p class="head-p rv">Three of the last twelve. Every figure is the client's own
         measurement, taken against <em>their</em> pre-AXON baseline. Imagery is
         generated placeholder art.</p>
       </div>
@@ -369,38 +338,20 @@
 
   <!-- ======================================================= 04 — team -->
   <section class="chapter skin sk-paper is-side side-left" id="c4">
-    <span class="band" aria-hidden="true">
-      <!-- 04 — the roster as a lattice under a seal, with a sweep reading it
-           back. Mirrored: this section runs model-left, so the schematic
-           takes the left half and the spine moves to the right gutter. -->
-      <svg class="hitech" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <g style="--dly:0s">
-          <path class="l1" data-draw pathLength="1" d="M180 168V600 M252 168V600 M324 168V600 M396 168V600 M468 168V600 M540 168V600 M612 168V600"/>
-          <path class="l3" data-draw pathLength="1" style="--dly:.2s" d="M180 168H612 M180 240H612 M180 312H612 M180 384H612 M180 456H612 M180 528H612 M180 600H612"/>
-        </g>
-        <g style="--dly:.62s">
-          <circle class="l2 bold" data-draw pathLength="1" cx="396" cy="384" r="62"/>
-          <circle class="l2 detail" data-draw pathLength="1" cx="396" cy="384" r="100"/>
-          <path class="l2 detail" data-draw pathLength="1" d="M396 260V302M396 466V508M272 384H314M478 384H520"/>
-        </g>
-        <line class="l2 bold sweep" style="--sweep:432px" x1="180" y1="168" x2="612" y2="168"/>
-        <g style="--dly:.22s">
-          <path class="l1" data-draw pathLength="1" d="M1568 128V822"/>
-          <path class="hair detail" data-draw pathLength="1" d="M1568 200H1552M1568 300H1556M1568 400H1552M1568 500H1556M1568 600H1552M1568 700H1556"/>
-          <path class="hair" data-draw pathLength="1" d="M32 822H700"/>
-        </g>
-        <path class="l3 bold detail" data-draw style="--dly:.42s" pathLength="1" d="M188 822V768 M226 822V742 M264 822V782 M302 822V730 M340 822V774 M378 822V750 M416 822V790 M454 822V736 M492 822V764 M530 822V744 M568 822V786 M606 822V754"/>
-        <path class="hair detail" data-draw style="--dly:.9s" pathLength="1" d="M122 104H32V194"/>
-        <circle class="f1 lamp" cx="44" cy="822" r="7"/>
-        <text class="detail" data-pop style="--dly:1.35s" x="150" y="110">roster</text>
-      </svg>
-    </span>
+    <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:30px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.04 &middot; vault</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <div class="head rv">
-        <p class="marker"><i></i> 04 &mdash; The team</p>
+      <div class="head">
+        <p class="marker rv-lead"><i></i> 04 &mdash; The team</p>
         <h2>Four people, no bench</h2>
-        <p class="head-p">Everyone you meet in the first call is <em>on the work</em>.
+        <p class="head-p rv">Everyone you meet in the first call is <em>on the work</em>.
         We run two engagements at a time and <strong>say no to the third.</strong>
         Portraits are generated stand-ins.</p>
       </div>
@@ -471,6 +422,13 @@
   <section class="chapter skin sk-cyan is-full" id="c5">
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:22px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.05 &middot; ledger</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
       <svg class="sprite" aria-hidden="true" focusable="false">
         <symbol id="gx0" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="none" stroke-width="2"/><circle cx="16" cy="16" r="3.5"/></symbol>
@@ -487,10 +445,10 @@
         <symbol id="gx11" viewBox="0 0 32 32"><rect x="6" y="9" width="20" height="3.5" rx="1.5"/><rect x="6" y="15" width="14" height="3.5" rx="1.5"/><rect x="6" y="21" width="8" height="3.5" rx="1.5"/></symbol>
       </svg>
 
-      <div class="head rv">
-        <p class="marker"><i></i> 05 &mdash; Collaborations</p>
+      <div class="head">
+        <p class="marker rv-lead"><i></i> 05 &mdash; Collaborations</p>
         <h2>Who we build with</h2>
-        <p class="head-p">A small team stays small by borrowing &mdash;
+        <p class="head-p rv">A small team stays small by borrowing &mdash;
         <strong>model labs, runtimes, accelerators, and the platforms our clients
         are already running on.</strong></p>
       </div>
@@ -528,9 +486,16 @@
   <section class="chapter skin sk-ember is-side side-right" id="c6">
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- instrument frame: sized to the copy, not to the model -->
+      <div class="frame" aria-hidden="true" style="--fr-pitch:36px">
+        <i class="fr-c tl"></i><i class="fr-c tr"></i><i class="fr-c bl"></i><i class="fr-c br"></i>
+        <i class="fr-rail"></i><i class="fr-bar"></i>
+        <b class="fr-tag">fig.06 &middot; core</b>
+        <i class="fr-sweep"><i></i></i>
+      </div>
 
-      <p class="marker rv"><i></i> 06 &mdash; Start here</p>
-      <h2 class="rv">Send us your p99</h2>
+      <p class="marker rv-lead"><i></i> 06 &mdash; Start here</p>
+      <h2>Send us your p99</h2>
       <p class="rv">One page on what you serve and where it hurts. We answer inside
       two working days with <em>whether we can help</em> &mdash;
       <strong>and, if we can't, who can.</strong></p>

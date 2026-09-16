@@ -279,42 +279,75 @@ body background
 and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
 wrapper rather than sitting directly in the section.
 
-## Schematics on the paper sections
+## The typed title, and the frame around the copy
 
-Intro, Method and Team carry no flood colour, so they get a drawn one instead:
-an instrument layer that traces itself in as the section arrives. `#c0` is a
-spine in the gutter, a bus off the baseline rail and an aperture around the
-model; `#c2` is the four levers as the stack the model is holding; `#c4` is the
-roster as a lattice under a seal, with a sweep reading down it — mirrored,
-because Team runs model-left.
+Each screen runs one sequence, and everything on it waits its turn:
 
-Each one lives inside `.band`, so it inherits that section's skin and sits under
-both the model and the copy, and it is `position: sticky` on the same 100svh
-rhythm as `.ch-body` — it holds still while the section is read and leaves with
-it.
+1. the eyebrow arrives — `.arming` on the `<section>`
+2. the title types, character by character, with a caret
+3. the caret stops, and the body copy and the instrument frame come in —
+   `.typed` on the `<section>`
 
-**Every stroked path carries `pathLength="1"`.** That is what lets a single CSS
-rule draw geometry of any length: dash and offset are both 1 unit, so a line is
-fully retracted at rest and fully drawn at 0 regardless of what it measures.
-`--dly` on a group staggers the trace. Two pieces stay live once drawn — a
-sweep down the lattice and a status lamp — so the layer reads as instrumentation
-rather than as a decal.
+So a reveal is no longer a property of an element meeting the viewport; it is a
+property of its section having finished typing. `js/app.js` stamps the two
+classes and the stylesheet does the rest.
 
-**Where the geometry may go was measured, not guessed.** At 1280x720, 1440x900
-and 1920x1080 the copy column fills its half of the container from y=89 to
-y=851 in the 1600x900 viewBox, and reaches x=740 on the side-right sections and
-back to x=860 on the side-left one. There is no free strip above or below it, so
-the schematic lives in the model's half plus a spine in the far gutter and
-nothing crosses the middle. Move the copy and you have to re-measure.
+### Typing without reflow
 
-They get their **own** observer at `threshold: 0.62`, not the copy's `0.01`. The
-band is 1.82 viewports tall and starts intersecting while the previous section
-is still being read; at the copy's threshold they would trace themselves in
-behind text that has not arrived. Because the layer is sticky at 100svh, its
-visible fraction is a direct reading of how far its section has come up the
-screen — 0.62 fires about 80% through the section before, as this one lands.
-Like the copy reveals, the dash rules are armed only under `html.reveals-armed`,
-so a script failure leaves the schematic simply drawn.
+**Every character is in the DOM from the start and merely invisible.** The
+heading therefore occupies its final box before the first character lands:
+nothing reflows as it types, and `text-wrap: balance` still gets the whole
+string to balance against. Truncating `textContent` per frame — the obvious
+implementation — does the opposite of all three.
+
+Characters are wrapped **a word at a time** in `.tw-w { display: inline-block }`,
+because a bare span per character lets the browser break a line between any two
+letters of a word. The caret is an absolutely positioned `::after` on whichever
+character was typed last, so it costs no layout either.
+
+The real sentence goes to an `aria-label` on the heading and the character
+spans are `aria-hidden`, so a screen reader is handed the sentence rather than
+a stream of single letters. `<br>` is kept as a break for the eye and as a
+space for the label — `textContent` drops it entirely and would otherwise run
+the two lines together.
+
+Typing is driven off elapsed time in one `requestAnimationFrame` loop rather
+than a timer per character, so it runs at the same speed on a 60Hz and a 120Hz
+screen. The per-character delay shortens as the title grows (`TYPE_PER` capped
+by `TYPE_MAX`), so a long title cannot outrun its own screen.
+
+The trigger is observed on the **heading**, not on the section. `.ch-body` is
+sticky and a screen tall, and on a narrow viewport it is *taller* than the
+viewport — an `intersectionRatio` threshold on it can never be met. A heading
+is small enough to reach full visibility on any screen, and it is also the
+thing whose arrival is being timed.
+
+### The frame
+
+The tech drawing is built around the **copy**, not around the model. An earlier
+pass put it in the model's half, which meant it was decorating the thing that is
+already the most decorated object on the screen. Over the text it does a job: it
+frames what you are meant to read, and it is what arrives when the title lands.
+
+It is sized to `.ch-col` rather than drawn in a fixed viewBox, so the same frame
+fits a hero, a four-item list and a three-card grid with no measuring and no
+per-breakpoint geometry. Straight lines and a tick gradient only — nothing in it
+has an aspect ratio to preserve:
+
+| | |
+|---|---|
+| `.fr-c` ×4 | corner brackets, scaling in from each corner in turn |
+| `.fr-rail` | a ticked measurement rail down the side the model is *not* on, so it never sits between the copy and the thing beside it |
+| `.fr-bar` | the readout under the copy — a rule, a tick scale, and `fig.0N · <arrangement>` naming the model's current state |
+| `.fr-sweep` | one pass of the reader down the frame, once |
+
+`--fr-pitch` sets the tick spacing per section, so the scale is not identical
+seven times over. On a phone the rail is dropped: the copy column is the whole
+screen there, so the rail would sit in the 20px gutter and read as a stray line
+at the edge.
+
+Under `prefers-reduced-motion` there is no typing, no caret and no sweep — the
+title is simply there and the frame arrives with it.
 
 ## Narrow screens
 
@@ -560,6 +593,13 @@ visible in the stylesheet and hidden only once reveals are armed, so if the
 model throws, the hiding never happens, the page is a readable static page, and
 the error reaches the console rather than being swallowed. There is no timer and
 no `catch` doing this — just the call order.
+
+The same rule holds one level down, now that the headings are rebuilt into
+character spans. Every heading is **split first and armed second**: if splitting
+throws, the headings that were already rebuilt are shown outright and
+`reveals-armed` is never added, so the page is still the page. If a section's
+typing throws, that section shows its title and opens immediately rather than
+sitting on a half-typed line.
 
 Scroll progress is measured from `getBoundingClientRect()`, not `window.scrollY`:
 when the page is embedded, the element doing the scrolling may not be the
