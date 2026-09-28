@@ -652,6 +652,21 @@
     this.render();
   };
 
+  /* How far arrangement `state` can reach sideways from its centre, as a
+     multiple of the drawn radius at zoom 1: its widest unit's distance from
+     the vertical axis, times its pose scale. Yaw is the only rotation that
+     moves a unit across the screen, and it can swing any unit side-on, so this
+     bounds the arrangement at every angle it will be turned to. The page uses
+     it to wire the copy towards the model without touching it. */
+  NeuralField.prototype.reach = function (state) {
+    var s = clamp(state | 0, 0, NS - 1), P = this.shapes[s], c = this.centres[s], m = 0;
+    for (var i = 0; i < this.cfg.nodes; i++) {
+      var x = P[i * 3] - c[0], z = P[i * 3 + 2] - c[2];
+      if (x * x + z * z > m) m = x * x + z * z;
+    }
+    return Math.sqrt(m) * POSE_SCALE[s];
+  };
+
   NeuralField.prototype.setProgress = function (p, immediate) {
     this.targetProgress = clamp(p, 0, NS - 1);
     if (immediate || this.reduced) this.progress = this.targetProgress;

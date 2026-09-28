@@ -38,19 +38,6 @@ body {
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 img, canvas { max-width: 100%; }
 
-/* --- texture ------------------------------------------------------------- */
-.texture { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.texture span {
-  position: absolute; inset: -40px; display: block;
-  transition: opacity var(--d-theme) var(--e-inout);
-}
-.texture .rules, .texture .scan { display: none; }
-.texture .dots {
-  opacity: 1;
-  background-image: radial-gradient(var(--tex-ink) 1.2px, transparent 1.2px);
-  background-size: 30px 30px;
-}
-
 /* --- the model stage ------------------------------------------------------
    One fixed canvas the size of the viewport, for the whole page. It is never
    resized by the layout and never scaled by CSS — both of those would either
@@ -204,12 +191,18 @@ img, canvas { max-width: 100%; }
    drawing reads as a border, not as instrumentation.
 
    What makes a panel read as live is movement and small dense detail, so this
-   one has: a scanning beam that carries its own scanline texture, a bus down
-   the outer edge with pulses running along it, registration crosshairs rather
-   than plain corners, and a readout strip whose numbers are the model's actual
-   state — the arrangement it is holding, where the scroll is, how far through
-   this screen you are. Nothing in it is decorative typography pretending to be
-   data; it is the same `progress` the rest of the page is built on.
+   one has: a scanning beam that carries its own scanline texture and whose
+   first pass is what reveals the copy, a circuit layer in the margins (a bus
+   down the outer edge, a chip wired into a small network on the model's side),
+   registration crosshairs rather than plain corners, and a readout strip whose
+   numbers are the model's actual state — the arrangement it is holding, where
+   the scroll is, how far through this screen you are. Nothing in it is
+   decorative typography pretending to be data; it is the same `progress` the
+   rest of the page is built on.
+
+   No grid. The panel had a 72px measurement grid for a surface and the page a
+   30px dot grid behind everything; both went, because two grids behind copy
+   that already sits on a band read as graph paper rather than as a screen.
 
    Sized to .ch-col, so the same panel fits a hero, a four-item list and a
    three-card grid with no per-breakpoint geometry.
@@ -231,21 +224,16 @@ img, canvas { max-width: 100%; }
 .chapter.typed .rig { opacity: 1; }
 .rig > i { display: block; position: absolute; }
 
-/* Instrument ground: a coarse measurement grid, the panel's own surface. */
-.rig-grid {
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(to right,  currentColor 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px 72px);
-  opacity: 0; transition: opacity .9s var(--e-out) .1s;
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
-          mask-image: radial-gradient(120% 90% at 50% 40%, #000 35%, transparent 100%);
-}
-.chapter.typed .rig-grid { opacity: .16; }
-
 /* The beam. It carries the scanlines with it, so the fine texture exists only
    where the scanner is — which is the difference between a screen that has a
-   scanline filter on it and a screen that is being read. */
+   scanline filter on it and a screen that is being read.
+
+   Its first pass is the scan that reveals the copy. It starts when the title
+   has finished typing, from the first line it has to reveal (--scan-from), and
+   runs at constant speed for --scan-d — linear on purpose, because app.js times
+   each line of copy to the moment this leading edge crosses it and the two have
+   to agree. Both are written onto the <section> by that same calculation.
+   After it, the slower idle sweep takes over for as long as the screen is live. */
 .rig-beam { inset: 0; overflow: hidden; }
 .rig-beam::before {
   content: ''; position: absolute; left: 0; right: 0; top: -150px; height: 150px;
@@ -257,7 +245,17 @@ img, canvas { max-width: 100%; }
   border-bottom: 1px solid var(--accent);
   box-shadow: 0 6px 18px -6px var(--accent);
 }
-.chapter.live .rig-beam::before { animation: rig-beam 5.4s var(--e-inout) infinite; }
+.chapter.live.typed .rig-beam::before {
+  animation:
+    rig-scan var(--scan-d, 2s) linear,
+    rig-beam 5.4s var(--e-inout) calc(var(--scan-d, 2s) + 1.4s) infinite;
+}
+@keyframes rig-scan {
+  0%   { top: calc(var(--scan-from, 0px) - 150px); opacity: 0; }
+  4%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
 @keyframes rig-beam {
   0%   { top: -150px; opacity: 0; }
   10%  { opacity: .9; }
@@ -281,28 +279,105 @@ img, canvas { max-width: 100%; }
 .chapter.typed .rig-reg.bl { transition-delay: .10s; }
 .chapter.typed .rig-reg.br { transition-delay: .15s; }
 
-/* The bus runs down the side the model is NOT on, so it never sits between the
-   copy and the thing standing next to it. Three pulses travel it on a loop. */
-.rig-bus {
-  top: 22px; bottom: 40px; left: 0; width: 1px; background: currentColor;
-  opacity: 0; transform: scaleY(0); transform-origin: top;
-  transition: opacity .4s var(--e-out) .1s, transform .75s var(--e-out) .1s;
+/* --- circuit layer --------------------------------------------------------
+   Drawn by js/circuit.js into one <svg class="rig-circ"> per panel: a bus down
+   the outer edge, and a chip wired into a small three-layer network on the
+   model's side (or, where the model is behind the copy, in the empty end of the
+   readout strip). Three rules keep it from being decoration for its own sake:
+
+     · it lives in the margins — nothing in it is ever under a line of copy
+     · it draws itself in with the rest of the panel, as the scan starts
+     · it moves only on the live screen, and what moves is a signal: pulses ride
+       the bus, and one inference runs chip → inputs → hidden → output on a
+       loop, the output ring firing as it lands
+
+   Traces take the rig's colour, the structure hue; signal is the accent; units
+   are the data hue and the output the signal hue — the page's four, in the
+   roles the model gives them.
+   ------------------------------------------------------------------------ */
+.rig-circ { position: absolute; left: 0; top: 0; overflow: visible; }
+
+/* Draw-in: every trace has pathLength="100", so one dash pattern draws any of
+   them from end to end whatever its real length. --d staggers the pieces. */
+.rig-circ .tr, .rig-circ .lk {
+  fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round;
+  stroke-dasharray: 100 100; stroke-dashoffset: 100;
 }
-.side-left .rig-bus { left: auto; right: 0; }
-.chapter.typed .rig-bus { opacity: .55; transform: scaleY(1); }
-.rig-bus > i {
-  position: absolute; left: -2px; width: 5px; height: 5px; border-radius: 50%;
-  background: var(--accent); opacity: 0;
-  box-shadow: 0 0 8px 1px var(--accent);
+.rig-circ .tr { stroke-opacity: .62; }
+.rig-circ .lk { stroke-opacity: .3; }
+.chapter.typed .rig-circ .tr, .chapter.typed .rig-circ .lk {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s var(--e-out) var(--d, 0s);
 }
-.chapter.live .rig-bus > i { animation: rig-pulse 3.2s linear infinite; }
-.chapter.live .rig-bus > i:nth-child(2) { animation-delay: 1.07s; }
-.chapter.live .rig-bus > i:nth-child(3) { animation-delay: 2.13s; }
-@keyframes rig-pulse {
-  0%   { top: 0;    opacity: 0; }
-  8%   { opacity: 1; }
-  88%  { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
+
+.rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd, .ring) {
+  opacity: 0; transition: opacity .45s var(--e-out) var(--d, 0s);
+}
+.rig-circ .via  { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
+.rig-circ .pad  { fill: currentColor; }
+.rig-circ .chip { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
+.rig-circ .chip-dot { fill: currentColor; }
+.rig-circ .pin  { stroke: currentColor; stroke-width: 1.2; --d: .15s; }
+.rig-circ .nd   { fill: var(--data); }
+.rig-circ .nd.out { fill: var(--c-signal); }
+.rig-circ .ring { fill: none; stroke: var(--c-signal); stroke-width: 1; }
+.chapter.typed .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
+.chapter.typed .rig-circ .ring { opacity: .5; }
+
+/* Signal. Pulses travel in real pixels (--len is each path's length), so a
+   comet is the same size on a 40px link and a 600px bus. */
+.rig-circ .pl {
+  fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round;
+  stroke-dasharray: 9px 4000px; stroke-dashoffset: 9px; opacity: 0;
+  filter: drop-shadow(0 0 2.5px var(--accent));
+}
+.rig-circ .pl.bus { stroke-dasharray: 14px 4000px; stroke-dashoffset: 14px; }
+.rig-circ .hl { fill: var(--accent); opacity: 0; }
+.rig-circ .fire {
+  fill: none; stroke: var(--c-signal); stroke-width: 1.2; opacity: 0;
+  transform-box: fill-box; transform-origin: center;
+}
+
+.chapter.live.typed .rig-circ .pl.bus {
+  animation: cp-run 3.4s linear calc(1s + var(--pd, 0s)) infinite;
+}
+.chapter.live.typed .rig-circ .pl.s1 { animation: cp-s1 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .pl.s2 { animation: cp-s2 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .pl.s3 { animation: cp-s3 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .hl.f1 { animation: cp-f1 4.8s ease-out 1.4s infinite; }
+.chapter.live.typed .rig-circ .hl.f2 { animation: cp-f2 4.8s ease-out 1.4s infinite; }
+.chapter.live.typed .rig-circ .fire { animation: cp-fire 4.8s var(--e-out) 1.4s infinite; }
+
+@keyframes cp-run {
+  0%   { stroke-dashoffset: 14px; opacity: 0; }
+  6%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+/* One 4.8s inference: feed (0–27%), inputs → hidden (29–48%), hidden → output
+   (50–66%), output fires (64–90%). The stages hand over rather than overlap,
+   so it reads as one signal moving through, not three things blinking. */
+@keyframes cp-s1 {
+  0%        { stroke-dashoffset: 9px; opacity: 0; }
+  3%, 24%   { opacity: 1; }
+  27%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-s2 {
+  0%, 29%   { stroke-dashoffset: 9px; opacity: 0; }
+  31%, 45%  { opacity: 1; }
+  48%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-s3 {
+  0%, 50%   { stroke-dashoffset: 9px; opacity: 0; }
+  52%, 63%  { opacity: 1; }
+  66%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-f1 { 0%, 25% { opacity: 0; } 29% { opacity: .5; } 42%, 100% { opacity: 0; } }
+@keyframes cp-f2 { 0%, 46% { opacity: 0; } 50% { opacity: .5; } 63%, 100% { opacity: 0; } }
+@keyframes cp-fire {
+  0%, 64%   { transform: scale(.5); opacity: 0; }
+  67%       { transform: scale(1); opacity: .9; }
+  90%, 100% { transform: scale(2.3); opacity: 0; }
 }
 
 /* The readout. Live numbers off the model, not decorative mono type. */
@@ -426,6 +501,18 @@ img, canvas { max-width: 100%; }
   border-radius: 2px;
   -webkit-box-decoration-break: clone;
           box-decoration-break: clone;
+}
+/* Once a claim has been split into words for the line-by-line reveal, the
+   highlight moves onto the words, so each line's fill arrives with that line
+   rather than the whole bar sitting there empty ahead of its text. Two
+   shadows, nudged left and right, give each word .28em of fill either side —
+   more than a word space in any face, the fallbacks included — so
+   neighbouring words still read as one bar, with the same .16em top and
+   bottom the unsplit highlight has. */
+.chapter strong.split { background: none; box-shadow: none; }
+.chapter strong.split .ln-w {
+  background: var(--contrast);
+  box-shadow: .12em 0 0 .16em var(--contrast), -.12em 0 0 .16em var(--contrast);
 }
 
 /* --- section head (used by the full-width sections) ----------------------- */
@@ -692,29 +779,41 @@ html:not([data-chapter="5"]) .wall-belt { animation-play-state: paused; }
 }
 
 /* --- reveals ------------------------------------------------------------- */
-/* The sequence per screen is: the eyebrow arrives, the title types, and only
-   when the caret stops do the body copy and the frame come in. So a reveal is
-   no longer a property of the element meeting the viewport — it is a property
-   of its section having finished typing, and js/app.js stamps .arming and
-   .typed on the <section> to drive both halves.
+/* The sequence per screen is: the eyebrow arrives, the title types, and when
+   the caret stops the panel comes in and its beam makes a first pass — which
+   is what reveals everything else, one line at a time, as its leading edge
+   crosses each line. Sub-headlines type rather than fade when it reaches
+   them. js/app.js stamps .arming and .typed on the <section> for the two
+   halves and adds .in to each piece as the beam gets to it.
+
+   The pieces are of two kinds, both marked up by app.js:
+     .sc    a box — a block of copy, a card, a list row, a thumbnail — whose
+            own chrome (border, fill, rule) arrives when the beam reaches its top
+     .ln-w  one word of body copy. The words of a line share a moment, so a
+            line lands as a unit; words, not line wrappers, because a line
+            wrapper cannot survive an <em> or a <strong> that spans two lines
 
    Copy is visible here. It is hidden only while .reveals-armed is on the root,
-   which JS adds after it has successfully set up an observer — and removes
-   again from a failsafe timer or its own error handler. Nothing on this page
-   may leave text invisible because a script did not finish. */
-html.reveals-armed .rv,
+   which JS adds only after every heading and paragraph has been split without
+   error. Nothing on this page may leave text invisible because a script did
+   not finish. */
 html.reveals-armed .rv-lead { opacity: 0; transform: translateY(16px);
   transition: opacity .85s var(--e-out), transform .85s var(--e-out); }
 
 /* The eyebrow leads: it is the label on the thing about to be typed, so it is
    already there when the caret starts. */
 html.reveals-armed .chapter.arming .rv-lead { opacity: 1; transform: none; }
-html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
 
-/* The stagger is written onto the elements by app.js in DOM order rather than
-   matched with :nth-child here — the sections do not share a shape, and after
-   the .head blocks were split the positional rules were counting the wrong
-   children. */
+.ln-w { display: inline-block; }
+html.reveals-armed .sc:not(.in),
+html.reveals-armed .ln-w:not(.in) { opacity: 0; }
+/* `backwards`, not `both`: once a piece has landed it drops back to its own
+   styles, so a card's hover and a button's lift are not pinned by a finished
+   animation holding transform: none. */
+.sc.in   { animation: sc-in .7s var(--e-out) backwards; }
+.ln-w.in { animation: ln-in .5s var(--e-out) backwards; }
+@keyframes sc-in { from { opacity: 0; transform: translateY(12px); } }
+@keyframes ln-in { from { opacity: 0; transform: translateY(.5em); } }
 
 /* ===========================================================================
    Per-chapter aesthetic. Everything discrete lives here so the whole look —
@@ -864,13 +963,13 @@ html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
   .card { padding: .8rem .9rem; }
 }
 
-/* On a phone the copy column is the whole screen, so the frame's outer rail
-   would sit in the 20px gutter and read as a stray line at the edge. Corners,
-   bar and tag carry the idea on their own at that width. */
+/* On a phone the copy column is the whole screen, so a bus down the outer edge
+   would sit in the 20px gutter and read as a stray line — js/circuit.js does
+   not draw it below 900px, and the network moves into the readout strip.
+   Corners, bar and tag carry the rest. */
 @media (max-width: 899px) {
-  /* .rig > i is (0,1,1), so a bare .rig-bus here would lose to it — these
-     have to be at least as specific to turn anything off. */
-  .rig > .rig-bus { display: none; }
+  /* .rig > i is (0,1,1), so a bare .rig-reg here would lose to it — these
+     have to be at least as specific to change anything. */
   .rig > .rig-reg { width: 11px; height: 11px; }
   .rig .rig-wave { display: none; }
 }
@@ -882,9 +981,11 @@ html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
   .wall-belt li.dup { display: none; }
   .wall-row { overflow: visible; -webkit-mask-image: none; mask-image: none; }
   .wall { margin-inline: 0; }
-  html.reveals-armed .rv,
   html.reveals-armed .rv-lead { opacity: 1; transform: none; transition: none; }
-  .stage, .doc, .cta, .texture span { transition: none; }
+  html.reveals-armed .sc:not(.in),
+  html.reveals-armed .ln-w:not(.in) { opacity: 1; }
+  .sc.in, .ln-w.in { animation: none; }
+  .stage, .doc, .cta { transition: none; }
   .cta:hover { transform: none; }
 
   /* No typing and nothing sweeping or pulsing: the title is simply there and
@@ -893,12 +994,15 @@ html.reveals-armed .chapter.typed .rv { opacity: 1; transform: none; }
   .tw-c { visibility: visible; }
   .tw-c.cursor::after { display: none; }
   .rig, .rig * { transition: none !important; }
-  .rig > .rig-beam, .rig .rig-bus > i { display: none; }
+  .rig > .rig-beam { display: none; }
   .chapter .rig { opacity: 1; }
-  .chapter .rig-grid { opacity: .16; }
   .chapter .rig-reg { opacity: .85; transform: none; }
-  .chapter .rig-bus { opacity: .55; transform: none; }
   .chapter .rig-strip { opacity: 1; transform: none; }
+  /* The circuit is drawn, not drawing: traces whole, units on, no signal. */
+  .rig-circ .tr, .rig-circ .lk { stroke-dashoffset: 0; }
+  .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
+  .rig-circ .ring { opacity: .5; }
+  .rig-circ :is(.pl, .hl, .fire) { display: none; }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
@@ -912,7 +1016,8 @@ html.theming .rail button i, html.theming .hud, html.theming .hud b,
 html.theming .colophon, html.theming .card,
 html.theming .wall .wm, html.theming .thumb,
 html.theming .portrait, html.theming .roster li,
-html.theming .band, html.theming .chapter strong, html.theming .rig,
+html.theming .band, html.theming .chapter strong, html.theming .chapter strong .ln-w,
+html.theming .rig,
 html.theming .rig i, html.theming .rig b {
   transition: background-color 420ms var(--e-inout), color 420ms var(--e-inout),
               border-color 420ms var(--e-inout) !important;

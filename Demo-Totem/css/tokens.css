@@ -206,7 +206,6 @@
   --bg-sunk: color-mix(in srgb, var(--ink) 7%, var(--panel));
   --rule:    color-mix(in srgb, var(--ink) 14%, transparent);
   --rule-hi: color-mix(in srgb, var(--ink) 28%, transparent);
-  --tex-ink: color-mix(in srgb, var(--ink) 6%, transparent);
 
   /* Cards are translucent: the model is behind them and the point of putting
      it there is that you can still see it. */

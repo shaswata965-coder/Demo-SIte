@@ -19,9 +19,10 @@
    instead of cutting.
 
    The reveal sequence hangs off that same number. Each screen runs: the
-   eyebrow arrives, the title types, then the body copy and the rig come in —
-   fired from paint() when `progress` says the copy has landed, not from an
-   IntersectionObserver watching a margin box.
+   eyebrow arrives, the title types, then the rig comes in and its beam makes
+   one pass that reveals the rest a line at a time — sub-headlines typing as it
+   reaches them. Fired from paint() when `progress` says the copy has landed,
+   not from an IntersectionObserver watching a margin box.
 
    Rule this file follows: the copy is the page. `armReveals` runs after the
    model is built, so a failure there leaves a readable static page and the
@@ -83,9 +84,10 @@
 
   var sections = [];
 
-  /* Set by armReveals() once every heading has been rebuilt; called from
-     paint() as the scroll reaches each screen. Null until then, which is why
-     paint() guards it — boot() paints one frame before reveals are armed. */
+  /* The runner armReveals() returns, set once every heading has been rebuilt
+     and the webfont has landed (see init); called from paint() as the scroll
+     reaches each screen. Null until then, which is why paint() guards it —
+     boot() paints several frames before reveals are armed. */
   var arrive = null;
 
   function $(id) { return document.getElementById(id); }
@@ -105,7 +107,6 @@
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var canvas = $('field');
     var stage = $('stage');
-    var texture = document.querySelector('.texture');
     var bodies = sections.map(function (el) { return el.querySelector('.ch-col'); });
 
     /* ---- where the content container actually is --------------------------
@@ -223,6 +224,49 @@
       colors: skin0.colors
     });
     field.start();
+
+    /* ---- circuit layer ---------------------------------------------------- */
+    /* Drawn per panel by js/circuit.js. The one thing it needs from here is
+       what only this file knows: how much room there is between a panel's
+       inner edge and the model standing beside it, so the network can reach
+       towards the model without touching it. The model's half-width is the
+       arrangement's own reach (see NeuralField#reach), plus the largest a
+       unit is drawn — the widest ring is about 10px. */
+    var rigs = sections.map(function (el) { return el.querySelector('.rig'); });
+
+    function modelGap(i, rig) {
+      var c = CHAPTERS[i];
+      if (!wide() || typeof c.x === 'number') return 0;
+      var r = rig.getBoundingClientRect();
+      var cx = anchor(c.x) * innerWidth;
+      var half = field.radius * zoomOf(i) * field.reach(i) + 10;
+      return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
+    }
+
+    function drawCircuits() {
+      if (!window.RigCircuit) return;
+      for (var i = 0; i < rigs.length; i++) {
+        if (!rigs[i]) continue;
+        RigCircuit.draw(rigs[i], {
+          side: typeof CHAPTERS[i].x === 'number' ? 'full' : CHAPTERS[i].x,
+          wide: wide(),
+          gap: modelGap(i, rigs[i])
+        });
+      }
+    }
+
+    /* A panel changes size when the webfont lands, when a phone rotates, when
+       copy reflows — not only on window resize — so each one is watched. The
+       draw is keyed on size, so a callback that changes nothing costs nothing. */
+    if (window.ResizeObserver) {
+      var circuitQueued = false;
+      var ro = new ResizeObserver(function () {
+        if (circuitQueued) return;
+        circuitQueued = true;
+        requestAnimationFrame(function () { circuitQueued = false; drawCircuits(); });
+      });
+      for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
+    }
 
     /* ---- section rail ----------------------------------------------------- */
     var rail = $('rail');
@@ -396,12 +440,9 @@
          behind a screen of copy — it goes with the dimming. */
       stage.style.setProperty('--hud-a', clamp((base - 0.55) / 0.45, 0, 1).toFixed(3));
 
-      /* Parallax. The dot grid drifts slower than the page — modulo its own
-         30px pitch, so the loop is seamless — and the pinned copy lifts a
-         little through its chapter, which gives the layers separation while
-         the model does the travelling. */
-      texture.style.transform =
-        'translate3d(0,' + (-(sCurrent * 0.07) % 30).toFixed(1) + 'px,0)';
+      /* Parallax. The pinned copy lifts a little through its chapter, which
+         gives the copy and the model separation while the model does the
+         travelling. */
       shiftCopy(lo, t);
 
       /* Axis gizmo, projected with the same yaw and pitch as the model — the
@@ -541,24 +582,30 @@
     addEventListener('resize', function () {
       field.resize();
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function () { measure(); computeSpin(); paint(true); }, 90);
+      resizeTimer = setTimeout(function () {
+        measure(); computeSpin(); drawCircuits(); paint(true);
+      }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
       paint(true);
     }, { passive: true });
 
     measure();
     computeSpin();
+    drawCircuits();
     field.originY = 0.5;
     paint(true);
     requestAnimationFrame(frame);
   }
 
-  /* ---- reveals: type the title, then release the screen -------------------
+  /* ---- reveals: type the title, then scan the screen in -------------------
      One sequence per section, in this order:
 
        1. the eyebrow arrives      (.arming on the <section>)
        2. the title types, character by character
-       3. everything else and the frame come in   (.typed on the <section>)
+       3. the rig comes in and its beam makes one pass   (.typed on the <section>)
+       4. as the beam's leading edge crosses each piece of the screen, that
+          piece lands: body copy a line at a time, boxes (cards, rows,
+          thumbnails) as the edge reaches their top, and sub-headlines type
 
      Copy is visible in the stylesheet and hidden only once this runs. Calling
      it *after* boot is the whole trick: if the model fails to build, the
@@ -621,14 +668,65 @@
     }
   }
 
+  /* Wrap every word of body copy in its own span, leaving the whitespace
+     between words as text, so lines break exactly where they did before.
+     Inline markup survives: a word goes inside the <em> or <strong> it was in,
+     which is why this is per word rather than per line — a line wrapper cannot
+     straddle an <em> that runs across two lines.
+
+     Headings, buttons, links and SVG are left whole: headings type, and the
+     others arrive with the box they sit in. So does the partner wall, whose
+     names are moving and have no line to be revealed on. */
+  function skipWords(node, stop) {
+    for (var el = node.parentNode; el && el !== stop; el = el.parentNode) {
+      if (/^(H1|H2|H3|A|BUTTON|SVG|SCRIPT|STYLE)$/i.test(el.nodeName)) return true;
+      if (el.classList && el.classList.contains('wall')) return true;
+    }
+    return false;
+  }
+
+  function splitWords(block) {
+    var texts = [], words = [], i;
+    var walk = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
+    while (walk.nextNode()) {
+      if (/\S/.test(walk.currentNode.nodeValue) && !skipWords(walk.currentNode, block.parentNode)) {
+        texts.push(walk.currentNode);
+      }
+    }
+    for (i = 0; i < texts.length; i++) {
+      var parts = texts[i].nodeValue.split(/(\s+)/), frag = document.createDocumentFragment();
+      for (var k = 0; k < parts.length; k++) {
+        if (!parts[k]) continue;
+        if (/^\s+$/.test(parts[k])) { frag.appendChild(document.createTextNode(parts[k])); continue; }
+        var w = document.createElement('span');
+        w.className = 'ln-w';
+        w.textContent = parts[k];
+        frag.appendChild(w);
+        words.push(w);
+      }
+      texts[i].parentNode.replaceChild(frag, texts[i]);
+    }
+    /* The claim highlight moves onto the words — see .chapter strong.split. */
+    var strong = block.querySelectorAll('strong');
+    for (i = 0; i < strong.length; i++) {
+      if (strong[i].querySelector('.ln-w')) strong[i].classList.add('split');
+    }
+    return words;
+  }
+
   /* Driven off elapsed time rather than one timer per character, so the speed
      is the same on a 60Hz and a 120Hz screen and a long title cannot outrun
      its own section. The per-character delay shortens as the title grows so
-     the whole line always lands inside TYPE_MAX. */
-  var TYPE_PER = 30, TYPE_MAX = 620, TYPE_HOLD = 150;
+     the whole line always lands inside `max`.
 
-  function typeHeading(chars, done) {
-    var n = chars.length, per = Math.min(TYPE_PER, TYPE_MAX / n);
+     Two speeds. A section title is the event of the screen and is given time
+     to be watched; a sub-headline types as the scan reaches it, alongside the
+     lines landing around it, so it is quicker and holds its caret only briefly. */
+  var TYPE_PER = 40, TYPE_MAX = 880, TYPE_HOLD = 160;
+  var SUB_PER = 26, SUB_MAX = 460, SUB_HOLD = 90;
+
+  function typeHeading(chars, done, perChar, max, hold) {
+    var n = chars.length, per = Math.min(perChar, max / n);
     var t0 = performance.now(), i = 0;
     (function step(now) {
       var want = Math.min(n, Math.floor((now - t0) / per) + 1);
@@ -639,48 +737,169 @@
         i++;
       }
       if (i < n) { requestAnimationFrame(step); return; }
-      /* The caret holds a beat on the last character before the screen opens —
-         without it the body copy arrives while the title is still being read
+      /* The caret holds a beat on the last character before moving on —
+         without it the next thing arrives while the title is still being read
          as unfinished. */
       setTimeout(function () {
         chars[n - 1].classList.remove('cursor');
-        done();
-      }, TYPE_HOLD);
+        if (done) done();
+      }, hold);
     }(performance.now()));
   }
 
-  /* Split every heading, then hand back a per-section runner that app.js can
-     fire from the scroll. Nothing here observes anything — see `arrive()` in
-     boot() for why, and for what fires it. */
+  /* ---- the scan -----------------------------------------------------------
+     The beam's first pass runs at a constant speed, so where its leading edge
+     is at any moment is a straight line — and each piece of the screen can be
+     given the exact moment the edge crosses it. That is all this is: measure
+     every piece against the panel, turn its height into a time, and hand the
+     beam the same start and duration through --scan-from and --scan-d so the
+     CSS animation and the reveals cannot drift apart.
+
+     Lines at the same height in two columns (the three project cards, the
+     contact figures) are offset by up to SCAN_RASTER across the panel's width,
+     left first — a raster, not a curtain.
+
+     SCAN_BEAM is the beam's height in css/main.css (.rig-beam::before): its
+     leading edge is that element's bottom border. */
+  var SCAN_SPEED = 220, SCAN_SPEED_NARROW = 320, SCAN_BEAM = 150, SCAN_RASTER = 0.12;
+  var BOXES = 'li, .card, .thumb, .portrait, .wall-row';
+
+  /* Group a block's words into the lines they are actually laid out on. In
+     document order a new line starts wherever a word sits lower than the line
+     it follows, or back to its left — the second catches the jump from the
+     bottom of one card to the top of the next, where the top goes *up*. */
+  function measureLines(words, R, items) {
+    var line = null, prevRight = -Infinity;
+    for (var k = 0; k < words.length; k++) {
+      var r = words[k].getBoundingClientRect();
+      if (!line || Math.abs(r.top - line.top) > r.height * 0.5 || r.left < prevRight - 2) {
+        line = { kind: 'line', els: [], top: r.top,
+                 y: r.top - R.top + r.height * 0.5, x: r.left - R.left };
+        items.push(line);
+      }
+      line.els.push(words[k]);
+      prevRight = r.right;
+    }
+  }
+
+  function planScan(entry) {
+    var rig = entry.sec.querySelector('.rig');
+    if (!rig) return null;
+    var R = rig.getBoundingClientRect(), W = Math.max(1, R.width);
+    var items = [], k, r;
+
+    for (k = 0; k < entry.boxes.length; k++) {
+      r = entry.boxes[k].getBoundingClientRect();
+      items.push({ kind: 'box', el: entry.boxes[k], y: r.top - R.top + 6, x: r.left - R.left });
+    }
+    for (k = 0; k < entry.subs.length; k++) {
+      r = entry.subs[k].el.getBoundingClientRect();
+      items.push({ kind: 'type', chars: entry.subs[k].chars,
+                   y: r.top - R.top + r.height * 0.5, x: r.left - R.left });
+    }
+    for (k = 0; k < entry.words.length; k++) measureLines(entry.words[k], R, items);
+    if (!items.length) return items;
+
+    /* The pass starts just above the first thing it has to reveal rather than
+       at the top of the panel: the eyebrow and the title are already there,
+       and sweeping over them first would be a second of nothing happening. */
+    var y0 = Infinity;
+    for (k = 0; k < items.length; k++) y0 = Math.min(y0, items[k].y);
+    y0 = Math.max(0, y0 - 12);
+    var span = Math.max(1, R.height + SCAN_BEAM - y0);
+    var dur = span / (wide() ? SCAN_SPEED : SCAN_SPEED_NARROW);
+
+    for (k = 0; k < items.length; k++) {
+      items[k].t = dur * clamp((items[k].y - y0) / span, 0, 1)
+                 + SCAN_RASTER * clamp(items[k].x / W, 0, 1);
+    }
+    items.sort(function (a, b) { return a.t - b.t; });
+    entry.sec.style.setProperty('--scan-from', Math.round(y0) + 'px');
+    entry.sec.style.setProperty('--scan-d', dur.toFixed(3) + 's');
+    return items;
+  }
+
+  function land(item) {
+    if (item.kind === 'box') item.el.classList.add('in');
+    else if (item.kind === 'line') {
+      for (var k = 0; k < item.els.length; k++) item.els[k].classList.add('in');
+    } else {
+      try { typeHeading(item.chars, null, SUB_PER, SUB_MAX, SUB_HOLD); }
+      catch (e) { showAll(item.chars); throw e; }
+    }
+  }
+
+  function landAll(entry) {
+    var k;
+    for (k = 0; k < entry.boxes.length; k++) entry.boxes[k].classList.add('in');
+    for (k = 0; k < entry.words.length; k++) {
+      for (var w = 0; w < entry.words[k].length; w++) entry.words[k][w].classList.add('in');
+    }
+    for (k = 0; k < entry.subs.length; k++) showAll(entry.subs[k].chars);
+  }
+
+  /* Split every heading and every block of copy, then hand back a per-section
+     runner that app.js can fire from the scroll. Nothing here observes
+     anything — see `arrive()` in boot() for why, and for what fires it. */
   function armReveals() {
     var chapters = document.querySelectorAll('.chapter');
     if (!chapters.length) return null;
 
     var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var entries = [], i;
+    var entries = [], i, k;
 
     /* Split first, arm second. If splitting throws we have changed nothing
-       that matters and the page is still the page — so only once every
-       heading is rebuilt do we let the stylesheet start hiding things. */
+       that hides anything — so only once every heading and every block is
+       rebuilt do we let the stylesheet start hiding things. */
     try {
       for (i = 0; i < chapters.length; i++) {
-        var h = chapters[i].querySelector('h1, h2');
-        entries.push({ sec: chapters[i], h: h, chars: h ? splitHeading(h) : null, done: false });
+        var sec = chapters[i], h = sec.querySelector('h1, h2');
+        var entry = { sec: sec, chars: h ? splitHeading(h) : null,
+                      subs: [], boxes: [], words: [], done: false };
+        entries.push(entry);
+
+        var subs = sec.querySelectorAll('.ch-col h3');
+        for (k = 0; k < subs.length; k++) {
+          var sc = splitHeading(subs[k]);
+          if (sc) entry.subs.push({ el: subs[k], chars: sc });
+        }
+
+        var blocks = sec.querySelectorAll('.rv');
+        for (k = 0; k < blocks.length; k++) {
+          entry.boxes.push(blocks[k]);
+          var inner = blocks[k].querySelectorAll(BOXES);
+          for (var b = 0; b < inner.length; b++) {
+            if (!inner[b].closest('.wall-belt')) entry.boxes.push(inner[b]);
+          }
+          entry.words.push(splitWords(blocks[k]));
+        }
+      }
+      for (i = 0; i < entries.length; i++) {
+        for (k = 0; k < entries[i].boxes.length; k++) entries[i].boxes[k].classList.add('sc');
       }
     } catch (e) {
-      for (i = 0; i < entries.length; i++) if (entries[i].chars) showAll(entries[i].chars);
+      for (i = 0; i < entries.length; i++) {
+        if (entries[i].chars) showAll(entries[i].chars);
+        for (k = 0; k < entries[i].subs.length; k++) showAll(entries[i].subs[k].chars);
+      }
       throw e;
     }
     root.classList.add('reveals-armed');
 
-    function release(entry) {
-      /* The stagger is written here, in DOM order, rather than matched with
-         :nth-child in CSS — the sections do not share a shape. */
-      var rv = entry.sec.querySelectorAll('.rv');
-      for (var k = 0; k < rv.length; k++) {
-        rv[k].style.transitionDelay = (k * 0.05).toFixed(2) + 's';
-      }
+    function release(entry, instant) {
+      var plan = null;
+      try { if (!instant) plan = planScan(entry); }
+      catch (e) { entry.sec.classList.add('typed'); landAll(entry); throw e; }
       entry.sec.classList.add('typed');
+      if (!plan) { landAll(entry); return; }
+
+      /* One loop per scan, walking a list already sorted by time. */
+      var t0 = performance.now(), next = 0;
+      requestAnimationFrame(function tick(now) {
+        var t = (now - t0) / 1000;
+        while (next < plan.length && plan[next].t <= t) land(plan[next++]);
+        if (next < plan.length) requestAnimationFrame(tick);
+      });
     }
 
     return function run(i, instant) {
@@ -688,16 +907,18 @@
       if (!entry || entry.done) return;
       entry.done = true;
       entry.sec.classList.add('arming');
-      if (!entry.chars || reduced || instant) {
+      if (reduced || instant) {
         if (entry.chars) showAll(entry.chars);
-        release(entry);
+        release(entry, true);
         return;
       }
+      if (!entry.chars) { release(entry, false); return; }
       try {
-        typeHeading(entry.chars, function () { release(entry); });
+        typeHeading(entry.chars, function () { release(entry, false); },
+                    TYPE_PER, TYPE_MAX, TYPE_HOLD);
       } catch (e) {
         showAll(entry.chars);
-        release(entry);
+        release(entry, true);
         throw e;
       }
     };
@@ -706,7 +927,17 @@
   function init() {
     sections = CHAPTERS.map(function (_, i) { return $('c' + i); });
     boot();
-    arrive = armReveals();
+    var run = armReveals();
+
+    /* Hold the first screen until the webfont has landed, or a second has
+       passed. The scan times each line off where it is laid out, and a line
+       measured in the fallback face is not where it will be once Archivo and
+       Plex swap in. */
+    var started = false;
+    function start() { if (!started) { started = true; arrive = run; } }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start);
+    else start();
+    setTimeout(start, 1000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

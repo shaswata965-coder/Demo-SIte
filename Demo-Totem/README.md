@@ -28,6 +28,7 @@ index.html            markup and copy
 css/tokens.css        the colour system — five skins, each in light and dark
 css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
+js/circuit.js         the circuit layer drawn around each block of copy
 js/app.js             scroll → everything else
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
@@ -244,10 +245,11 @@ only once it has arrived and settled. The curve plateaus through the middle rath
 smoothly through it, so the screen is clean for the whole crossing rather than
 just its midpoint.
 
-Two parallax layers give the crossing depth: the dot grid drifts at 7% of scroll
-speed (modulo its own 30px pitch, so the loop is seamless) and the pinned copy
-lifts 22px through its chapter. Only the chapter you are in carries an offset —
-two style writes a frame at most.
+One parallax layer gives the crossing depth: the pinned copy lifts 22px through
+its chapter. Only the chapter you are in carries an offset — one style write a
+frame at most. (There used to be a second, a 30px dot grid behind everything
+drifting at 7% of scroll speed. It went with the panel's own grid; see "The
+rig".)
 
 ## Section rhythm
 
@@ -269,7 +271,6 @@ knowing before you touch it:
 body background
   .band              z-index: -1   full-bleed, sized to the chapter
     .hitech          sticky inside it, on the three paper sections
-  .texture           z-index:  0
   .stage (canvas)    z-index:  1
   .ch-body (copy)    z-index:  3
 ```
@@ -285,8 +286,11 @@ Each screen runs one sequence, and everything on it waits its turn:
 
 1. the eyebrow arrives — `.arming` on the `<section>`
 2. the title types, character by character, with a caret
-3. the caret stops, and the body copy and the instrument rig come in —
+3. the caret stops, the instrument rig comes in and its beam makes one pass —
    `.typed` on the `<section>`
+4. as the beam's leading edge crosses each piece of the screen, that piece
+   lands: body copy **a line at a time**, cards and rows as the edge reaches
+   their top, and every sub-headline — service, week, project, name — **types**
 
 ### What fires it, and why it is not an observer
 
@@ -344,7 +348,50 @@ the two lines together.
 Typing is driven off elapsed time in one `requestAnimationFrame` loop rather
 than a timer per character, so it runs at the same speed on a 60Hz and a 120Hz
 screen. The per-character delay shortens as the title grows (`TYPE_PER` capped
-by `TYPE_MAX`), so a long title cannot outrun its own screen.
+by `TYPE_MAX`), so a long title cannot outrun its own screen. Sub-headlines use
+the same code on a quicker clock (`SUB_PER`, `SUB_MAX`) — a section title is the
+event of the screen and is given time to be watched; a sub-headline types
+alongside the lines landing around it.
+
+### The scan: copy a line at a time
+
+The beam's first pass is what reveals the copy, so the two have to agree
+exactly on where the beam is. That is arranged by making the pass **linear**:
+at constant speed the leading edge's position is a straight line in time, and
+every piece of the screen can be given the moment the edge crosses it.
+
+`planScan()` in `app.js` measures each piece against the panel, turns its
+height into a time, sorts the list, and writes the same start and duration
+onto the `<section>` as `--scan-from` and `--scan-d` — which is what the CSS
+`rig-scan` animation runs on. One `requestAnimationFrame` loop then walks the
+sorted list and lands each piece as its time comes up. The gap between two
+lines is simply line height over beam speed: about 85ms for the small copy in
+the lists and cards, 120ms for body copy, 160ms for the intro's lede.
+
+- **Lines, not paragraphs.** Body copy is split into words, and the words are
+  grouped by the line they are actually laid out on — so a line lands as a
+  unit wherever the browser wrapped it. Words rather than line wrappers,
+  because a line wrapper cannot straddle an `<em>` or `<strong>` that runs
+  across two lines; each word stays inside the inline element it was in.
+- **The claim highlight moves onto the words** once a `<strong>` is split
+  (`strong.split`), so each line's fill arrives with that line instead of the
+  whole bar sitting there empty ahead of its text. Each word's fill reaches
+  further than a word space in any face, fallbacks included, so it still reads
+  as one bar.
+- **It starts at the first line, not the top of the panel.** The eyebrow and
+  title are already on screen; sweeping over them first was a second of nothing
+  happening.
+- **A raster, not a curtain.** Lines at the same height in two columns (the
+  project cards, the method steps, the contact figures) are offset by up to
+  `SCAN_RASTER` across the panel's width, left first.
+- **Boxes arrive with the edge.** A card, list row, thumbnail or portrait
+  (`.sc`) fades in as the edge reaches its top, so its border and fill are
+  there just before its first line.
+
+`SCAN_SPEED` sets the pace (220px/s wide, 320px/s on a phone, where panels are
+taller); a whole screen scans in 2–3.5s. The first screen waits for the webfont — or one second — before it
+starts, because a line measured in the fallback face is not where it will be
+once Archivo and Plex swap in.
 
 ### The rig
 
@@ -358,11 +405,14 @@ What makes a panel read as live is movement and small dense detail:
 
 | | |
 |---|---|
-| `.rig-grid` | a coarse measurement grid, radially masked — the panel's own surface |
-| `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read |
+| `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read. Its first pass reveals the copy (above); after that it sweeps idly while the screen is live |
 | `.rig-reg` | registration crosshairs at the corners. A bracket says "border"; a crosshair says the panel has been aligned to something |
-| `.rig-bus` | a bus down the side the model is *not* on, with three pulses running it on a loop |
+| `.rig-circ` | the circuit layer — see below |
 | `.rig-strip` | a waveform, a readout and a segmented meter |
+
+There is **no grid**. The panel used to stand on a 72px measurement grid and
+the page on a 30px dot grid; both went, because two grids behind copy that
+already sits on a coloured band read as graph paper rather than as a screen.
 
 **The readout is the model's actual state**, not decorative mono type: the
 arrangement it is holding, where the scroll is in `[0, 6]`, the yaw it has
@@ -379,15 +429,50 @@ The rig is sized to `.ch-col`, so the same panel fits a hero, a four-item list
 and a three-card grid with no per-breakpoint geometry.
 
 One trap to know before editing it: `.rig > i` is `(0,1,1)`, so a bare
-`.rig-bus { display: none }` in a media query **loses** to it. The phone and
-reduced-motion overrides are written `.rig > .rig-bus` for that reason — the
-first pass of both was silently doing nothing.
+`.rig-reg { … }` in a media query **loses** to it. The phone overrides are
+written `.rig > .rig-reg` for that reason — an earlier pass was silently doing
+nothing.
 
-On a phone the bus is dropped (the copy column is the whole screen there, so it
-would sit in the 20px gutter and read as a stray edge line) and the waveform
-goes with it. The beam stays. Under `prefers-reduced-motion` there is no
-typing, no caret, no beam and no pulses — the readout still updates, because it
-is information rather than animation and it only changes when you scroll.
+On a phone the waveform is dropped and the circuit layer changes shape (below).
+The beam stays. Under `prefers-reduced-motion` there is no typing, no caret, no
+beam, no scan and no pulses — every line is simply there, the circuit is drawn
+but still, and the readout still updates, because it is information rather
+than animation and it only changes when you scroll.
+
+### The circuit layer
+
+`js/circuit.js` draws one SVG into each panel — electrical traces carrying a
+small neural network, the idiom most AI sites reach for, kept to two pieces so
+it frames the copy rather than competing with it:
+
+- **A bus down the outer edge**, the side the model is *not* on: two traces with
+  45° jogs and vias, the long one running into the readout strip's rail, with
+  pulses riding it.
+- **A chip wired into a network on the model's side.** Four traces fan out of a
+  chip on the panel's inner edge into a 4–3–1 network pointed at the model's
+  centre — the copy is literally wired to the thing it describes. Once a loop a
+  signal runs chip → inputs → hidden → output and the output ring fires, the
+  same idea as the traced inference through the model, at the scale of the
+  panel.
+
+Everything sits in the margins, **never under a line of copy**: the bus in the
+1.8rem the rig extends past the column, the network in the gap between the
+column and the model. That gap is measured, not assumed — `modelGap()` in
+`app.js` takes the model's anchor and its arrangement's own reach
+(`NeuralField#reach`: the widest unit's distance from the vertical axis times
+the pose scale, which bounds it at any yaw) — and the network is sized to it: a
+wide fan when there is room, a tighter one down to ~56px, then a chip with three
+stubs, then nothing when the model is already over the panel's edge (around
+1024px wide). On a phone, and on the two full-width sections where the model is
+behind the copy, there is no gap to wire across, so a flat version of the
+network sits in the empty end of the readout strip instead.
+
+It is drawn in the panel's own pixels rather than a stretched `viewBox`, so a
+45° trace stays 45° whatever shape the panel is, and redrawn whenever the panel
+changes size — a `ResizeObserver` on each rig catches the webfont landing and
+copy reflowing, not only window resizes. It draws itself in with the panel as
+the scan starts (every trace has `pathLength="100"`, so one dash pattern draws
+any of them), and like the rest of the rig it only moves on the live screen.
 
 ## Narrow screens
 
@@ -635,11 +720,11 @@ the error reaches the console rather than being swallowed. There is no timer and
 no `catch` doing this — just the call order.
 
 The same rule holds one level down, now that the headings are rebuilt into
-character spans. Every heading is **split first and armed second**: if splitting
-throws, the headings that were already rebuilt are shown outright and
-`reveals-armed` is never added, so the page is still the page. If a section's
-typing throws, that section shows its title and opens immediately rather than
-sitting on a half-typed line.
+character spans and the body copy into words. Everything is **split first and
+armed second**: if splitting throws, the headings that were already rebuilt are
+shown outright and `reveals-armed` is never added, so the page is still the
+page. If a section's typing or its scan plan throws, that section shows
+everything at once rather than sitting on a half-typed line.
 
 Scroll progress is measured from `getBoundingClientRect()`, not `window.scrollY`:
 when the page is embedded, the element doing the scrolling may not be the
@@ -653,6 +738,7 @@ The split is deliberate:
 |---|---|
 | `js/neural.js` | A React Three Fiber scene. `STATES`, the arrangement generators, `VIS` and `POSE_*` carry over unchanged; the hand projection is replaced by instanced meshes and a vertex shader. |
 | `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. The travel, zoom and dim become a scrubbed timeline; `dragEase` becomes its ease. |
+| `js/circuit.js` | A `<Circuit side gap />` component rendering the same SVG; the geometry functions carry over unchanged. |
 | `css/tokens.css` | Unchanged. Tailwind v4 reads CSS custom properties directly. |
 | `css/main.css` | Component styles; the `[data-chapter]` block stays as-is. |
 | `index.html` | `page.tsx` plus a `Chapter` component (`is-side` / `is-full` as a prop), with the copy, projects, people and partners coming from the CMS. |

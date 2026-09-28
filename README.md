@@ -23,8 +23,11 @@ python3 -m http.server 8000 --directory Demo-Totem
 - The model lives on one side of the content, not behind it, swaps sides as the
   sections progress, and recolours with the skin — on the deep skins it flips
   from plotted ink to additive light.
-- The sections that carry no flood colour carry a drawn schematic instead: an
-  instrument layer that traces itself in as the section arrives.
+- Every screen of copy sits in an instrument panel. Its headlines type in as
+  you land, then a scan beam passes and reveals the body copy a line at a time.
+  A circuit layer in the panel's margins wires the copy to the model: a PCB bus
+  down the outer edge, and a chip fanning into a small neural network pointed
+  at the model.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
 
