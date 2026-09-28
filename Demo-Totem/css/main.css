@@ -62,8 +62,12 @@ img, canvas { max-width: 100%; }
 .doc { position: relative; }
 
 /* --- stage HUD ------------------------------------------------------------
-   The readout frames the model rather than the page, so it travels with it:
+   A frame around the model rather than the page, so it travels with it:
    --model-x is the model's own position, written once a frame by app.js.
+   Two corners and an axis gizmo — no text. It used to carry a readout of the
+   arrangement's name and unit count, and the model carried a label on a
+   leader line per arrangement; both went, along with the readout under the
+   copy, so the only words on screen are the copy's own.
    ------------------------------------------------------------------------ */
 .hud {
   position: absolute; top: 12svh; bottom: 11svh;
@@ -72,95 +76,181 @@ img, canvas { max-width: 100%; }
   transform: translateX(-50%);
   opacity: var(--hud-a, 1);
   pointer-events: none;
-  font-family: var(--f-mono); font-size: clamp(.625rem, .62vw, .8125rem);
-  letter-spacing: .16em; text-transform: uppercase; color: var(--faint);
+  color: var(--faint);
   padding: clamp(.9rem, 2vw, 1.6rem);
   display: none;                      /* pointer devices only; see 900px up */
   grid-template-rows: 1fr auto; gap: .5rem;
 }
-.hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; gap: .8rem;
-  text-align: right; line-height: 1.8; }
-.hud b { color: var(--data); font-weight: 500; font-variant-numeric: tabular-nums; }
+.hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; }
 .hud .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--rule-hi); }
 .hud .c3 { bottom: .7rem; left: .7rem; border-right: 0; border-top: 0; }
 .hud .c4 { bottom: .7rem; right: .7rem; border-left: 0; border-top: 0; }
 .hud .gizmo { width: clamp(34px, 2.6vw, 54px); height: clamp(34px, 2.6vw, 54px); opacity: .75 }
 .hud .gizmo line { stroke-width: 1; }
 
-/* --- persistent chrome ---------------------------------------------------- */
-.topbar {
-  position: fixed; z-index: 6; top: 0; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: .75rem;
-  padding: clamp(.7rem, 2.4vw, 1.5rem) var(--gutter);
+/* --- navigation -----------------------------------------------------------
+   One floating glass bar in place of a full-width strip with a scrim. It
+   carries the root's skin, which app.js keeps in step with the section under
+   it, so over a flooded band it takes that band's panel colour and ink — a
+   violet bar over the violet section, a pale one over the paper ones — rather
+   than sitting on the page as a fixed slab of one colour.
+
+   Three columns: the mark on the left, the section links centred on the
+   page's own centre line, the theme toggle and the call to action on the
+   right. The current section is a pill that slides between the links, lit by
+   a signal dot; the bottom edge carries a hairline that fills with scroll
+   progress. Below 1024px the links fold into a menu under the bar.
+   ------------------------------------------------------------------------ */
+:root { --nav-h: 3.25rem; --nav-top: clamp(.6rem, 1.2vw, 1rem); }
+
+.nav {
+  position: fixed; z-index: 6; left: 0; right: 0; top: var(--nav-top);
+  padding-inline: var(--gutter);
   pointer-events: none;
-  /* The chrome is fixed while the bands slide under it, so at a section
-     boundary it may be sitting on two very different grounds at once. The
-     scrim is what gives it one of its own: it carries the root's skin, which
-     app.js keeps in step with the section the chrome is actually over. At the
-     old 22% it was a hint; against a flooded band it has to be a ground. */
-  background: linear-gradient(to bottom,
-    var(--bg) 58%, color-mix(in srgb, var(--bg) 55%, transparent) 82%, transparent);
 }
-.topbar > * { pointer-events: auto; }
-.brand {
-  display: flex; align-items: baseline; gap: .7rem; text-decoration: none;
-  font-family: var(--f-mono);
-  font-size: clamp(.5625rem, .62vw, .8125rem); letter-spacing: .18em;
-  text-transform: uppercase; color: var(--faint); min-width: 0;
+.nav-bar {
+  position: relative; pointer-events: auto;
+  max-width: var(--maxw); height: var(--nav-h); margin-inline: auto;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem;
+  padding: 0 .45rem 0 .4rem;
+  border-radius: 999px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+          backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent),
+    0 16px 36px -22px color-mix(in srgb, var(--ink) 60%, transparent);
+  transition: background-color .5s var(--e-out), border-color .5s var(--e-out),
+              color .5s var(--e-out), box-shadow .5s var(--e-out);
 }
-.brand b {
-  font-family: var(--f-display); font-size: clamp(1rem, 1.05vw, 1.45rem);
-  letter-spacing: .24em; color: var(--ink);
+
+.nav-brand {
+  justify-self: start; display: inline-flex; align-items: center; gap: .65rem;
+  padding: .3rem .8rem .3rem .3rem; border-radius: 999px;
+  color: var(--ink); text-decoration: none;
+}
+.nav-mark { display: block; width: 2.125rem; height: 2.125rem; flex: none; }
+.nav-mark rect { fill: var(--accent); transition: fill .5s var(--e-out); }
+.nav-mark g { stroke: var(--on-accent); fill: var(--on-accent); }
+.nav-word {
+  font-family: var(--f-display); font-size: 1rem; line-height: 1;
   font-variation-settings: 'wdth' 112, 'wght' 800;
+  letter-spacing: .24em; margin-right: -.24em;
 }
-.brand span { display: none; }
-@media (min-width: 1100px) { .brand span { display: inline; } }
 
-.controls { display: flex; gap: .4rem; align-items: center; }
-.btn {
-  font: inherit; font-family: var(--f-mono); font-size: .625rem;
-  letter-spacing: .14em; text-transform: uppercase;
-  color: var(--ink); background: var(--surface);
-  border: var(--rule-weight) solid var(--rule-hi); border-radius: var(--panel-radius);
-  padding: .6rem .7rem; cursor: pointer; display: inline-flex; align-items: center; gap: .5rem;
-  transition: border-color var(--d-base) var(--e-out), color var(--d-base) var(--e-out);
+.nav-links { position: relative; justify-self: center; display: flex; align-items: center; gap: .1rem; }
+.nav-links a {
+  position: relative; z-index: 1;
+  padding: .6rem .95rem; border-radius: 999px;
+  font-family: var(--f-body); font-size: .875rem; font-weight: 500; line-height: 1;
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  text-decoration: none; white-space: nowrap;
+  transition: color .3s var(--e-out);
 }
-.btn:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
-.btn svg { width: 13px; height: 13px; flex: none; }
-.btn span { display: none; }
-@media (min-width: 560px) { .btn span { display: inline; } }
+.nav-links a:hover, .nav-links a[aria-current] { color: var(--ink); }
+/* The pill. Positioned by app.js from the current link's own box, so it lands
+   exactly on whichever link is current however wide the labels are. */
+.nav-ind {
+  position: absolute; z-index: 0; left: 0; top: 50%;
+  width: 0; height: 2.2rem; margin-top: -1.1rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+  opacity: 0;
+  transition: transform .55s var(--e-out), width .55s var(--e-out), opacity .3s var(--e-out);
+}
+.nav-ind.on { opacity: 1; }
+.nav-ind::after {
+  content: ''; position: absolute; left: 50%; bottom: -.45rem;
+  width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 10px 1px var(--accent);
+}
 
-/* --- chapter rail --------------------------------------------------------- */
-/* Top centre — the one strip of the page the travelling model never crosses. */
-.rail {
-  position: fixed; z-index: 6; top: calc(var(--gutter) * .7);
-  left: 50%; transform: translateX(-50%);
-  display: none; gap: .3rem; align-items: flex-start; flex-wrap: nowrap;
+.nav-actions { justify-self: end; display: flex; align-items: center; gap: .45rem; }
+.nav-icon {
+  width: 2.375rem; height: 2.375rem; flex: none; padding: 0;
+  display: grid; place-items: center; border-radius: 50%;
+  color: var(--ink); background: transparent; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: background-color .3s var(--e-out), border-color .3s var(--e-out), color .5s var(--e-out);
 }
-.rail button {
-  appearance: none; border: 0; background: none; cursor: pointer;
-  /* Fixed width with the label taken out of flow. Sized by its own label, each
-     button was a different width and the ticks came out unevenly spaced —
-     and the whole rail reflowed every time a label faded in. */
-  position: relative; width: 2.7rem; height: 1.9rem; padding: 0;
-  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--faint);
+.nav-icon:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.nav-icon svg { display: block; width: 1rem; height: 1rem; }
+/* The toggle shows where it will take you: a moon in light, a sun in dark. */
+#themeBtn[aria-pressed="false"] .i-sun,
+#themeBtn[aria-pressed="true"] .i-moon { display: none; }
+
+.nav-cta {
+  height: 2.375rem; padding: 0 1rem 0 1.15rem;
+  display: inline-flex; align-items: center; gap: .55rem;
+  border: 0; border-radius: 999px; cursor: pointer;
+  font-family: var(--f-mono); font-size: .6875rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+  background: var(--accent); color: var(--on-accent);
+  box-shadow: 0 8px 20px -12px var(--accent);
+  transition: transform .3s var(--e-out), box-shadow .3s var(--e-out),
+              background-color .5s var(--e-out), color .5s var(--e-out);
 }
-.rail button i {
-  position: absolute; bottom: .35rem; left: 50%; transform: translateX(-50%);
-  display: block; width: 16px; height: 2px; background: currentColor;
-  transition: width var(--d-base) var(--e-out);
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -12px var(--accent); }
+.nav-cta i { font-style: normal; transition: transform .3s var(--e-out); }
+.nav-cta:hover i { transform: translateX(3px); }
+.nav-cta .cta-short { display: none; }
+
+/* Scroll progress along the bottom edge, inset to the straight run of the
+   pill so it never bends round the rounded ends. */
+.nav-progress {
+  position: absolute; left: 1.6rem; right: 1.6rem; bottom: -1px; height: 2px;
+  border-radius: 2px; overflow: hidden; pointer-events: none;
 }
-.rail button:hover { color: var(--ink-2); }
-.rail button[aria-current="true"] { color: var(--accent-ink); }
-.rail button[aria-current="true"] i { width: 34px; }
-.rail button em {
-  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  font-style: normal; white-space: nowrap; opacity: 0;
-  transition: opacity var(--d-base) var(--e-out);
+.nav-progress i {
+  display: block; height: 100%;
+  transform-origin: left center; transform: scaleX(0);
+  background: linear-gradient(90deg, var(--c-second), var(--accent));
 }
-.rail button[aria-current="true"] em, .rail button:hover em { opacity: 1; }
+
+.nav-menu { display: none; }
+.nav-menu span {
+  display: block; width: 15px; height: 1.5px; border-radius: 1px;
+  background: currentColor; transition: transform .35s var(--e-out);
+}
+.nav-menu span + span { margin-top: 5px; }
+.nav.open .nav-menu span:first-child { transform: translateY(3.25px) rotate(45deg); }
+.nav.open .nav-menu span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+
+@media (max-width: 1023px) {
+  .nav-bar { grid-template-columns: 1fr auto; }
+  .nav-menu { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .nav-ind { display: none; }
+  .nav-links {
+    position: absolute; top: calc(100% + .5rem); right: 0;
+    min-width: 14rem; padding: .4rem;
+    flex-direction: column; align-items: stretch; gap: .15rem;
+    border-radius: 1.25rem;
+    /* Near-opaque, not glass: the menu sits inside the bar, and a backdrop
+       filter nested inside another one only sees the bar, not the page — so a
+       translucent menu let the copy underneath read straight through it. */
+    background: color-mix(in srgb, var(--panel) 97%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    box-shadow: 0 22px 44px -24px color-mix(in srgb, var(--ink) 60%, transparent);
+    opacity: 0; visibility: hidden;
+    transform: translateY(-6px) scale(.98); transform-origin: top right;
+    transition: opacity .25s var(--e-out), transform .3s var(--e-out), visibility 0s linear .3s;
+  }
+  .nav.open .nav-links {
+    opacity: 1; visibility: visible; transform: none;
+    transition: opacity .25s var(--e-out), transform .3s var(--e-out);
+  }
+  .nav-links a { padding: .85rem 1rem; font-size: 1rem; border-radius: .9rem; }
+  .nav-links a[aria-current] { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+}
+@media (max-width: 559px) {
+  .nav-cta { padding: 0 .9rem; }
+  .nav-cta .cta-long { display: none; }
+  .nav-cta .cta-short { display: inline; }
+}
+@media (max-width: 359px) { .nav-word { display: none; } }
 
 /* --- chapters ------------------------------------------------------------- */
 /* A chapter is a run of scroll with one screen of copy pinned inside it. The
@@ -194,11 +284,11 @@ img, canvas { max-width: 100%; }
    one has: a scanning beam that carries its own scanline texture and whose
    first pass is what reveals the copy, a circuit layer in the margins (a bus
    down the outer edge, a chip wired into a small network on the model's side),
-   registration crosshairs rather than plain corners, and a readout strip whose
-   numbers are the model's actual state — the arrangement it is holding, where
-   the scroll is, how far through this screen you are. Nothing in it is
-   decorative typography pretending to be data; it is the same `progress` the
-   rest of the page is built on.
+   registration crosshairs rather than plain corners, and a strip along the
+   bottom with a waveform and a meter of how far through this screen you are —
+   the same `progress` the rest of the page is built on. It carries no text:
+   the readout that used to sit in that strip went, so the only words in the
+   panel are the copy's own.
 
    No grid. The panel had a 72px measurement grid for a surface and the page a
    30px dot grid behind everything; both went, because two grids behind copy
@@ -232,8 +322,11 @@ img, canvas { max-width: 100%; }
    has finished typing, from the first line it has to reveal (--scan-from), and
    runs at constant speed for --scan-d — linear on purpose, because app.js times
    each line of copy to the moment this leading edge crosses it and the two have
-   to agree. Both are written onto the <section> by that same calculation.
-   After it, the slower idle sweep takes over for as long as the screen is live. */
+   to agree. Both are written onto the <section> by that same calculation, and
+   the pass runs for as long as the section carries .scanning — whether or not
+   it is the live one, because on a phone a section can be landing in the top
+   half of the screen while the previous one still owns the middle. After it,
+   the slower idle sweep takes over for as long as the screen is live. */
 .rig-beam { inset: 0; overflow: hidden; }
 .rig-beam::before {
   content: ''; position: absolute; left: 0; right: 0; top: -150px; height: 150px;
@@ -245,10 +338,9 @@ img, canvas { max-width: 100%; }
   border-bottom: 1px solid var(--accent);
   box-shadow: 0 6px 18px -6px var(--accent);
 }
-.chapter.live.typed .rig-beam::before {
-  animation:
-    rig-scan var(--scan-d, 2s) linear,
-    rig-beam 5.4s var(--e-inout) calc(var(--scan-d, 2s) + 1.4s) infinite;
+.chapter.scanning .rig-beam::before { animation: rig-scan var(--scan-d, 2s) linear; }
+.chapter.live.typed:not(.scanning) .rig-beam::before {
+  animation: rig-beam 5.4s var(--e-inout) 1.4s infinite;
 }
 @keyframes rig-scan {
   0%   { top: calc(var(--scan-from, 0px) - 150px); opacity: 0; }
@@ -380,7 +472,7 @@ img, canvas { max-width: 100%; }
   90%, 100% { transform: scale(2.3); opacity: 0; }
 }
 
-/* The readout. Live numbers off the model, not decorative mono type. */
+/* The strip: a waveform and a meter of how far through this screen you are. */
 .rig-strip {
   position: absolute; left: 0; right: 0; bottom: 0; height: 20px;
   display: flex; align-items: center; gap: .7rem;
@@ -393,11 +485,6 @@ img, canvas { max-width: 100%; }
   flex: none; width: clamp(66px, 9vw, 132px); height: 20px;
   fill: none; stroke: var(--accent); stroke-width: 1.25;
   vector-effect: non-scaling-stroke; opacity: .8;
-}
-.rig-read {
-  font-family: var(--f-mono); font-size: .5625rem; letter-spacing: .15em;
-  text-transform: uppercase; color: var(--faint); font-weight: 400;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .rig-meter { position: relative; flex: none; width: clamp(48px, 6vw, 82px); height: 7px; }
 .rig-meter::before, .rig-meter::after {
@@ -540,13 +627,6 @@ img, canvas { max-width: 100%; }
               0 18px 34px -16px color-mix(in srgb, var(--accent) 95%, transparent); }
 .cta:hover i { transform: translateX(3px); }
 .cta-lg { padding: 1.15rem 1.8rem; font-size: clamp(.75rem, .9vw, .9375rem); }
-.cta-sm { padding: .62rem .85rem; font-size: .625rem; letter-spacing: .12em; box-shadow: none; }
-.cta-sm .cta-short { display: inline; }
-.cta-sm .cta-long { display: none; }
-@media (min-width: 560px) {
-  .cta-sm .cta-short { display: none; }
-  .cta-sm .cta-long { display: inline; }
-}
 
 .link-btn {
   font: inherit; font-family: var(--f-mono); font-size: clamp(.6875rem, .78vw, .8125rem);
@@ -839,7 +919,6 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
    ≥ 900px — the model comes out from behind the copy and stands beside it
    =========================================================================== */
 @media (min-width: 900px) {
-  .rail { display: flex; }
   .hud { display: grid; }
   /* The two full-bleed sections get the whole container, so their grids open
      out here and nowhere else. */
@@ -935,11 +1014,12 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
    section still has to fit one screen, so the air goes first.
    =========================================================================== */
 @media (max-height: 760px) and (min-width: 900px) {
-  /* The top bar is ~56px, so 5rem of head room was buying nothing. Method is
+  /* The nav is ~54px here, so 5rem of head room was buying nothing. Method is
      the tightest section on the page here — four steps two-up inside half a
      screen — and the space to fit it comes out of padding and density rather
      than out of the copy: on a 960x700 laptop this recovers about 55px, which
      is what that section was over by. */
+  :root { --nav-h: 2.875rem; --nav-top: .5rem; }
   .ch-body { padding-block: 4rem 2rem; }
   .is-full .ch-col { gap: 1.25rem; }
   .chapter h1, .chapter h2 { font-size: clamp(2rem, 3.4vw, 3.2rem); }
@@ -1008,12 +1088,11 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
    the length of the fade and removes it again, so nothing transitions during
    ordinary scrolling. */
-html.theming, html.theming body, html.theming .btn, html.theming .cta,
+html.theming, html.theming body, html.theming .cta,
 html.theming .marker, html.theming .marker i, html.theming .chapter h1,
 html.theming .chapter h2, html.theming .chapter h3, html.theming .figures dd,
-html.theming .figures dd b, html.theming .brand b, html.theming .rail button,
-html.theming .rail button i, html.theming .hud, html.theming .hud b,
-html.theming .colophon, html.theming .card,
+html.theming .figures dd b, html.theming .nav-links a, html.theming .nav-icon,
+html.theming .hud, html.theming .colophon, html.theming .card,
 html.theming .wall .wm, html.theming .thumb,
 html.theming .portrait, html.theming .roster li,
 html.theming .band, html.theming .chapter strong, html.theming .chapter strong .ln-w,

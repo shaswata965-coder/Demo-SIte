@@ -18,11 +18,11 @@
    morph, which is why the two kinds of section transition into each other
    instead of cutting.
 
-   The reveal sequence hangs off that same number. Each screen runs: the
-   eyebrow arrives, the title types, then the rig comes in and its beam makes
-   one pass that reveals the rest a line at a time — sub-headlines typing as it
-   reaches them. Fired from paint() when `progress` says the copy has landed,
-   not from an IntersectionObserver watching a margin box.
+   Each screen also plays a reveal when it lands: the eyebrow arrives, the
+   title types, then the rig comes in and its beam makes one pass that reveals
+   the rest a line at a time — sub-headlines typing as it reaches them. That
+   is read off where the title actually is on screen, every frame, and it
+   rewinds once the screen has gone, so landing on it again plays it again.
 
    Rule this file follows: the copy is the page. `armReveals` runs after the
    model is built, so a failure there leaves a readable static page and the
@@ -57,17 +57,17 @@
      `skin` names the section's whole colour set — see css/tokens.css. The
      <section> wears it as a class so its band and copy are painted from it;
      the root wears it as data-skin so the model, which reads its colours off
-     the root, and the topbar scrim, which is drawn from the root's ground,
+     the root, and the nav bar, which is drawn from the root's panel and ink,
      both follow. The names here and the .sk-* classes in index.html have to
      agree. */
   var CHAPTERS = [
-    { id: 'seed',   label: 'Intro',    x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper' },
-    { id: 'bloom',  label: 'Services', x: 'left',  dim: 1.00, zoom: 0.82, skin: 'violet' },
-    { id: 'infer',  label: 'Method',   x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
-    { id: 'settle', label: 'Work',     x: 0.60,    dim: 0.34, zoom: 1.38, skin: 'lemon' },
-    { id: 'vault',  label: 'Team',     x: 'left',  dim: 1.00, zoom: 0.80, skin: 'paper' },
-    { id: 'ledger', label: 'Partners', x: 0.44,    dim: 0.42, zoom: 1.50, skin: 'cyan' },
-    { id: 'core',   label: 'Contact',  x: 'right', dim: 1.00, zoom: 0.88, skin: 'ember' }
+    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper' },
+    { id: 'bloom',  x: 'left',  dim: 1.00, zoom: 0.82, skin: 'violet' },
+    { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
+    { id: 'settle', x: 0.60,    dim: 0.34, zoom: 1.38, skin: 'lemon' },
+    { id: 'vault',  x: 'left',  dim: 1.00, zoom: 0.80, skin: 'paper' },
+    { id: 'ledger', x: 0.44,    dim: 0.42, zoom: 1.50, skin: 'cyan' },
+    { id: 'core',   x: 'right', dim: 1.00, zoom: 0.88, skin: 'ember' }
   ];
 
   /* Narrow screens have no half to park anything in: the model is a backdrop
@@ -84,11 +84,11 @@
 
   var sections = [];
 
-  /* The runner armReveals() returns, set once every heading has been rebuilt
-     and the webfont has landed (see init); called from paint() as the scroll
-     reaches each screen. Null until then, which is why paint() guards it —
-     boot() paints several frames before reveals are armed. */
-  var arrive = null;
+  /* The per-frame update armReveals() returns, set once every heading has
+     been rebuilt and the webfont has landed (see init); frame() calls it.
+     Null until then, which is why frame() guards it — boot() runs several
+     frames before reveals are armed. */
+  var reveal = null;
 
   function $(id) { return document.getElementById(id); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -112,8 +112,11 @@
     /* ---- where the content container actually is --------------------------
        Measured rather than recomputed from the CSS clamps, so the model and
        the copy can never disagree about where the halfway line is. */
-    var innerL = 0, innerW = innerWidth;
+    var innerL = 0, innerW = innerWidth, navBottom = 0;
+    var navBar = document.querySelector('.nav-bar');
     function measure() {
+      /* Where the nav ends: a title under it has not landed. */
+      navBottom = navBar ? navBar.getBoundingClientRect().bottom : 0;
       var el = document.querySelector('.ch-inner');
       if (!el) { innerL = 0; innerW = innerWidth; return; }
       var r = el.getBoundingClientRect();
@@ -157,12 +160,13 @@
       return systemDark.matches;
     }
 
-    var themeBtn = $('themeBtn'), themeLabel = $('themeLabel');
+    /* A toggle with a fixed name — "Dark theme" — whose pressed state says
+       whether it is on; the icon shows where a click will take you. */
+    var themeBtn = $('themeBtn');
     function syncThemeButton() {
       var dark = isDark();
-      themeLabel.textContent = dark ? 'Light' : 'Dark';
       themeBtn.setAttribute('aria-pressed', String(dark));
-      themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      themeBtn.title = dark ? 'Switch to light' : 'Switch to dark';
     }
 
     var fadeTimer;
@@ -255,30 +259,75 @@
       }
     }
 
-    /* A panel changes size when the webfont lands, when a phone rotates, when
-       copy reflows — not only on window resize — so each one is watched. The
-       draw is keyed on size, so a callback that changes nothing costs nothing. */
-    if (window.ResizeObserver) {
-      var circuitQueued = false;
-      var ro = new ResizeObserver(function () {
-        if (circuitQueued) return;
-        circuitQueued = true;
-        requestAnimationFrame(function () { circuitQueued = false; drawCircuits(); });
-      });
-      for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
+    /* ---- navigation ------------------------------------------------------- */
+    /* The links are in the markup. This keeps the bar in step with the page:
+       which link is current (the pill slides onto it), how far down the page
+       you are (the hairline along the bottom edge), and the menu that the
+       links fold into below 1024px. */
+    var nav = $('nav'), navMenu = $('navMenu'), navProgress = $('navProgress');
+    var navList = $('navLinks'), navInd = nav ? nav.querySelector('.nav-ind') : null;
+    var navLinks = navList ? [].slice.call(navList.querySelectorAll('a')) : [];
+    var navCurrent = -1, navP = -1;
+
+    function setNavCurrent(idx) {
+      navCurrent = idx;
+      var on = null;
+      for (var k = 0; k < navLinks.length; k++) {
+        if (parseInt(navLinks[k].getAttribute('data-goto'), 10) === idx) {
+          on = navLinks[k];
+          navLinks[k].setAttribute('aria-current', 'location');
+        } else {
+          navLinks[k].removeAttribute('aria-current');
+        }
+      }
+      if (!navInd) return;
+      /* On the intro nothing is current — the mark is home — so the pill
+         fades out where it stands rather than sliding off to nowhere. */
+      if (!on || !on.offsetWidth) { navInd.classList.remove('on'); return; }
+      navInd.style.width = on.offsetWidth + 'px';
+      navInd.style.transform = 'translateX(' + on.offsetLeft + 'px)';
+      navInd.classList.add('on');
     }
 
-    /* ---- section rail ----------------------------------------------------- */
-    var rail = $('rail');
-    var buttons = CHAPTERS.map(function (c, i) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.innerHTML = '<em>' + c.label + '</em><i></i>';
-      b.setAttribute('aria-label', 'Section ' + i + ', ' + c.label);
-      b.addEventListener('click', function () { scrollToSection(i); });
-      rail.appendChild(b);
-      return b;
-    });
+    function setMenu(open) {
+      if (!nav || !navMenu) return;
+      nav.classList.toggle('open', open);
+      navMenu.setAttribute('aria-expanded', String(open));
+    }
+    if (navMenu) {
+      /* The links come before the button in the document, so opening the menu
+         takes focus into it; Escape brings focus back. */
+      navMenu.addEventListener('click', function () {
+        var open = !nav.classList.contains('open');
+        setMenu(open);
+        if (open && navLinks[0]) navLinks[0].focus();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); navMenu.focus(); }
+      });
+      document.addEventListener('click', function (e) {
+        if (nav.classList.contains('open') && !nav.contains(e.target)) setMenu(false);
+      });
+    }
+
+    /* A panel changes size when the webfont lands, when a phone rotates, when
+       copy reflows — not only on window resize — so each one is watched, and so
+       are the nav links, whose widths the pill is sized from. The circuit draw
+       is keyed on size, so a callback that changes nothing costs nothing. */
+    if (window.ResizeObserver) {
+      var relayoutQueued = false;
+      var ro = new ResizeObserver(function () {
+        if (relayoutQueued) return;
+        relayoutQueued = true;
+        requestAnimationFrame(function () {
+          relayoutQueued = false;
+          drawCircuits();
+          if (navCurrent >= 0) setNavCurrent(navCurrent);
+        });
+      });
+      for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
+      if (navList) ro.observe(navList);
+    }
 
     /* ---- progress, measured from the viewport ----------------------------- */
     /* Deliberately not window.scrollY: when this page is embedded, the thing
@@ -300,32 +349,28 @@
     }
 
     /* ---- painting --------------------------------------------------------- */
-    var hudState = $('hudState'), hudCount = $('hudCount');
     var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
-    hudCount.textContent = field.cfg.nodes + ' units · ' + field.eCount + ' weights';
 
     var lastChapter = -1, lastSkinKey = null, shiftedCopy = -1;
-    var liveSec = -1, readTick = 0, scrollP = 0;
+    var liveSec = -1, meterTick = 0, scrollP = 0;
 
-    /* The rig's numbers are the model's, not decorative mono type: which
-       arrangement it is holding, where the scroll is in [0, 6], the yaw it has
-       turned to, and how far through this screen you are. Written only for the
-       live section and only every few frames — it is a readout, not an
-       animation, and at 60Hz nobody can read two digits of it anyway. */
-    function writeReadout(sec, i, p) {
-      if (!sec.rigRead && !sec.rigDone) {
-        sec.rigRead = sec.querySelector('.rig-read');
-        sec.rigMeter = sec.querySelector('.rig-meter');
-        sec.rigDone = true;
+    /* The strip's meter: how far through this screen you are. Written only for
+       the live section and only every few frames. */
+    function writeMeter(sec, i, p) {
+      if (sec.rigMeter === undefined) sec.rigMeter = sec.querySelector('.rig-meter');
+      if (sec.rigMeter) sec.rigMeter.style.setProperty('--fill', clamp(p - i, 0, 1).toFixed(3));
+    }
+
+    /* The live section is whichever one is under the middle of the viewport —
+       measured, so it is right on a phone too, where nothing is pinned and a
+       section is as tall as its copy. */
+    function liveIndex() {
+      var mid = innerHeight / 2;
+      for (var i = 0; i < sections.length; i++) {
+        var r = sections[i].getBoundingClientRect();
+        if (r.top <= mid && r.bottom > mid) return i;
       }
-      if (sec.rigRead) {
-        var yaw = Math.round(Math.abs(field.viewYaw || 0) * 1000) % 4096;
-        sec.rigRead.textContent = CHAPTERS[i].id + ' \u00b7 p ' + p.toFixed(2)
-          + ' \u00b7 0x' + ('00' + yaw.toString(16)).slice(-3).toUpperCase();
-      }
-      if (sec.rigMeter) {
-        sec.rigMeter.style.setProperty('--fill', clamp(p - i, 0, 1).toFixed(3));
-      }
+      return liveSec < 0 ? 0 : liveSec;
     }
 
     /* Only the chapter you are in carries a parallax offset; the previous one
@@ -353,10 +398,7 @@
         lastChapter = idx;
         root.setAttribute('data-chapter', String(idx));
         root.setAttribute('data-skin', CHAPTERS[idx].skin);
-        for (var i = 0; i < buttons.length; i++) {
-          buttons[i].setAttribute('aria-current', i === idx ? 'true' : 'false');
-        }
-        hudState.textContent = CHAPTERS[idx].id;
+        setNavCurrent(idx);
         if (!force) field.pulse(0.6);
       }
 
@@ -372,34 +414,25 @@
         field.setTheme(sk.mode, sk.colors);
       }
 
-      /* Which screen has arrived. This is deliberately NOT an
-         IntersectionObserver: the observer fired on a margin box roughly 400px
-         before the copy landed, so a title started typing while its section was
-         still below the fold and the body copy was released after the copy had
-         already scrolled off the top — on any normal scroll you saw neither
-         half. `progress` is the number the rest of the page is built on and it
-         says exactly where the copy is, so the sequence hangs off that instead.
+      /* Only the screen you are on animates — the idle beam, the circuit's
+         signal, the meter. Seven panels beaming and pulsing at once would
+         compete with the canvas for the frame budget, and you can only ever
+         see one of them. */
+      var live = liveIndex();
+      if (live !== liveSec) {
+        if (liveSec >= 0 && sections[liveSec]) sections[liveSec].classList.remove('live');
+        liveSec = live;
+        if (sections[liveSec]) sections[liveSec].classList.add('live');
+      }
+      if (sections[liveSec] && (force || ++meterTick % 5 === 0)) {
+        writeMeter(sections[liveSec], liveSec, scrollP);
+      }
 
-         reach is the screen whose copy is landing: p + 0.08 gives the title a
-         short run-up so it is mid-type as the screen settles rather than
-         starting after it. Screens behind you are released outright — you have
-         passed them, and scrolling back up should find copy, not a blank. */
-      if (arrive) {
-        var reach = clamp(Math.floor(scrollP + 0.08), 0, CHAPTERS.length - 1);
-        for (var a = 0; a < reach; a++) arrive(a, true);
-        arrive(reach, false);
-
-        /* Only the screen you are on animates. Seven panels beaming and
-           pulsing at once would compete with the canvas for the frame budget
-           and you can only ever see one of them. */
-        if (reach !== liveSec) {
-          if (liveSec >= 0 && sections[liveSec]) sections[liveSec].classList.remove('live');
-          liveSec = reach;
-          if (sections[liveSec]) sections[liveSec].classList.add('live');
-        }
-        if (sections[liveSec] && (force || ++readTick % 5 === 0)) {
-          writeReadout(sections[liveSec], liveSec, scrollP);
-        }
+      /* The nav's hairline: how far down the whole page you are. */
+      var np = Math.round(clamp(scrollP / (CHAPTERS.length - 1), 0, 1) * 1000) / 1000;
+      if (navProgress && np !== navP) {
+        navP = np;
+        navProgress.style.transform = 'scaleX(' + np + ')';
       }
 
       /* Travel, roll, zoom and morph all run off the same eased fraction, so
@@ -477,12 +510,15 @@
         sCurrent = window.scrollY;
       }
 
-      /* The sequence gate needs where the SCROLL is, not where the model has
-         eased to. field.progress chases this value with a ~0.5s time constant,
-         which is exactly the weight the model wants and exactly half a screen
-         of lag for anything trying to fire as a screen arrives. */
+      /* The page's own bookkeeping needs where the SCROLL is, not where the
+         model has eased to. field.progress chases this value with a ~0.5s time
+         constant, which is exactly the weight the model wants and exactly half
+         a screen of lag for anything else. The reveals read the page directly
+         and run here, between measuring and painting, so their reads land on
+         a layout that is already clean. */
       scrollP = progress();
       field.setProgress(scrollP);
+      if (reveal) reveal(navBottom);
       paint(false);
       requestAnimationFrame(frame);
     }
@@ -497,6 +533,7 @@
       (function (el) {
         el.addEventListener('click', function (ev) {
           ev.preventDefault();
+          setMenu(false);
           scrollToSection(clamp(parseInt(el.getAttribute('data-goto'), 10) || 0,
                                 0, sections.length - 1));
         });
@@ -583,7 +620,8 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); drawCircuits(); paint(true);
+        measure(); computeSpin(); drawCircuits(); setMenu(false); paint(true);
+        if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
       paint(true);
@@ -716,19 +754,26 @@
 
   /* Driven off elapsed time rather than one timer per character, so the speed
      is the same on a 60Hz and a 120Hz screen and a long title cannot outrun
-     its own section. The per-character delay shortens as the title grows so
-     the whole line always lands inside `max`.
+     its own section. The per-character delay is `per`, stretched so that a
+     short title still takes `min` to type — "Projects" at 42ms a letter was
+     over in a third of a second, which reads as a flash, not as typing — and
+     squeezed so a long one never takes more than `max`.
 
      Two speeds. A section title is the event of the screen and is given time
      to be watched; a sub-headline types as the scan reaches it, alongside the
-     lines landing around it, so it is quicker and holds its caret only briefly. */
-  var TYPE_PER = 40, TYPE_MAX = 880, TYPE_HOLD = 160;
-  var SUB_PER = 26, SUB_MAX = 460, SUB_HOLD = 90;
+     lines landing around it, so it is quicker and holds its caret only briefly.
 
-  function typeHeading(chars, done, perChar, max, hold) {
-    var n = chars.length, per = Math.min(perChar, max / n);
+     `alive` is how a sequence is cancelled: when a section rewinds, the token
+     it was started under goes stale and the next step quietly does nothing. */
+  var TYPE = { per: 42, min: 560, max: 900, hold: 260 };
+  var SUB = { per: 28, min: 300, max: 520, hold: 110 };
+
+  function typeHeading(chars, done, speed, alive) {
+    var n = chars.length;
+    var per = clamp(speed.per, speed.min / n, speed.max / n);
     var t0 = performance.now(), i = 0;
     (function step(now) {
+      if (alive && !alive()) return;
       var want = Math.min(n, Math.floor((now - t0) / per) + 1);
       while (i < want) {
         if (i > 0) chars[i - 1].classList.remove('cursor');
@@ -741,9 +786,10 @@
          without it the next thing arrives while the title is still being read
          as unfinished. */
       setTimeout(function () {
+        if (alive && !alive()) return;
         chars[n - 1].classList.remove('cursor');
         if (done) done();
-      }, hold);
+      }, speed.hold);
     }(performance.now()));
   }
 
@@ -761,7 +807,7 @@
 
      SCAN_BEAM is the beam's height in css/main.css (.rig-beam::before): its
      leading edge is that element's bottom border. */
-  var SCAN_SPEED = 220, SCAN_SPEED_NARROW = 320, SCAN_BEAM = 150, SCAN_RASTER = 0.12;
+  var SCAN_SPEED = 220, SCAN_SPEED_NARROW = 440, SCAN_BEAM = 150, SCAN_RASTER = 0.12;
   var BOXES = 'li, .card, .thumb, .portrait, .wall-row';
 
   /* Group a block's words into the lines they are actually laid out on. In
@@ -783,7 +829,7 @@
   }
 
   function planScan(entry) {
-    var rig = entry.sec.querySelector('.rig');
+    var rig = entry.rig;
     if (!rig) return null;
     var R = rig.getBoundingClientRect(), W = Math.max(1, R.width);
     var items = [], k, r;
@@ -798,6 +844,7 @@
                    y: r.top - R.top + r.height * 0.5, x: r.left - R.left });
     }
     for (k = 0; k < entry.words.length; k++) measureLines(entry.words[k], R, items);
+    entry.scanDur = 0;
     if (!items.length) return items;
 
     /* The pass starts just above the first thing it has to reveal rather than
@@ -816,15 +863,16 @@
     items.sort(function (a, b) { return a.t - b.t; });
     entry.sec.style.setProperty('--scan-from', Math.round(y0) + 'px');
     entry.sec.style.setProperty('--scan-d', dur.toFixed(3) + 's');
+    entry.scanDur = dur;
     return items;
   }
 
-  function land(item) {
+  function land(item, alive) {
     if (item.kind === 'box') item.el.classList.add('in');
     else if (item.kind === 'line') {
       for (var k = 0; k < item.els.length; k++) item.els[k].classList.add('in');
     } else {
-      try { typeHeading(item.chars, null, SUB_PER, SUB_MAX, SUB_HOLD); }
+      try { typeHeading(item.chars, null, SUB, alive); }
       catch (e) { showAll(item.chars); throw e; }
     }
   }
@@ -838,9 +886,40 @@
     for (k = 0; k < entry.subs.length; k++) showAll(entry.subs[k].chars);
   }
 
-  /* Split every heading and every block of copy, then hand back a per-section
-     runner that app.js can fire from the scroll. Nothing here observes
-     anything — see `arrive()` in boot() for why, and for what fires it. */
+  function hideChars(chars) {
+    if (!chars) return;
+    for (var i = 0; i < chars.length; i++) chars[i].classList.remove('on', 'cursor');
+  }
+
+  /* ---- when a screen lands ------------------------------------------------
+     A section plays when its title has landed, and rewinds when it has left.
+     Both are read off where things actually are on screen, every frame —
+     not off `progress`, and not once:
+
+       · landed — the title is wholly on screen, clear of the nav, and has come
+         up to at most LAND of the viewport's height; or its section has
+         reached the top of the viewport (pinned, on a wide screen) with the
+         title on screen. The second clause is the guarantee: whatever the
+         viewport, a title at rest always counts as landed.
+       · gone below — the copy is wholly under the viewport. Everything
+         rewinds, so scrolling down into it again plays it again.
+       · gone above — the copy is wholly over the viewport. The copy stays
+         (scrolling back up should find text coming down into view, not an
+         empty panel) but the title rewinds, and types again as it comes
+         back into view.
+
+     The first version fired off `progress` at i − 0.08 and ran each section
+     once. Both were wrong in ways a desktop scroll never showed. A jump from
+     the nav glides past every section in between, so each one started typing
+     off screen and was spent by the time you scrolled back to it; and below
+     900px, where nothing is pinned, i − 0.08 is the moment a section is about
+     to leave the top of the screen, so the typing happened as it scrolled
+     away. Measured with a wheel-driven scroll: on a 390px phone, 8–13 of ~45
+     typing frames had the title on screen; after a jump, 3 of 30. */
+  var LAND_WIDE = 0.45, LAND_NARROW = 0.62;
+
+  /* Split every heading and every block of copy, then hand back the per-frame
+     update that app.js runs from the frame loop. */
   function armReveals() {
     var chapters = document.querySelectorAll('.chapter');
     if (!chapters.length) return null;
@@ -854,8 +933,10 @@
     try {
       for (i = 0; i < chapters.length; i++) {
         var sec = chapters[i], h = sec.querySelector('h1, h2');
-        var entry = { sec: sec, chars: h ? splitHeading(h) : null,
-                      subs: [], boxes: [], words: [], done: false };
+        var col = sec.querySelector('.ch-col') || sec;
+        var entry = { sec: sec, col: col, head: h || col, rig: sec.querySelector('.rig'),
+                      chars: h ? splitHeading(h) : null, subs: [], boxes: [], words: [],
+                      title: 'hidden', body: 'hidden', tTok: 0, bTok: 0, scanDur: 0 };
         entries.push(entry);
 
         var subs = sec.querySelectorAll('.ch-col h3');
@@ -886,40 +967,103 @@
     }
     root.classList.add('reveals-armed');
 
-    function release(entry, instant) {
-      var plan = null;
-      try { if (!instant) plan = planScan(entry); }
-      catch (e) { entry.sec.classList.add('typed'); landAll(entry); throw e; }
-      entry.sec.classList.add('typed');
-      if (!plan) { landAll(entry); return; }
+    /* No motion: everything is simply there, once, and nothing rewinds. */
+    if (reduced) {
+      for (i = 0; i < entries.length; i++) {
+        if (entries[i].chars) showAll(entries[i].chars);
+        landAll(entries[i]);
+        entries[i].sec.classList.add('arming', 'typed');
+      }
+      return function () {};
+    }
 
-      /* One loop per scan, walking a list already sorted by time. */
+    function rewind(e) {
+      var j, w;
+      e.tTok++; e.bTok++;
+      e.sec.classList.remove('arming', 'typed', 'scanning');
+      hideChars(e.chars);
+      for (j = 0; j < e.subs.length; j++) hideChars(e.subs[j].chars);
+      for (j = 0; j < e.boxes.length; j++) e.boxes[j].classList.remove('in');
+      for (j = 0; j < e.words.length; j++) {
+        for (w = 0; w < e.words[j].length; w++) e.words[j][w].classList.remove('in');
+      }
+      e.title = e.body = 'hidden';
+    }
+
+    /* The copy, all at once — for a section you have scrolled past. */
+    function settle(e) {
+      e.bTok++;
+      landAll(e);
+      e.sec.classList.add('arming', 'typed');
+      e.sec.classList.remove('scanning');
+      e.body = 'shown';
+    }
+
+    function untype(e) {
+      e.tTok++;
+      hideChars(e.chars);
+      e.title = 'hidden';
+    }
+
+    function typeTitle(e) {
+      var tok = ++e.tTok;
+      e.title = 'typing';
+      e.sec.classList.add('arming');
+      function then() {
+        e.title = 'shown';
+        if (e.body === 'hidden') scan(e);
+      }
+      if (!e.chars) { then(); return; }
+      try {
+        typeHeading(e.chars, then, TYPE, function () { return e.tTok === tok; });
+      } catch (err) {
+        showAll(e.chars); then();
+        throw err;
+      }
+    }
+
+    function scan(e) {
+      var tok = ++e.bTok, alive = function () { return e.bTok === tok; };
+      var plan;
+      try { plan = planScan(e); }
+      catch (err) { settle(e); throw err; }
+      if (!plan) { settle(e); return; }
+      e.body = 'scanning';
+      e.sec.classList.add('typed', 'scanning');
+
+      /* One loop per scan, walking a list already sorted by time; it holds
+         .scanning until the beam has left the panel. */
       var t0 = performance.now(), next = 0;
       requestAnimationFrame(function tick(now) {
+        if (!alive()) return;
         var t = (now - t0) / 1000;
-        while (next < plan.length && plan[next].t <= t) land(plan[next++]);
-        if (next < plan.length) requestAnimationFrame(tick);
+        try {
+          while (next < plan.length && plan[next].t <= t) land(plan[next++], alive);
+        } catch (err) { settle(e); throw err; }
+        if (next < plan.length || t < e.scanDur) { requestAnimationFrame(tick); return; }
+        e.sec.classList.remove('scanning');
+        e.body = 'shown';
       });
     }
 
-    return function run(i, instant) {
-      var entry = entries[i];
-      if (!entry || entry.done) return;
-      entry.done = true;
-      entry.sec.classList.add('arming');
-      if (reduced || instant) {
-        if (entry.chars) showAll(entry.chars);
-        release(entry, true);
-        return;
-      }
-      if (!entry.chars) { release(entry, false); return; }
-      try {
-        typeHeading(entry.chars, function () { release(entry, false); },
-                    TYPE_PER, TYPE_MAX, TYPE_HOLD);
-      } catch (e) {
-        showAll(entry.chars);
-        release(entry, true);
-        throw e;
+    return function update(navBottom) {
+      var vh = innerHeight || 800, land = wide() ? LAND_WIDE : LAND_NARROW;
+      for (var n = 0; n < entries.length; n++) {
+        var e = entries[n], c = e.col.getBoundingClientRect();
+        if (c.top >= vh) {
+          if (e.title !== 'hidden' || e.body !== 'hidden') rewind(e);
+          continue;
+        }
+        if (c.bottom <= 0) {
+          if (e.body !== 'shown') settle(e);
+          if (e.title !== 'hidden') untype(e);
+          continue;
+        }
+        if (e.title !== 'hidden') continue;
+        var hr = e.head.getBoundingClientRect();
+        if (hr.top < 0 || hr.bottom > vh) continue;
+        var clear = hr.top >= navBottom - 2 && (hr.top + hr.bottom) * 0.5 <= vh * land;
+        if (clear || e.sec.getBoundingClientRect().top <= 1) typeTitle(e);
       }
     };
   }
@@ -927,14 +1071,14 @@
   function init() {
     sections = CHAPTERS.map(function (_, i) { return $('c' + i); });
     boot();
-    var run = armReveals();
+    var update = armReveals();
 
     /* Hold the first screen until the webfont has landed, or a second has
        passed. The scan times each line off where it is laid out, and a line
        measured in the fallback face is not where it will be once Archivo and
        Plex swap in. */
     var started = false;
-    function start() { if (!started) { started = true; arrive = run; } }
+    function start() { if (!started) { started = true; reveal = update; } }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start);
     else start();
     setTimeout(start, 1000);

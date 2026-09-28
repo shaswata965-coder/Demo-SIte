@@ -98,23 +98,10 @@
   var POSE_PITCH = [0, 0.00,  0.05, -0.10, 0.10,  0.50, 0.30];
   var POSE_SCALE = [1, 0.94,  0.70,  0.88, 0.78,  0.47, 0.95];
 
-  /* Contextual annotations — two per arrangement, pinned to a real node and
-     faded with the blend. They are the difference between "abstract dots" and
-     "a model you are looking at". */
-  var NOTES = [
-    [['dormant', 0.10]],
-    [['σ activation', 0.55]],
-    [['ŷ output', 0.94]],
-    [['corridor 41', 0.18]],
-    [['immutable', 0.78]],
-    [['p99 38 ms', 0.14]],
-    [['commit', 0.04]]
-  ];
-
   var TIERS = {
-    high:   { nodes: 420, edges: 2100, pulses: 22, dpr: 2.0, notes: true },
-    medium: { nodes: 300, edges: 1400, pulses: 14, dpr: 1.5, notes: true },
-    low:    { nodes: 190, edges: 850,  pulses: 8,  dpr: 1.0, notes: true }
+    high:   { nodes: 420, edges: 2100, pulses: 22, dpr: 2.0 },
+    medium: { nodes: 300, edges: 1400, pulses: 14, dpr: 1.5 },
+    low:    { nodes: 190, edges: 850,  pulses: 8,  dpr: 1.0 }
   };
 
   function detectTier() {
@@ -156,7 +143,6 @@
       maxEdges: opts.maxEdges || Math.round(t.edges * Math.min(1.08, density)),
       pulses: opts.pulses !== undefined ? opts.pulses : t.pulses,
       dprCap: opts.dprCap || t.dpr,
-      notes: opts.notes !== undefined ? opts.notes : t.notes,
       interactive: opts.interactive !== false,
       autoRotate: opts.autoRotate !== undefined ? opts.autoRotate : 0,
       spinPerChapter: opts.spinPerChapter !== undefined ? opts.spinPerChapter : 0.62,
@@ -195,7 +181,7 @@
     this.yawVel = 0; this.pitchVel = 0;
     this.energy = 0;
     this.t = 0;
-    this.frames = 0; this.slowFrames = 0;
+    this.frames = 0;
     this.running = false;
 
     this._build();
@@ -588,14 +574,6 @@
       this.pulses.push({ e: (rand() * c) | 0, t: rand(), speed: 0.45 + rand() * 0.8 });
     }
     this._rand = rand;
-
-    /* Bind each annotation to a node at roughly the given position in the
-       index range, so notes land on different parts of the model. */
-    this.notes = NOTES.map(function (pair) {
-      return pair.map(function (p) {
-        return { text: p[0], node: Math.min(n - 1, Math.round(p[1] * (n - 1))) };
-      });
-    });
   };
 
   /* --------------------------------------------------------------------------
@@ -983,52 +961,9 @@
       }
     }
 
-    /* ---- annotations ----------------------------------------------------- */
-    if (this.cfg.notes) {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.font = '500 ' + Math.round(10 * this.u) + 'px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.textBaseline = 'middle';
-      this._notes(ctx, lo, 1 - t);
-      this._notes(ctx, hi, t);
-    }
-
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.lineCap = 'butt';
-  };
-
-  /* A leader line out to a label — the model annotated, like a schematic. */
-  NeuralField.prototype._notes = function (ctx, state, alpha) {
-    if (alpha < 0.06) return;
-    var notes = this.notes[state], P = this.proj, C = this.colors;
-    for (var i = 0; i < notes.length; i++) {
-      var nd = notes[i].node * 4;
-      var d = P[nd + 2];
-      if (d < 0.6) continue;
-      var x = P[nd], y = P[nd + 1];
-      var u = this.u;
-      var right = x < this.w * this.originX;
-      var lead = Math.min(52 * u, this.w * 0.12);
-      var ex = right ? x + lead : x - lead;
-      var rise = 10 * u;
-
-      ctx.globalAlpha = alpha * 0.5;
-      ctx.strokeStyle = C.dim;
-      ctx.lineWidth = 1 * u;
-      ctx.beginPath();
-      ctx.moveTo(x, y); ctx.lineTo(ex, y - rise); ctx.lineTo(ex + (right ? 8 * u : -8 * u), y - rise);
-      ctx.stroke();
-
-      ctx.globalAlpha = alpha * 0.62;
-      ctx.fillStyle = C.dim;
-      ctx.beginPath(); ctx.arc(x, y, 3.2 * u, 0, TAU); ctx.stroke();
-
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = C.ink;
-      ctx.textAlign = right ? 'left' : 'right';
-      ctx.fillText(notes[i].text, ex + (right ? 12 * u : -12 * u), y - rise);
-    }
-    ctx.textAlign = 'left';
   };
 
   NeuralField.prototype.start = function () {
@@ -1040,9 +975,6 @@
       var dt = Math.min(0.05, (now - last) / 1000); last = now;
       self.t += dt;
       self.frames++;
-
-      if (dt > 0.028) self.slowFrames++; else self.slowFrames = Math.max(0, self.slowFrames - 1);
-      if (self.slowFrames > 90 && self.cfg.notes) { self.cfg.notes = false; self.slowFrames = 0; }
 
       self.progress += (self.targetProgress - self.progress) * Math.min(1, dt * 1.9);
       if (self.reduced) self.t = 0;

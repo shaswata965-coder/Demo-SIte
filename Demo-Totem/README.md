@@ -82,8 +82,11 @@ stack dims away as the globe forms rather than vanishing. That is the whole
 trick behind the model appearing to rewire itself.
 
 **Nodes are drawn by role** — inputs and outputs as rings, bias units as
-squares, hidden units as dots — and each arrangement carries one contextual
-annotation on a leader line (`σ activation`, `corridor 41`, `immutable`).
+squares, hidden units as dots. There are no labels on the model: an earlier
+pass pinned one annotation per arrangement on a leader line (`σ activation`,
+`corridor 41`) and framed the model with a readout of its name and unit count;
+both went, along with the readout under the copy, so the only words on screen
+are the copy's own.
 
 **Viewing poses.** Scroll spin alone can present an arrangement edge-on; the
 layered stack was being viewed straight down its own axis. Each arrangement
@@ -132,9 +135,9 @@ action and orange takes structure.
 relative luminance of the `#C25E2A` it replaces. At that brightness it is an
 excellent ground and a poor foreground, so there are two of it. `--accent` is
 the *fill* — the button, the rule, the model. `--accent-ink` is the same hue as
-*text*, at the lightness the ground can actually carry; `<em>`, `.btn:hover`
-and the rail's current section use that one. Mixing them up is how you get a
-2.9:1 paragraph.
+*text*, at the lightness the ground can actually carry; `<em>` and
+`.link-btn:hover` use that one. Mixing them up is how you get a 2.9:1
+paragraph.
 
 Every value in `tokens.css` is solved, not eyeballed: each hue goes to full
 chroma and then to the lightness nearest the pure hue (L = 0.5) that still
@@ -146,14 +149,14 @@ paints its band and tones its copy — so a section stays readable against its
 own ground even mid-transition, when the section above it may be near-white and
 the one below deep violet. And on `:root` as `data-skin`, written by `paint()`
 from the active section, which is where the model reads its colours and where
-the topbar's scrim is drawn from. Nothing is written per frame: `readSkin()`
+the nav bar is drawn from. Nothing is written per frame: `readSkin()`
 runs once per skin or theme change, because `getComputedStyle` straight after
 an attribute write forces a style recalc.
 
-The persistent chrome is fixed while the bands slide under it, so at a boundary
-it can be over two very different grounds at once. The topbar scrim is what
-gives it one of its own — it carries the root's skin, which `app.js` keeps in
-step with the section the chrome is actually over.
+The nav is fixed while the bands slide under it, so at a boundary it can be
+over two very different grounds at once. It is a glass bar drawn from the
+root's skin — its panel colour and its ink — which `app.js` keeps in step with
+the section underneath, so it always has a ground of its own. See "Navigation".
 
 Per section, the only other things that step are the display type's width and
 weight (Archivo's `wdth` axis runs 84 → 122) and which side the model sits on.
@@ -280,6 +283,42 @@ body background
 and the copy cannot reach above it. That is why the copy lives in a `.ch-body`
 wrapper rather than sitting directly in the section.
 
+## Navigation
+
+One floating glass bar replaces the full-width strip and the rail of dashes
+that used to sit at the top of the page:
+
+```
+[mark AXON]        Services  Method  Work  Team  Partners  Contact        (☾)  [BOOK A TEARDOWN →]
+                              ───────                    (progress along the bottom edge)
+```
+
+- **Drawn from the root's skin.** Its panel colour and ink come from whatever
+  section is underneath, so it is a violet bar over the violet section and a
+  pale one over the paper ones — glass (`backdrop-filter`) over a 72% panel,
+  with its own border and shadow, rather than a scrim fading into the page.
+- **The current section is a pill** that slides between the links, lit by a
+  small accent dot. `setNavCurrent()` in `app.js` sizes it from the current
+  link's own box, so it lands exactly whatever the labels' widths; it is
+  re-placed when the links resize (the webfont landing, a window resize). On
+  the intro nothing is current — the mark is home — and the pill fades out
+  where it stands.
+- **The bottom edge is a progress line**, filled with the same `progress` the
+  rest of the page runs on, inset to the straight run of the pill.
+- **The theme toggle** is an icon: a moon in light, a sun in dark — it shows
+  where a click takes you. It is a toggle button with a fixed name ("Dark
+  theme") whose `aria-pressed` says whether dark is on.
+- **Below 1024px the links fold into a menu** under the bar, opened from a
+  button that turns into a close mark. It closes on a link, on Escape (focus
+  goes back to the button), on a click outside, and on resize. It is
+  near-opaque rather than glass: a backdrop filter nested inside the bar's
+  own only sees the bar, so a translucent menu let the copy underneath read
+  through it.
+
+The links are real anchors (`href="#c3"`), so the page still navigates with
+scripts off; with scripts on they route through the same glide as every other
+call to action.
+
 ## The typed title, and the rig around the copy
 
 Each screen runs one sequence, and everything on it waits its turn:
@@ -292,39 +331,51 @@ Each screen runs one sequence, and everything on it waits its turn:
    lands: body copy **a line at a time**, cards and rows as the edge reaches
    their top, and every sub-headline — service, week, project, name — **types**
 
-### What fires it, and why it is not an observer
+### What fires it: the title, on screen
 
-The first version hung this off an `IntersectionObserver` on the heading, and
-it looked broken on almost every screen. Instrumenting it said why:
+The sequence is fired from **where the title actually is on screen**, read
+every frame from the frame loop — not from an `IntersectionObserver`, and no
+longer from `progress` either.
 
-```
-c1 ARMING y=418     ← typing starts while the section is still 418px below the fold
-c1 TYPED  y=-989    ← the reveal lands after the copy has scrolled off the top
-c3 ARMING y=409     ← c3 arms while c2 is still typing
-```
+The first version hung it off an observer on the heading, and it looked broken
+on almost every screen: the observer fired on a margin box roughly 400px
+before the copy landed, so a title typed while its section was below the fold.
+The second fired off `progress` at `i − 0.08` and ran each section once. That
+measured well with a wheel on a wide screen and was wrong in the two cases
+people actually hit:
 
-A margin box is a poor proxy for "this screen has arrived" when the copy is
-`position: sticky` and the section is 1.82 viewports tall. So the sequence
-hangs off **`progress`** instead — the same number the model, the stage and the
-skins are built on, which says exactly where the copy is.
+- **A jump from the nav** glides past every section in between. Each one armed
+  as it flew by, typed off screen, and was spent — scroll back up and every
+  title was simply there. Measured: 3 of 30 typing frames on screen.
+- **Below 900px**, where nothing is pinned, `i − 0.08` is the moment a section
+  is about to leave the top of the screen, so its title typed as it scrolled
+  away (and its copy stayed hidden the whole way up the screen). Measured on a
+  390px phone: 8–13 of ~45 typing frames on screen.
 
-One detail that is easy to get wrong and worth a full screen of lag: fire off
-the **scroll's** progress, not `field.progress`. The field chases the scroll
-with a ~0.5s time constant, which is exactly the weight the model wants and
-exactly half a screen of error for anything trying to fire as a screen lands.
-`frame()` writes `scrollP` and `paint()` gates on that.
+So now, per section, per frame (`update()` in `armReveals`):
 
-A screen arms at `progress = i − 0.08`, a short run-up so the title is mid-type
-as the screen settles rather than starting after it. Screens behind you are
-released outright — you have passed them, and scrolling back up should find
-copy, not a blank. Measured at the three speeds that matter, `local` being the
-fraction of the section scrolled past (its copy is pinned from 0 to 0.44):
+| where it is | what happens |
+|---|---|
+| title **landed** — wholly on screen, clear of the nav, and up to `LAND` of the viewport's height (0.45 wide, 0.62 narrow); or its section at the top of the viewport with the title on screen, which guarantees a title at rest always lands | the title types, then the scan reveals the copy |
+| copy wholly **below** the viewport | everything rewinds, so scrolling down into it plays it again |
+| copy wholly **above** the viewport | the copy stays — scrolling back up finds text coming down into view, not an empty panel — but the title rewinds and types again as it comes back into view |
 
-| scroll speed | arms at | completes at |
+Sequences are cancellable: each section carries a token for its title and one
+for its copy, and a rewind bumps them, so a half-typed title or a half-run scan
+simply stops at its next step. Measured with a wheel-driven scroll, the same
+script against both versions — frames with the title on screen, out of frames
+spent typing:
+
+| case | before | after |
 |---|---|---|
-| ~600 px/s, reading | −0.08 | 0.07 – 0.19, copy pinned |
-| ~1100 px/s, moving | −0.08 | 0.12 – 0.32, copy pinned |
-| ~2700 px/s, a flick | −0.08 | 0.28 – 0.60, copy still on screen |
+| 1440×900, continuous scroll | all on screen | all on screen |
+| 1440×900, jump to Contact, then scroll back up | typed in flight (3 of 5 frames on screen), then nothing on the way back | every title types on screen on the way back |
+| 760×900, reading — scroll, pause, repeat | two sections lost about half (24 of 44, 28 of 32) | all on screen |
+| 390×844, reading — scroll, pause, repeat | three sections lost up to 60% (21 of 44, 19 of 51, 28 of 31) | worst 43 of 52, the rest all on screen |
+
+The reads come after `progress()` and before `paint()` in `frame()`, so they
+land on a layout that is already clean; a section waiting to land costs two
+rect reads, everything else one.
 
 ### Typing without reflow
 
@@ -408,22 +459,24 @@ What makes a panel read as live is movement and small dense detail:
 | `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read. Its first pass reveals the copy (above); after that it sweeps idly while the screen is live |
 | `.rig-reg` | registration crosshairs at the corners. A bracket says "border"; a crosshair says the panel has been aligned to something |
 | `.rig-circ` | the circuit layer — see below |
-| `.rig-strip` | a waveform, a readout and a segmented meter |
+| `.rig-strip` | a waveform and a segmented meter of how far through this screen you are — no text |
 
 There is **no grid**. The panel used to stand on a 72px measurement grid and
 the page on a 30px dot grid; both went, because two grids behind copy that
 already sits on a coloured band read as graph paper rather than as a screen.
 
-**The readout is the model's actual state**, not decorative mono type: the
-arrangement it is holding, where the scroll is in `[0, 6]`, the yaw it has
-turned to, and a meter of how far through this screen you are. It is the same
-`progress` the rest of the page runs on, written every fifth frame for the live
-screen only.
+The meter is the same `progress` the rest of the page runs on, written every
+fifth frame for the live screen only. The strip used to carry a readout too —
+the arrangement's name, the scroll position, the yaw in hex — and it went with
+the rest of the small text around the copy and the model.
 
-Everything that moves is gated on **`.live`**, which `paint()` puts on the one
-screen you are looking at. Seven panels beaming and pulsing at once would
-compete with the canvas for the frame budget for no benefit — you can only see
-one. Measured: 3 running animations across all seven panels.
+Everything that moves is gated on **`.live`**, which `paint()` puts on the
+section under the middle of the viewport — measured, so it is right on a phone
+too. Seven panels beaming and pulsing at once would compete with the canvas for
+the frame budget for no benefit — you can only see one. The one exception is
+the scan's first pass (`.scanning`), which runs wherever a section is landing:
+on a phone a section can be landing in the top half of the screen while the
+previous one still owns the middle.
 
 The rig is sized to `.ch-col`, so the same panel fits a hero, a four-item list
 and a three-card grid with no per-breakpoint geometry.
@@ -436,8 +489,8 @@ nothing.
 On a phone the waveform is dropped and the circuit layer changes shape (below).
 The beam stays. Under `prefers-reduced-motion` there is no typing, no caret, no
 beam, no scan and no pulses — every line is simply there, the circuit is drawn
-but still, and the readout still updates, because it is information rather
-than animation and it only changes when you scroll.
+but still, and the meter still updates, because it is information rather than
+animation and it only changes when you scroll.
 
 ### The circuit layer
 
@@ -446,7 +499,7 @@ small neural network, the idiom most AI sites reach for, kept to two pieces so
 it frames the copy rather than competing with it:
 
 - **A bus down the outer edge**, the side the model is *not* on: two traces with
-  45° jogs and vias, the long one running into the readout strip's rail, with
+  45° jogs and vias, the long one running into the strip's rail, with
   pulses riding it.
 - **A chip wired into a network on the model's side.** Four traces fan out of a
   chip on the panel's inner edge into a 4–3–1 network pointed at the model's
@@ -465,7 +518,7 @@ wide fan when there is room, a tighter one down to ~56px, then a chip with three
 stubs, then nothing when the model is already over the panel's edge (around
 1024px wide). On a phone, and on the two full-width sections where the model is
 behind the copy, there is no gap to wire across, so a flat version of the
-network sits in the empty end of the readout strip instead.
+network sits in the empty end of the strip instead.
 
 It is drawn in the panel's own pixels rather than a stretched `viewBox`, so a
 45° trace stays 45° whatever shape the panel is, and redrawn whenever the panel
@@ -666,7 +719,7 @@ fed back*: project, compare the bounding-box centre with the target, take a
 quarter of the difference into the next frame. It settles in about eight
 frames, costs one subtraction per point, and follows the pose continuously
 instead of needing a hand-tuned constant per arrangement. A residual over 150px
-means the pose jumped — first paint, a resize, a section skipped via the rail —
+means the pose jumped — first paint, a resize, a section skipped via the nav —
 and is taken whole rather than crawled towards.
 
 All seven arrangements now measure 0px from their declared origin. The
