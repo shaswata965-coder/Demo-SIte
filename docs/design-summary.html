@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXON Design Summary</title>
+<meta name="description" content="One-page summary of the AXON demo: intuition, colour system, diversity, tech assets, dummy content and the feedback that shaped them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F8FA; --panel: #FFFFFF; --ink: #0B0D14;
+    --ink-2: #4A4F5C; --rule: #E2E4EA;
+    --acc: #FF5F0C; --acc-ink: #CA4500; --con: #6600FF; --data: #0076C0; --sig: #DC0081;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B0C10; --panel: #171A21; --ink: #F0F2F7;
+      --ink-2: #A7ADBA; --rule: #262A33;
+      --acc: #FF8038; --acc-ink: #FF8038; --con: #9E5DFF; --data: #33B1FF; --sig: #FF45B2;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B0C10; --panel: #171A21; --ink: #F0F2F7;
+    --ink-2: #A7ADBA; --rule: #262A33;
+    --acc: #FF8038; --acc-ink: #FF8038; --con: #9E5DFF; --data: #33B1FF; --sig: #FF45B2;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 'IBM Plex Sans', system-ui, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 56px 16px 80px; }
+  @media (min-width: 720px) { .wrap { padding-inline: 32px; } }
+
+  h1, h2, h3 { font-family: 'Archivo', sans-serif; line-height: 1.1; margin: 0; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; font-stretch: 112%; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; font-weight: 700; font-stretch: 105%; margin-bottom: 14px; }
+  h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 4px; }
+  p { margin: 0 0 10px; }
+  em { font-style: normal; color: var(--con); font-weight: 600; }
+  strong { color: var(--acc-ink); }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+  .muted { color: var(--ink-2); }
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--acc-ink); margin-bottom: 10px; }
+
+  header { margin-bottom: 44px; }
+  header p { font-size: 1.12rem; max-width: 62ch; margin-top: 14px; color: var(--ink-2); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .chip { border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; font-size: .8rem; background: var(--panel); }
+
+  section { padding: 34px 0; border-top: 1px solid var(--rule); }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; }
+  .card p { font-size: .92rem; color: var(--ink-2); margin: 0; }
+  ul.tight { margin: 0; padding-left: 18px; }
+  ul.tight li { margin-bottom: 6px; }
+
+  /* Skins */
+  .skins { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .skin { border-radius: 10px; padding: 14px; min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--rule); }
+  .skin b { font-family: 'Archivo', sans-serif; font-size: 1.05rem; }
+  .skin small { display: block; font-size: .78rem; opacity: .85; }
+  .dots { display: flex; gap: 5px; margin-top: 10px; }
+  .dots i { width: 18px; height: 18px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+
+  .roles { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 14px; }
+  .role { display: flex; gap: 10px; align-items: center; font-size: .92rem; }
+  .role i { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+
+  /* Rhythm strip */
+  .rhythm { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; border-radius: 10px; overflow: hidden; margin: 6px 0 12px; }
+  .rhythm div { padding: 10px 6px; font-size: .72rem; min-height: 74px; display: flex; flex-direction: column; justify-content: space-between; }
+  .rhythm span { font-family: 'IBM Plex Mono', monospace; font-size: .64rem; opacity: .8; }
+  @media (max-width: 600px) {
+    .rhythm { grid-template-columns: 1fr; }
+    .rhythm div { min-height: 0; flex-direction: row; }
+  }
+
+  /* Feedback table */
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); font-weight: 500; }
+  td:first-child { width: 42%; color: var(--ink-2); }
+  .tag { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: .66rem; padding: 1px 6px; border-radius: 4px; margin-right: 6px; color: #fff; vertical-align: 1px; }
+  .t-col { background: #6600FF; } .t-div { background: #0076C0; } .t-tech { background: #C43D00; } .t-mot { background: #B8006B; }
+  .table-scroll { overflow-x: auto; }
+
+  /* Mock content */
+  .mock { border-radius: 12px; overflow: hidden; border: 1px solid var(--rule); }
+  .mock > div { padding: 22px 20px; }
+  .m-hero { background: #F7F8FA; color: #0B0D14; }
+  .m-hero h3 { font-size: 1.9rem; font-weight: 800; font-stretch: 115%; }
+  .m-hero h3 span { color: #CA4500; }
+  .btn { display: inline-block; background: #FF5F0C; color: #1A0A00; border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: .85rem; margin-top: 10px; }
+  .stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 14px; font-size: .8rem; }
+  .stats b { display: block; font-family: 'Archivo', sans-serif; font-size: 1.3rem; color: #0076C0; }
+  .m-violet { background: #3F11BC; color: #F4EEFF; }
+  .m-lemon { background: #FFD82E; color: #1A1400; }
+  .m-ember { background: #160A30; color: #F7F2FF; }
+  .mini { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 12px; }
+  .mini div { border-radius: 8px; padding: 10px; font-size: .8rem; }
+  .m-violet .mini div { background: #5320E0; }
+  .m-violet .mini b { color: #FFC800; }
+  .m-lemon .mini div { background: #FFFEF5; }
+  .m-lemon .mini b { color: #6600FF; font-family: 'Archivo', sans-serif; font-size: 1.15rem; }
+  .team { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+  .person { display: flex; gap: 8px; align-items: center; font-size: .8rem; }
+  .person svg { flex: none; }
+  .m-ember q { display: block; font-style: italic; margin: 10px 0 4px; max-width: 60ch; }
+
+  .theme-btn { position: fixed; top: 12px; right: 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 12px; font: 500 .78rem 'IBM Plex Mono', monospace; cursor: pointer; }
+  footer { border-top: 1px solid var(--rule); padding-top: 20px; font-size: .82rem; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<button class="theme-btn" id="theme" type="button" aria-label="Toggle light and dark theme">Theme</button>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Design summary · Demo-Totem</div>
+  <h1>AXON — one model, seven rooms</h1>
+  <p>A scroll-driven site in the spirit of totem.itsoffbrand.com: <em>one object that transforms as you scroll</em>. Here the object is a neural model, and the brand is AXON, a fictional consultancy that makes LLMs cheaper to serve. Every name and figure is invented.</p>
+  <div class="chips">
+    <span class="chip">7 sections</span><span class="chip">5 colour skins</span><span class="chip">7 model arrangements</span><span class="chip">Light + dark</span><span class="chip">Plain HTML/CSS/JS, no build</span>
+  </div>
+</header>
+
+<section>
+  <h2>Intuition</h2>
+  <div class="grid">
+    <div class="card"><h3>The model is the brand</h3><p>AXON sells efficient inference, so the hero asset is a live network. Scroll turns it, rewires it and moves it. It never spins on its own.</p></div>
+    <div class="card"><h3>The copy becomes the network</h3><p>On the flooded sections the model comes apart. Its units bead the wiring between content nodes, then fly back to rebuild it.</p></div>
+    <div class="card"><h3>A room per section, not a tint</h3><p>Every section changes the whole colour set at once. Seams blend in OKLab so bands grow into each other instead of cutting.</p></div>
+    <div class="card"><h3>Read like an instrument</h3><p>Headlines type in, a scan beam reveals body copy line by line, and a circuit layer wires the text to the model.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Colour</h2>
+  <p class="muted">Five skins. A skin is the ground, panel, ink, four hues and how the model is drawn (as ink or as light). Each also has a dark variant. There is no green.</p>
+  <div class="skins">
+    <div class="skin" style="background:#F7F8FA;color:#0B0D14"><div><b>Paper</b><small>Intro · Method · Team</small></div><div class="dots"><i style="background:#FF5F0C"></i><i style="background:#6600FF"></i><i style="background:#0076C0"></i><i style="background:#DC0081"></i></div></div>
+    <div class="skin" style="background:#3F11BC;color:#F4EEFF"><div><b>Violet</b><small>Services · model as light</small></div><div class="dots"><i style="background:#FFC800"></i><i style="background:#FF8C50"></i><i style="background:#3AB4FF"></i><i style="background:#FF7EC9"></i></div></div>
+    <div class="skin" style="background:#FFD82E;color:#1A1400"><div><b>Lemon</b><small>Work</small></div><div class="dots"><i style="background:#E04400"></i><i style="background:#6600FF"></i><i style="background:#0064A2"></i><i style="background:#BC006D"></i></div></div>
+    <div class="skin" style="background:#3FDDF5;color:#041820"><div><b>Cyan</b><small>Partners</small></div><div class="dots"><i style="background:#D63500"></i><i style="background:#6200F6"></i><i style="background:#005991"></i><i style="background:#A80062"></i></div></div>
+    <div class="skin" style="background:#160A30;color:#F7F2FF"><div><b>Ember</b><small>Contact · the close</small></div><div class="dots"><i style="background:#FF5F0C"></i><i style="background:#FFC800"></i><i style="background:#009DFF"></i><i style="background:#FF0496"></i></div></div>
+  </div>
+  <div class="roles">
+    <div class="role"><i style="background:var(--acc)"></i><span><strong>Orange = action.</strong> CTAs only, the most rationed hue.</span></div>
+    <div class="role"><i style="background:var(--con)"></i><span><b>Violet = structure.</b> Labels, rules, <em>named things</em>.</span></div>
+    <div class="role"><i style="background:var(--data)"></i><span><b>Azure = data.</b> Anything counted.</span></div>
+    <div class="role"><i style="background:var(--sig)"></i><span><b>Magenta = live.</b> Pulses, what's running.</span></div>
+  </div>
+  <ul class="tight" style="margin-top:16px">
+    <li>Colours are assigned <b>by role, never by position</b>. A flooded skin swaps only the roles its own ground would swallow. On violet, for example, yellow takes over action.</li>
+    <li>Every value is <b>solved rather than picked by eye</b>. Each hue is pushed to full chroma, then to the lightness closest to the pure hue that still clears <b>4.5:1</b> on its ground and panel.</li>
+    <li>The accent comes in two versions. <span class="mono">--accent</span> #FF5F0C is the fill and <span class="mono">--accent-ink</span> #CA4500 is the same hue as readable text.</li>
+    <li>The model's hues are the page's hues, so the canvas and the copy read as one palette.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Diversity &amp; rhythm</h2>
+  <div class="rhythm" aria-label="Section rhythm">
+    <div style="background:#F7F8FA;color:#0B0D14;box-shadow:inset 0 0 0 1px #E2E4EA">Intro<span>whole · side</span></div>
+    <div style="background:#3F11BC;color:#F4EEFF">Services<span>apart · feed-fwd</span></div>
+    <div style="background:#F7F8FA;color:#0B0D14;box-shadow:inset 0 0 0 1px #E2E4EA">Method<span>whole · side</span></div>
+    <div style="background:#FFD82E;color:#1A1400">Work<span>apart · hub</span></div>
+    <div style="background:#F7F8FA;color:#0B0D14;box-shadow:inset 0 0 0 1px #E2E4EA">Team<span>whole · side</span></div>
+    <div style="background:#3FDDF5;color:#041820">Partners<span>apart · clusters</span></div>
+    <div style="background:#160A30;color:#F7F2FF">Contact<span>whole · core</span></div>
+  </div>
+  <ul class="tight">
+    <li><b>Visual variety.</b> Sections alternate between the model standing whole and the model taken apart. Each taken-apart section uses a different network shape: feed-forward, hub and spokes, clusters.</li>
+    <li><b>No monotony.</b> No two consecutive sections share a flood colour. The page never has more than two dimmed-model screens in a row, because four read as "switched off".</li>
+    <li><b>People.</b> The four team portraits differ in skin tone, build, tilt and halo, so they read as four distinct people. Names come from a range of backgrounds: Mara Ostrowski, Ifeanyi Balogun, June Park, Tomáš Vrba.</li>
+    <li><b>Type range.</b> Archivo's width axis (75–125) carries display type, IBM Plex Sans the body and Plex Mono the data.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Tech assets</h2>
+  <div class="grid">
+    <div class="card"><h3>Neural renderer</h3><p>Custom 3D point-graph on 2D canvas, with no WebGL so it opens on any phone. It has seven arrangements (helix, shells, layers, globe, vault, ledger, core), three quality tiers and a frame-time governor.</p></div>
+    <div class="card"><h3>Generated imagery</h3><p>Project thumbnails and portraits are inline SVG drawn from the page's colour tokens. External image hosts are blocked by the embed CSP, and inline SVG themes itself for free. Each image is labelled as generated.</p></div>
+    <div class="card"><h3>Partner marks</h3><p>Neutral geometric glyphs in one SVG sprite, deliberately not anyone's logo. The real company names are placeholders and carry a visible disclaimer. The only testimonial is fictional and says so.</p></div>
+    <div class="card"><h3>Circuit &amp; instrument layer</h3><p>A PCB bus in the margins, a chip fanning into a small 4-3-1 network, and a scan beam with scanlines. Everything that moves runs only on the screen you're looking at.</p></div>
+  </div>
+  <p class="muted" style="margin-top:14px"><b>Production stack:</b> Next.js 15 · React Three Fiber · GSAP ScrollTrigger · Lenis · Tailwind v4 (reading the same tokens) · Sanity, so motion parameters are editable content · Vercel.</p>
+</section>
+
+<section>
+  <h2>Dummy content</h2>
+  <div class="mock">
+    <div class="m-hero">
+      <div class="eyebrow" style="color:#CA4500">Intro</div>
+      <h3>Same model. <span>Half the bill.</span></h3>
+      <p style="max-width:58ch">AXON is a four-person consultancy that makes large language models cheaper to serve. It measures against your p99 and your evals.</p>
+      <span class="btn">Book an inference teardown →</span>
+      <div class="stats"><div><b>42</b>engagements</div><div><b>3.1×</b>median throughput</div><div><b>4wk</b>typical build</div></div>
+    </div>
+    <div class="m-violet">
+      <div class="eyebrow" style="color:#FFC800">Services</div>
+      <h3>Four levers on the bill</h3>
+      <div class="mini">
+        <div><b>01</b> Inference audit</div><div><b>02</b> Model compression</div><div><b>03</b> Serving architecture</div><div><b>04</b> Capacity &amp; procurement</div>
+      </div>
+    </div>
+    <div class="m-lemon">
+      <div class="eyebrow" style="color:#AB3B00">Work</div>
+      <h3>Selected projects</h3>
+      <div class="mini">
+        <div>70B assistant distilled to 8B<br><b>−71%</b> cost / 1k tokens</div>
+        <div>First token under a heartbeat<br><b>640ms</b> TTFT p95 (was 2.4s)</div>
+        <div>A batch fleet, two thirds smaller<br><b>42 → 12</b> GPUs</div>
+      </div>
+    </div>
+    <div class="m-hero" style="border-top:1px solid #E2E4EA">
+      <div class="eyebrow" style="color:#CA4500">Team</div>
+      <h3 style="font-size:1.3rem">Four people, no bench</h3>
+      <div class="team">
+        <div class="person"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#E9E4FF"/><circle cx="17" cy="14" r="6" fill="#F1C9A5"/><path d="M6 31c2-7 20-7 22 0" fill="#6600FF"/></svg>Mara Ostrowski · serving</div>
+        <div class="person"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#DDF0FB"/><circle cx="17" cy="14" r="6.5" fill="#6B4226"/><path d="M5 31c2-8 22-8 24 0" fill="#0076C0"/></svg>Ifeanyi Balogun · quantisation</div>
+        <div class="person"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#FFE3D3"/><circle cx="17" cy="14" r="5.5" fill="#E8B98F"/><path d="M7 31c2-6 18-6 20 0" fill="#FF5F0C"/></svg>June Park · research</div>
+        <div class="person"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#FDE0F0"/><circle cx="17" cy="14" r="6" fill="#C68B63"/><path d="M6 31c2-7 20-7 22 0" fill="#DC0081"/></svg>Tomáš Vrba · infra &amp; cost</div>
+      </div>
+    </div>
+    <div class="m-ember">
+      <div class="eyebrow" style="color:#FF8038">Contact</div>
+      <h3 style="font-size:1.5rem">Send us your p99</h3>
+      <q>They spent the first week telling us which of our assumptions were wrong, and the last week proving it in production.</q>
+      <span class="mono" style="opacity:.75">Dana Whitlock, Northwind Cloud (fictional)</span><br>
+      <span class="btn">hello@axon.example</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Feedback → decision</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Feedback</th><th>What changed</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag t-col">colour</span>Changing the hue on every section read like seven different websites.</td><td>One fixed palette; colour assigned by structure and role.</td></tr>
+      <tr><td><span class="tag t-col">colour</span>Six accents plus a pair per section felt like a swatch book.</td><td>Cut to three role colours, then rebuilt as four split-complementary hues.</td></tr>
+      <tr><td><span class="tag t-col">colour</span>The palette collapsed to orange: the accent was on everything.</td><td>Orange limited to action. Other roles went to other hues, and the model's edges were spread across all four.</td></tr>
+      <tr><td><span class="tag t-col">colour</span>Still monotone and greyish, and the tinted bands were only "a change of paper".</td><td>Five full-chroma skins that flood the section. Teal and green removed. Contrast solved to 4.5:1.</td></tr>
+      <tr><td><span class="tag t-div">diversity</span>Four dimmed backdrop screens in a row.</td><td>At most two in a row, with side and full-width layouts alternating.</td></tr>
+      <tr><td><span class="tag t-div">diversity</span>Flooded sections repeated the same headline + panel layout.</td><td>Copy becomes a network, with a different topology in each flooded section.</td></tr>
+      <tr><td><span class="tag t-div">diversity</span>Portraits and imagery needed to feel real and varied.</td><td>Generated SVG portraits that vary in tone, build and pose. Thumbnails depict each project.</td></tr>
+      <tr><td><span class="tag t-tech">assets</span>Stock photos rendered blank when embedded.</td><td>All imagery inline SVG, which is CSP-safe and themes automatically.</td></tr>
+      <tr><td><span class="tag t-tech">assets</span>Real partner names and logos risked implying endorsement.</td><td>Generic glyphs, an on-page disclaimer, and the only quote given to a fictional client.</td></tr>
+      <tr><td><span class="tag t-tech">assets</span>The partner wall looked boxy.</td><td>Borderless marks, first as drifting rows, then as a cluster network.</td></tr>
+      <tr><td><span class="tag t-tech">assets</span>The instrument panel read as a border.</td><td>A live rig: crosshairs, bus pulses and a scan beam. Grids and small readout text were later removed as clutter.</td></tr>
+      <tr><td><span class="tag t-mot">motion</span>Snap-back undid a whole section of scrolling.</td><td>Snap removed. The scroll glides with τ = 0.30s, and you stop where you stopped.</td></tr>
+      <tr><td><span class="tag t-mot">motion</span>Titles typed off-screen and content never animated.</td><td>Typing fires when the title is actually on screen, and replays when you scroll back.</td></tr>
+      <tr><td><span class="tag t-mot">motion</span>Hard edges between sections; the nav clashed with each skin.</td><td>OKLab-blended seams. The nav became one dark glass island.</td></tr>
+      <tr><td><span class="tag t-mot">motion</span>Cards felt static.</td><td>Cards tinted in their section's hues. They lift and tilt on hover and push their neighbours; the wiring follows.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  <p>AXON is fictional. Figures, people and the testimonial are invented. Partner names only size the layout, and no affiliation is implied. Source: <span class="mono">Demo-Totem/</span>; the full rationale is in its README and commit history.</p>
+</footer>
+
+</div>
+<script>
+  (function () {
+    var root = document.documentElement, btn = document.getElementById('theme');
+    try { var s = localStorage.getItem('axon-summary-theme'); if (s) root.dataset.theme = s; } catch (e) {}
+    btn.addEventListener('click', function () {
+      var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+      try { localStorage.setItem('axon-summary-theme', root.dataset.theme); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
