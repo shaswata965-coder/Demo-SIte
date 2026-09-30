@@ -747,6 +747,55 @@ height. A taken-apart section costs the same to draw as an assembled one — 16.
 ms median at 1440×900 and 2560×1400 in a software-rendered container; fewer
 edges are drawn while units are on the page, not more.
 
+## Cards: tint and lift
+
+**Every card is lit in its own section's colours.** Method's week cards, every
+card, circle and pill in the networks, and a team row once it is lifted, share
+one fill: two soft glows from opposite corners over the panel colour. By default
+these are the structure hue and the data hue. Every third card swaps in the
+accent, and the next the signal hue, so a row reads as one family without any
+two cards matching. The glows are mixed in OKLab and kept under a fifth of full
+strength. On the paper, yellow and cyan skins that gives pastel, airy cards; on
+the deep ones the cards keep a ground dark enough for light type. Circles are
+lit off-centre, like a sphere, and pills along their length. The strength is a
+registered custom property (`--tint-k`), so a card's light can brighten
+smoothly when it is lifted.
+
+**Point at a card and it comes forward.** It rises, grows, tilts toward the
+pointer, and picks up a sheen under the pointer and a ring and glow in the
+section's accent. The cards around it are pushed a few pixels straight away
+from it and fall back a little, so the one you are on is the only thing at full
+strength. Each shape arrives its own way:
+
+| Shape | Lift |
+|---|---|
+| card (weeks, levers, projects, the claim) | turns toward you: a half-swing on its vertical axis, 1.05× |
+| title card of a network (hub, core) | only rises, 1.025×. It is the ground the rest stands on |
+| circle (the ½, figures, partner kinds) | flips over like a coin, one full turn, and lands at 1.12× |
+| pill (a partner name) | flips on its long axis like a split-flap display, 1.09× |
+| team row | slides out into a tinted card while its portrait coin-flips |
+
+**In a network the wiring holds on.** The lifted card and every card it pushed
+drag their links, their ports and the ring of model units round them, and the
+links into the lifted card light up in the accent. A card wired to the one you
+are on is dimmed less than the rest.
+
+That is why the motion is not a CSS transition. The wiring has to know where a
+card is on every frame, and a transition would not tell it. `liftTick()` in
+`js/app.js` eases every value per frame and writes one transform per card. It
+then re-lays the network through `SectionGraph.layout(…, rectOf)`, measuring
+each card from its layout offsets plus its lift and push, never its tilt or
+flip. Measured from the screen, a card turning edge-on would pull its wires
+into its own middle. Guards:
+
+- Nothing starts lifting while the page is moving under a still pointer. A
+  lifted card lets go if the page carries it out from under the pointer.
+- A card flips once per visit. Coming straight back to it does not turn it again.
+- A card still waiting for the scan cannot be lifted or pushed. It is hidden by
+  opacity, and an inline opacity would show it early.
+- Touch never lifts anything. With reduced motion a card still lights up but
+  does not move.
+
 ## Keeping the model in its slot
 
 The page tells the model where to sit; making it actually sit there took two

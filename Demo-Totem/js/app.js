@@ -278,7 +278,7 @@
     function layoutGraphs() {
       var mode = graphMode() ? 'graph' : 'spine';
       for (var i = 0; i < graphs.length; i++) {
-        if (graphs[i]) graphTargets[i] = SectionGraph.layout(graphs[i], mode, field.cfg.nodes);
+        if (graphs[i]) graphTargets[i] = SectionGraph.layout(graphs[i], mode, field.cfg.nodes, liftRect);
       }
     }
 
@@ -293,6 +293,272 @@
         });
       }
     }
+
+    /* ---- lifting a card ----------------------------------------------------
+       Point at a card and it comes forward out of the page: it rises, grows,
+       tilts toward the pointer and picks up a sheen and a ring in the section's
+       accent; the cards round it are pushed a few pixels away and fall back a
+       little, so the one you are on is the only thing at full strength. Each
+       shape arrives in its own way —
+
+         card    a panel turns toward you, a half-swing on its vertical axis
+         hub     the big title card of a network only rises; it is the ground
+         round   a circle flips over like a coin, once, and lands zoomed in
+         leaf    a pill flips on its long axis, a split-flap turning over
+         row     a roster row slides out into a card; its portrait coin-flips
+
+       In a network the wiring holds on: the lifted card and the ones it pushed
+       drag their links, their ports and the ring of model units round them,
+       and the links into the lifted card light up.
+
+       One writer. Every value is eased here, per frame, and written as one
+       transform — not CSS transitions — because the wiring has to know where
+       a card is on each frame, and a transition would not tell it. Nothing
+       starts while the page is moving under a still pointer, a card only
+       flips once per visit, and touch never triggers any of it. With reduced
+       motion a card still lights up; it just does not move.
+       ---------------------------------------------------------------------- */
+    var LIFTABLE = '.steps .card, .g-card, .g-round, .g-leaf, .roster li';
+    var LIFT = {
+      card:  { s: 1.05,  rise: 8, dx: 0, tilt: 7,   flip: 'swing', dur: 620, push: 18 },
+      hub:   { s: 1.025, rise: 5, dx: 0, tilt: 3.5, flip: null,    dur: 0,   push: 24 },
+      round: { s: 1.12,  rise: 5, dx: 0, tilt: 6,   flip: 'coin',  dur: 760, push: 16 },
+      leaf:  { s: 1.09,  rise: 3, dx: 0, tilt: 4,   flip: 'flap',  dur: 640, push: 12 },
+      row:   { s: 1.015, rise: 0, dx: 6, tilt: 0,   flip: 'coin',  dur: 760, push: 10 }
+    };
+    var lifts = [], hot = null;
+    var ptr = { x: 0, y: 0, on: false, moved: false }, lastScrollAt = 0, wasMoving = false;
+
+    (function () {
+      var els = document.querySelectorAll(LIFTABLE);
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i], sec = el.closest('.chapter');
+        var si = sections.indexOf(sec);
+        if (si < 0) continue;
+        var kind = el.matches('.roster li') ? 'row'
+                 : el.matches('.g-title') ? 'hub'
+                 : el.matches('.g-round') ? 'round'
+                 : el.matches('.g-leaf') ? 'leaf' : 'card';
+        var gi = graphs[si] && graphs[si].root.contains(el) ? si : -1;
+        var L = { el: el, sec: si, gi: gi, kind: kind, P: LIFT[kind],
+                  root: gi >= 0 ? graphs[si].root : el.closest('.steps, .roster') || el.parentNode,
+                  flipEl: kind === 'row' ? el.querySelector('.portrait') : el,
+                  l: 0, px: 0, py: 0, dim: 0, rx: 0, ry: 0,
+                  tl: 0, tpx: 0, tpy: 0, tdim: 0, trx: 0, try_: 0,
+                  f0: -1e9, fs: 1, mx: 0.5, my: 0.5, on: false, edges: [] };
+        if (gi >= 0) {
+          var links = graphs[si].links;
+          for (var k = 0; k < links.length; k++) {
+            if (links[k].from === el || links[k].to === el) L.edges.push(links[k]);
+          }
+        }
+        el.classList.add('lift');
+        el.__lift = L;
+        lifts.push(L);
+      }
+    }());
+
+    /* Where a card sits in its container, from offsets: layout only, so a
+       transform never feeds back into its own measurement. */
+    function restOf(L) {
+      var x = 0, y = 0, n = L.el;
+      while (n && n !== L.root) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+      var w = L.el.offsetWidth, h = L.el.offsetHeight;
+      return { cx: x + w / 2, cy: y + h / 2, w: w, h: h };
+    }
+    /* The card's box on screen as the wiring should see it: moved and scaled
+       with the lift, but never tilted or flipped. */
+    function liftRect(node) {
+      var L = node.__lift;
+      if (!L || !L.on) return node.getBoundingClientRect();
+      var r = restOf(L), b = L.root.getBoundingClientRect();
+      var s = liftScale(L);
+      var cx = b.left + r.cx + L.px + L.P.dx * L.l, cy = b.top + r.cy + L.py - L.P.rise * L.l;
+      var hw = r.w * s / 2, hh = r.h * s / 2;
+      return { left: cx - hw, right: cx + hw, top: cy - hh, bottom: cy + hh };
+    }
+    function liftScale(L) { return 1 + (L.P.s - 1) * L.l - 0.035 * L.dim; }
+
+    /* Landed and on a screen that is showing: a card still waiting for the
+       scan is hidden by opacity, and an inline opacity would show it early. */
+    function present(L) {
+      var c = L.el.classList;
+      return !c.contains('sc') || c.contains('in');
+    }
+
+    function pickHot(moving) {
+      if (!ptr.on) return null;
+      if (hot && present(hot)) {
+        var r = liftRect(hot.el);
+        if (ptr.x >= r.left && ptr.x <= r.right && ptr.y >= r.top && ptr.y <= r.bottom) return hot;
+      }
+      if (moving) return null;
+      var t = document.elementFromPoint(ptr.x, ptr.y);
+      var el = t && t.closest ? t.closest('.lift') : null;
+      var L = el && el.__lift;
+      return L && present(L) ? L : null;
+    }
+
+    function setHot(L, now) {
+      if (hot === L) return;
+      var k;
+      if (hot) {
+        hot.el.classList.remove('is-lifted');
+        for (k = 0; k < hot.edges.length; k++) hot.edges[k].g.classList.remove('hot');
+      }
+      hot = L;
+      if (!L) return;
+      L.el.classList.add('is-lifted');
+      aimAt(L);
+      for (k = 0; k < L.edges.length; k++) L.edges[k].g.classList.add('hot');
+      /* One flip per visit: coming straight back to a card that has only just
+         turned over does not turn it again. */
+      if (L.P.flip && !reduced && now - L.f0 > L.P.dur + 500) {
+        var r = liftRect(L.el);
+        L.f0 = now;
+        L.fs = ptr.x < (r.left + r.right) / 2 ? -1 : 1;
+      }
+    }
+
+    function easeOut3(t) { var u = 1 - t; return 1 - u * u * u; }
+
+    function liftTick(dt, now) {
+      var moving = (fluid && Math.abs(sTarget - sCurrent) > 1.5) || now - lastScrollAt < 140;
+      if (ptr.moved || moving || wasMoving || hot) {
+        setHot(pickHot(moving), now);
+        ptr.moved = false;
+      }
+      wasMoving = moving;
+      if (reduced || !lifts.length) return;
+
+      var i, L, relink = null;
+
+      /* Targets. */
+      var hr = null, hs = hot ? hot.sec : -1;
+      if (hot) {
+        hr = restOf(hot);
+        var hb = hot.root.getBoundingClientRect();
+        hr.x = hb.left + hr.cx; hr.y = hb.top + hr.cy;
+        hot.trx = (0.5 - hot.my) * hot.P.tilt;
+        hot.try_ = (hot.mx - 0.5) * hot.P.tilt;
+      }
+      for (i = 0; i < lifts.length; i++) {
+        L = lifts[i];
+        L.tl = L === hot ? 1 : 0;
+        L.tpx = L.tpy = L.tdim = 0;
+        if (L !== hot) { L.trx = L.try_ = 0; }
+        if (!hot || L === hot || L.sec !== hs || !present(L)) continue;
+        if (L.el.contains(hot.el) || hot.el.contains(L.el)) continue;
+        var r = restOf(L), b = L.root === hot.root ? hb : L.root.getBoundingClientRect();
+        var vx = b.left + r.cx - hr.x, vy = b.top + r.cy - hr.y;
+        var d = Math.hypot(vx, vy) || 1;
+        var f = clamp(1 - d / 760, 0, 1);
+        f = f * f * (3 - 2 * f);
+        if (f <= 0) continue;
+        var push = hot.P.push * f;
+        L.tpx = vx / d * push;
+        L.tpy = vy / d * push;
+        /* A card wired to the one you are on stays brighter than the rest. */
+        var linked = false;
+        for (var k = 0; k < hot.edges.length; k++) {
+          if (hot.edges[k].from === L.el || hot.edges[k].to === L.el) { linked = true; break; }
+        }
+        L.tdim = (0.35 + 0.65 * f) * (linked ? 0.4 : 1);
+      }
+
+      /* Ease and write. */
+      var kl = 1 - Math.exp(-dt / 0.11), kp = 1 - Math.exp(-dt / 0.16), kt = 1 - Math.exp(-dt / 0.09);
+      for (i = 0; i < lifts.length; i++) {
+        L = lifts[i];
+        var flipping = now - L.f0 < L.P.dur;
+        if (!L.on && !L.tl && !L.tdim && !L.tpx && !L.tpy && !flipping) continue;
+
+        if (!present(L)) {                 /* rewound under us: let it go */
+          L.l = L.dim = L.px = L.py = L.rx = L.ry = 0; L.f0 = -1e9;
+          clearLift(L);
+          if (L.gi >= 0) { relink = relink || {}; relink[L.gi] = true; }
+          continue;
+        }
+
+        L.l += (L.tl - L.l) * kl;
+        L.dim += (L.tdim - L.dim) * kp;
+        L.px += (L.tpx - L.px) * kp;
+        L.py += (L.tpy - L.py) * kp;
+        L.rx += (L.trx - L.rx) * kt;
+        L.ry += (L.try_ - L.ry) * kt;
+
+        var rest = Math.abs(L.l) < 0.002 && Math.abs(L.dim) < 0.002 &&
+                   Math.abs(L.px) < 0.05 && Math.abs(L.py) < 0.05 &&
+                   Math.abs(L.rx) < 0.02 && Math.abs(L.ry) < 0.02 && !flipping && !L.tl && !L.tdim;
+        if (L.gi >= 0 && graphMode()) { relink = relink || {}; relink[L.gi] = true; }
+        if (rest) {
+          L.l = L.dim = L.px = L.py = L.rx = L.ry = 0;
+          clearLift(L);
+          continue;
+        }
+        L.on = true;
+
+        /* The flip: a coin turns a whole revolution, a pill flaps over on its
+           long axis, a panel swings a few degrees and back. */
+        var fx = 0, fy = 0;
+        if (flipping) {
+          var p = clamp((now - L.f0) / L.P.dur, 0, 1);
+          if (L.P.flip === 'coin') fy = 360 * easeOut3(p) * L.fs;
+          else if (L.P.flip === 'flap') fx = -360 * easeOut3(p);
+          else fy = 16 * Math.sin(Math.PI * p) * (1 - p * 0.35) * L.fs;
+        }
+        var s = liftScale(L);
+        var tx = L.px + L.P.dx * L.l, ty = L.py - L.P.rise * L.l;
+        var tf = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0)';
+        if (L.kind === 'row') {
+          L.el.style.transform = tf + ' scale(' + s.toFixed(4) + ')';
+          if (L.flipEl) {
+            L.flipEl.style.transform = (fy || L.l > 0.002)
+              ? 'perspective(420px) rotateY(' + fy.toFixed(2) + 'deg) scale(' + (1 + 0.1 * L.l).toFixed(4) + ')'
+              : '';
+          }
+        } else {
+          L.el.style.transform = 'perspective(1100px) ' + tf +
+            ' rotateX(' + (L.rx + fx).toFixed(2) + 'deg) rotateY(' + (L.ry + fy).toFixed(2) + 'deg)' +
+            ' scale(' + s.toFixed(4) + ')';
+        }
+        L.el.style.opacity = L.dim > 0.002 ? (1 - 0.28 * L.dim).toFixed(3) : '';
+      }
+
+      /* The wiring follows. */
+      if (relink && graphMode()) {
+        for (var gi in relink) {
+          graphTargets[gi] = SectionGraph.layout(graphs[gi], 'graph', field.cfg.nodes, liftRect);
+        }
+      }
+    }
+
+    function clearLift(L) {
+      L.on = false;
+      L.el.style.transform = '';
+      L.el.style.opacity = '';
+      if (L.flipEl && L.flipEl !== L.el) L.flipEl.style.transform = '';
+    }
+
+    /* Where on the lifted card the pointer is, 0–1 each way: the tilt leans
+       that way and the sheen sits under it. */
+    function aimAt(L) {
+      var r = liftRect(L.el), w = r.right - r.left, h = r.bottom - r.top;
+      L.mx = clamp((ptr.x - r.left) / (w || 1), 0, 1);
+      L.my = clamp((ptr.y - r.top) / (h || 1), 0, 1);
+      L.el.style.setProperty('--gx', (L.mx * 100).toFixed(1) + '%');
+      L.el.style.setProperty('--gy', (L.my * 100).toFixed(1) + '%');
+    }
+    function trackPointer(e) {
+      if (e.pointerType === 'touch') { ptr.on = false; return; }
+      ptr.x = e.clientX; ptr.y = e.clientY; ptr.on = true; ptr.moved = true;
+      if (hot) aimAt(hot);
+    }
+    document.addEventListener('pointermove', trackPointer, { passive: true });
+    document.addEventListener('pointerdown', trackPointer, { passive: true });
+    document.documentElement.addEventListener('mouseleave', function () { ptr.on = false; ptr.moved = true; });
+    addEventListener('blur', function () { ptr.on = false; ptr.moved = true; });
+    addEventListener('scroll', function () { lastScrollAt = performance.now(); }, { passive: true });
 
     /* ---- navigation ------------------------------------------------------- */
     /* The links are in the markup. This keeps the bar in step with the page:
@@ -598,6 +864,7 @@
       scrollP = progress();
       field.setProgress(scrollP);
       if (reveal) reveal(navBottom);
+      liftTick(dt, now);
       paint(false);
       requestAnimationFrame(frame);
     }

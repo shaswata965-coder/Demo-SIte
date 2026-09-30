@@ -133,8 +133,12 @@
   }
 
   /* mode 'graph' wires the section and returns the model's targets; any other
-     mode (the stacked spine on narrow screens) has no wiring to draw. */
-  function layout(g, mode, units) {
+     mode (the stacked spine on narrow screens) has no wiring to draw.
+     `rectOf`, if given, is asked where a node is instead of the node itself —
+     app.js passes one so that a card lifted on hover drags its links and its
+     ring of units with it, measured without the tilt or the flip it is doing,
+     which would otherwise pull the wires to its middle as it turns edge-on. */
+  function layout(g, mode, units, rectOf) {
     if (mode !== 'graph') return null;
     var box = g.root.getBoundingClientRect();
     var W = Math.round(box.width), H = Math.round(box.height);
@@ -143,7 +147,7 @@
     g.svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
     function local(node) {
-      var r = node.getBoundingClientRect();
+      var r = rectOf ? rectOf(node) : node.getBoundingClientRect();
       return { left: r.left - box.left, right: r.right - box.left,
                top: r.top - box.top, bottom: r.bottom - box.top };
     }

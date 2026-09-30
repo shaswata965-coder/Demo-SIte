@@ -30,6 +30,11 @@ python3 -m http.server 8000 --directory Demo-Totem
   body copy a line at a time, and a circuit layer in the margins wires the copy
   to the model; the networks instead assemble node by node along their own
   wiring.
+- Cards are tinted with their own section's colours: light, airy glows in
+  its structure, data and accent hues. Point at one and it comes forward. It
+  lifts, tilts toward the pointer and pushes its neighbours aside. Circles
+  coin-flip, partner pills flip over like a split-flap display, and in the
+  networks the wiring and the model's beads follow the cards as they move.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
 

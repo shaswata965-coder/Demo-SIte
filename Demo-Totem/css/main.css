@@ -1049,6 +1049,105 @@ html.reveals-armed .g-edge:not(.in) .g-port { opacity: 0; transition-delay: 0s; 
   .chapter.is-graph h2 { font-size: clamp(2rem, 3vw, 3.2rem); }
 }
 
+/* --- card tint ------------------------------------------------------------
+   Every card and round node is lit from inside by its own section's colours:
+   two soft glows from opposite corners over the panel colour — the structure
+   hue and the data hue by default, the accent on every third card, the signal
+   hue on the next — so a row of cards reads as one family without repeating.
+   Mesh-gradient light rather than a flat fill, mixed in OKLab and kept under a
+   fifth strength: on the paper, yellow and cyan skins the cards come out
+   pastel and airy; on the deep ones they keep a ground dark enough for light
+   ink. --tint-k is registered so the glow can brighten smoothly on hover.
+   ------------------------------------------------------------------------ */
+@property --tint-k { syntax: '<percentage>'; inherits: true; initial-value: 17%; }
+
+.steps .card, .g-card, .g-round:not(.g-out), .g-leaf {
+  --tint-a: var(--c-second); --tint-b: var(--c-third);
+  --tint-at-a: 0% 0%; --tint-at-b: 100% 100%;
+  background-color: var(--surface-2);
+  background-image:
+    radial-gradient(120% 110% at var(--tint-at-a),
+      color-mix(in oklab, var(--tint-a) var(--tint-k), transparent), transparent 62%),
+    radial-gradient(110% 100% at var(--tint-at-b),
+      color-mix(in oklab, var(--tint-b) calc(var(--tint-k) - 3%), transparent), transparent 60%);
+  border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3),
+              0 18px 40px -30px color-mix(in srgb, var(--ink) 65%, transparent);
+}
+:is(.steps .card, .g-card, .g-round, .g-leaf):nth-child(3n+2) {
+  --tint-a: var(--accent); --tint-at-a: 100% 0%; --tint-at-b: 0% 100%;
+}
+:is(.steps .card, .g-card, .g-round, .g-leaf):nth-child(3n) {
+  --tint-b: var(--c-signal); --tint-at-a: 50% 0%; --tint-at-b: 50% 100%;
+}
+/* Circles are lit off-centre, like a sphere, rather than corner to corner. */
+.g-round:not(.g-out) { --tint-at-a: 28% 18%; --tint-at-b: 78% 92%; }
+/* A category hub leans into the structure hue it names a cluster of. */
+.g-cat { --tint-a: var(--contrast); --tint-k: 24%; }
+/* A pill is lit along its length. */
+.g-leaf {
+  background-image: linear-gradient(100deg,
+    color-mix(in oklab, var(--tint-a) var(--tint-k), transparent), transparent 70%);
+}
+/* The hub and the core are the largest cards, and carry the brightest light. */
+.g-hub, .g-core { --tint-k: 21%; }
+
+/* --- lifting a card -------------------------------------------------------
+   js/app.js marks every card, circle, pill and roster row .lift and moves the
+   one under the pointer (see "lifting a card" there); this is how it looks
+   once it is up: a stronger shadow, a ring and a glow in the section's accent,
+   the tint brightened, and a sheen that follows the pointer across it. The
+   motion is all in the script, so none of it is transitioned here but the
+   light.
+   ------------------------------------------------------------------------ */
+.g-node { pointer-events: auto; }      /* the section body passes pointers through */
+.steps .card, .roster li, .steps, .roster { position: relative; }
+.steps .card, .roster li { z-index: 0; }
+.lift {
+  transition: box-shadow .35s var(--e-out), border-color .35s var(--e-out),
+              --tint-k .35s var(--e-out);
+  backface-visibility: visible;
+}
+.lift.is-lifted { z-index: 5; --tint-k: 27%; }
+.lift.is-lifted:not(.roster li) {
+  border-color: color-mix(in srgb, var(--accent) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .45),
+    0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 12px 32px -14px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 34px 70px -30px color-mix(in srgb, var(--ink) 60%, transparent);
+}
+/* The sheen: a soft highlight under the pointer. */
+.lift:not(.roster li)::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 0%),
+    rgba(255, 255, 255, .3), rgba(255, 255, 255, .06) 38%, transparent 62%);
+  opacity: 0; transition: opacity .35s var(--e-out);
+}
+.lift.is-lifted::before { opacity: 1; }
+/* A roster row has no card until it is lifted; then one fades up behind it,
+   tinted like the rest. */
+.roster li::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  inset: calc(-1 * clamp(.45rem, .9vw, .7rem)) 0 calc(-1 * clamp(.45rem, .9vw, .7rem))
+         calc(-1 * clamp(.6rem, 1.1vw, .9rem));
+  border-radius: 16px;
+  background-color: var(--surface-2);
+  background-image:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--c-second) 20%, transparent), transparent 62%),
+    radial-gradient(110% 120% at 100% 100%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 60%);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4),
+              0 24px 54px -28px color-mix(in srgb, var(--ink) 55%, transparent);
+  opacity: 0; transform: scale(.97); transition: opacity .3s var(--e-out), transform .35s var(--e-out);
+}
+.roster li.is-lifted::before { opacity: 1; transform: none; }
+.roster .portrait { transform-origin: 50% 50%; }
+/* The links into a lifted card light up in the accent. */
+.g-edge .g-link { transition: stroke-dashoffset .5s var(--e-out), stroke .3s, stroke-opacity .3s, stroke-width .3s; }
+.g-edge.hot .g-link { stroke: var(--accent); stroke-opacity: .95; stroke-width: 2; }
+.g-edge.hot .g-port { stroke: var(--accent); }
+
 /* --- reveals ------------------------------------------------------------- */
 /* The sequence per screen is: the title types, and when
    the caret stops the panel comes in and its beam makes a first pass — which
