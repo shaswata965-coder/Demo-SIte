@@ -5,10 +5,12 @@ consultancy: one neural model turning through seven arrangements while the page
 transforms with it. Plain HTML, CSS and JS — no build step, no dependencies.
 
 Seven sections — intro, services, method, selected work, team, collaborations,
-contact. Five keep the model **beside** the copy; two — the ones that are grids
-of real components with imagery in them — need the whole screen, so the model
-drops **behind** them instead. Both are the same three numbers, lerped on one
-curve; see "Two layout modes" below.
+contact — of two kinds, alternating. In four the model is **assembled**, whole,
+standing beside a panel of copy. In the three flooded sections it is **taken
+apart**: there is no panel, the copy is broken into nodes wired into a network,
+and the model's own units fly out of it to bead the wiring and ring the cards —
+then fly back and rebuild it for the next section. Each of the three is a
+different network. See "Taken apart" below.
 
 Built to be ported to Next.js / React later; see "Porting" below.
 
@@ -28,7 +30,8 @@ index.html            markup and copy
 css/tokens.css        the colour system — five skins, each in light and dark
 css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
-js/circuit.js         the circuit layer drawn around each block of copy
+js/circuit.js         the circuit layer drawn around each panel of copy
+js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/app.js             scroll → everything else
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
@@ -60,20 +63,19 @@ pose:
 | # | Section | Layout | Arrangement | What it is |
 |---|---|---|---|---|
 | 0 | Intro | side right | `seed` | A twisted double helix column, rungs across the strands |
-| 1 | Services | side left | `bloom` | Two nested shells — an outer sensor surface, an inner core, spokes between |
+| 1 | Services | **taken apart** — feed-forward | `bloom` | Two nested shells — an outer sensor surface, an inner core, spokes between |
 | 2 | Method | side right | `infer` | Six layers, each a ring, fanned forward layer to layer |
-| 3 | Selected work | **full** | `settle` | A globe banded into latitude corridors, with bowed long-haul arcs |
+| 3 | Selected work | **taken apart** — hub and spokes | `settle` | A globe banded into latitude corridors, with bowed long-haul arcs |
 | 4 | Team | side left | `vault` | A hollow cube — lattice on the faces, small solid core inside |
-| 5 | Collaborations | **full** | `ledger` | A ledger plane with risers standing off it |
+| 5 | Collaborations | **taken apart** — clusters | `ledger` | A ledger plane with risers standing off it |
 | 6 | Contact | side right | `core` | Collapse to a core, one orbital ring still holding |
 
-**Two backdrops, and they are not adjacent.** An earlier pass had four in a
-row. Consecutive dimmed screens read as the model having been switched off
-rather than as a change of register — the effect only means something if the
-model comes back out in front. Team sits between the two at full strength,
-which is what lets the partner wall take the whole viewport without the middle
-of the page going flat. Team earns its half-screen by being a roster of small
-round portraits rather than four large cards.
+**Assembled, taken apart, assembled.** The sections alternate, so the page
+reads as the model coming apart and being put back together three times over
+before it closes on its core beside the call to action. The arrangements of the
+three taken-apart sections are still there — they are what the model is passing
+through while its units are in flight. Team earns its half-screen by being a
+roster of small round portraits rather than four large cards.
 
 **Edges fade, they never cut.** Every edge belongs to a family (`helix`,
 `prox`, `spoke`, `layer`, `ring`, `arc`, `lattice`, `riser`) and carries a
@@ -548,15 +550,12 @@ and no pinned section taller than its viewport. Method is the tightest — four
 steps two-up inside half a screen — and on a short laptop the space to fit it
 comes out of padding and step density, not out of the copy.
 
-The partner wall is hairlined by `gap` over a background rather than by borders
-on each cell. The nth-child arithmetic that per-cell borders needs has to be
-rewritten for every column count, and it broke twice — once dropping the fourth
-cell's divider on desktop, once silently leaving the wall at two columns when a
-breakpoint rewrite missed. One `gap` works at every column count.
+The taken-apart sections have a narrow form of their own — the spine, see
+"Taken apart" — and use it below 1100px as well as on phones.
 
-## Placeholder imagery and the partner wall
+## Placeholder imagery and the partner names
 
-The project cards, the team and the partner wall carry generated art rather
+The project cards, the team and the partners carry generated art rather
 than photographs or logos: three abstract thumbnails, four stand-in portraits
 and twelve geometric marks, hand-authored as inline SVG. Inline rather than image files for three reasons — it themes from the same
 tokens as everything else, it costs no request, and the Artifact CSP blocks
@@ -575,7 +574,7 @@ four people read as four people. All of it is labelled as generated on the page
 itself, in each section's standfirst and again in the colophon; none of it is
 passed off as a photograph of anyone.
 
-**The partner wall carries real company names as placeholders**, which needs
+**The partner section carries real company names as placeholders**, which needs
 saying out loud. The twelve marks are neutral geometry in this page's own
 palette — deliberately *not* reproductions of anyone's logo — and the section
 carries a disclaimer on the page, not buried in the colophon: names are there
@@ -585,38 +584,8 @@ moved to the closing section for the same reason: attributing an invented quote
 to a real company would have been a fabricated endorsement, so it stays with
 its invented one, marked fictional in the caption.
 
-### The wall drifts
-
-The wall was a bordered grid and is now three rows of mark-and-name moving past
-in alternating directions. The cells were doing two jobs badly: separating
-twelve items that space separates perfectly well, and framing marks that are
-not photographs and did not need a frame.
-
-Three things make it work:
-
-- **The loop is seamless because the arithmetic is exact.** Each row holds the
-  twelve marks twice, the second run `aria-hidden`, and the belt animates
-  `translateX(-50%)`. That lands on the start of the copy *only* if the two
-  halves are the same width — so spacing is symmetric `padding-inline` on every
-  item and the belt has no `gap` of its own. A `gap` would leave the seam half
-  a gap short and the loop would visibly hitch once a minute. Measured: both
-  halves 1971px at 1440.
-- **The strip is always wider than the row.** A half-belt narrower than its
-  container leaves a hole that scrolls past. Twelve items per row is enough at
-  every width tested, 3440 included, where the half-belt is 2565px against a
-  2331px row.
-- **It stops when nobody is watching.** `html:not([data-chapter="5"])` pauses
-  all three belts, so off-section they are not competing with the canvas for
-  frames. Hover pauses too, which is also what makes the hover state on an
-  item reachable.
-
-Under `prefers-reduced-motion` a paused marquee would show four of the twelve
-and clip the rest, so the strip becomes a static wrapped set instead and the
-duplicate run is hidden.
-
-The glyphs are a `<symbol>` sprite used 72 times rather than 72 inline SVGs —
-the same drawing repeated at full length would have added most of a hundred
-kilobytes to the embed build for nothing.
+The glyphs are a `<symbol>` sprite, defined once and `<use>`d by each partner
+node, so the drawing is not repeated in the markup.
 
 ## Micro-animation
 
@@ -666,36 +635,91 @@ webfont. `app.js` sets `lang` and `data-chapter` on the root itself, so the
 embed build behaves identically to the standalone one. Use it for anywhere you
 are pasting the page into someone else's document; use `index.html` for hosting.
 
-## Two layout modes, one canvas
+## Two kinds of section, one canvas
 
 The canvas is **fixed at viewport size for the life of the page**. It is never
 moved by the layout and never scaled by CSS: one would reallocate the backing
 store mid-scroll, the other would blur every mark. Everything the model does
-spatially happens *inside* it, through three numbers `app.js` writes each frame:
+spatially happens *inside* it, through numbers `app.js` writes each frame:
 
 | | |
 |---|---|
 | `field.originX` | where the model sits across the canvas, 0..1 |
 | `field.zoom` | how large it is drawn, on top of the radius `resize()` derived |
 | `.stage` opacity | how far forward it comes |
+| `field.scatter` + targets | how far it has come apart, and where each unit goes |
 
-A section declares its own values in `CHAPTERS` (`app.js`) and they are lerped
-on `dragEase` — the same curve as the morph and the roll — so a section that
-stands the model beside its copy and one that lies it behind a full screen of
-cards *transition into each other* rather than cutting:
+A section declares its values in `CHAPTERS` (`app.js`) and they are lerped on
+`dragEase` — the same curve as the morph and the roll — so neighbouring
+sections transition into each other rather than cutting:
 
-- **`.is-side`** — copy takes 46% of the container, model centres in the rest,
-  `dim: 1`, `zoom: 0.82`.
-- **`.is-full`** — copy takes the whole container, model centres behind it,
-  `dim: 0.24–0.30`, `zoom: 1.26–1.34`. The four full sections still drift left
-  and right rather than sitting dead centre for four chapters in a row, so the
-  model is travelling (and rolling) even when it is only a backdrop.
+- **`.is-side`** — the model assembled: copy takes 46% of the container, model
+  centres in the rest, `dim: 1`, `zoom: 0.76–0.88`. Intro, Method, Team,
+  Contact.
+- **`.is-graph`** — the model taken apart: `graph: true`, `scatter` 1, the model
+  centred while its units are in flight. Services, Work, Partners.
 
 `anchor()` measures the real `.ch-inner` rectangle rather than recomputing the
 CSS clamps, so the model and the copy can never disagree about where the
 halfway line is — which is what keeps a 3440px monitor from putting a paragraph
 and a model a metre apart. `--maxw` (1680px) caps the container; the model is
 parked against that box, not the raw viewport.
+
+## Taken apart
+
+The flooded sections are not a headline over a paragraph. The copy is broken
+into nodes, and the nodes are wired into a network — a different one each time:
+
+| Section | Network | Nodes |
+|---|---|---|
+| Services | **feed-forward**, left to right | the claim is the input; the four levers are the hidden layer, each fed on its number; a round output — ½, the bill |
+| Work | **hub and spokes** | the title is the hub; each project hangs on a spoke, and each of its figures is pulled out of the card into a round node of its own |
+| Partners | **clusters** | the title is the core; four kinds of collaborator are hubs, each with its names as pills around it |
+
+**The wiring is measured, not drawn.** Layout is CSS grid — nothing in JS
+positions a node. `js/graph.js` reads the links declared on the graph
+(`data-links="claim:r>l1:l …"`, a node and a port — r, l, t or b — at each end)
+and lays one SVG trace per link over wherever the nodes actually are: a cubic
+that leaves each port square to its card's edge, a port ring at each end, and a
+pulse that runs it once the screen is live. It is laid out again whenever the
+page changes shape, so the wiring can never disagree with the page, and with
+scripts off the page is still the copy, just unwired.
+
+**The scaffold is made of the model.** Each layout also returns one target
+point per unit of the model: just over half beaded evenly along the links, the
+rest ringed a few pixels outside each card and round node, spaced in
+proportion to length so the beading is even across the whole network. Units
+are assigned in index order, and consecutive units sit next to each other in
+most arrangements, so they stream out together rather than criss-crossing.
+
+**It is measured where the section will be pinned,** not where it is. So as you
+scroll in, the units leave the arrangement and gather into the finished
+scaffold on the same eased fraction as everything else — each on its own delay
+and its own arc, so it comes apart as a swarm, not as one shape sliding — and
+the copy then slides up into the scaffold they have made. Scrolling on, the
+copy slides away, the scaffold is left standing for a moment, and the units fly
+back to build the next arrangement. A unit in flight takes its edges with it
+(an edge between two points on the page would be a streak across the screen),
+and the centring feedback only ever sees the model, never the page.
+
+**It assembles along its own wiring.** Every node carries a `data-order`. When
+the title has typed, a node grows into place at `order × 0.22s`, its lines land
+one after another just behind it, its sub-headline types, and each link draws
+from its source towards the next node as that one arrives. There is no scan
+beam here — the network is the reveal. Rewinding and replaying work exactly as
+they do for the panels.
+
+**Below 1100px wide, or 600px tall, a network is a spine:** the nodes stacked
+in reading order down a single wire, each with a port on it, scrolling rather
+than pinned, with the model a faint backdrop behind rather than taken apart.
+Hubs become pills; figures sit in a row under their project.
+
+Measured at 1100×620, 1280×720, 1440×900 and 1920×1080: every network fits
+under the nav with nothing clipped. On a short wide screen (up to 820px tall)
+the project imagery drops out of Work, which is what buys its three rows their
+height. A taken-apart section costs the same to draw as an assembled one — 16.7
+ms median at 1440×900 and 2560×1400 in a software-rendered container; fewer
+edges are drawn while units are on the page, not more.
 
 ## Keeping the model in its slot
 
@@ -749,7 +773,8 @@ sized off `uBase`, the unzoomed unit, so a model at `zoom: 1.34` gets longer
 edges and not fatter ones. Getting this wrong is not subtle: with width scaling
 too, a full-bleed section measured 33.3 ms/frame at 1440×900, exactly half rate.
 
-**`field.detail` pays for the backdrop.** A section that dims the model to 28%
+**`field.detail` pays for the backdrop** — which is now only the spine form of
+a taken-apart section, and phones. A section that dims the model to 28%
 also turns `detail` down, which raises the alpha cutoff in the edge loop from
 0.115 to about 0.30. The edges it drops are ones already below the threshold of
 visible at that opacity, and dropping them is what buys back the fill area the
@@ -792,9 +817,10 @@ The split is deliberate:
 | `js/neural.js` | A React Three Fiber scene. `STATES`, the arrangement generators, `VIS` and `POSE_*` carry over unchanged; the hand projection is replaced by instanced meshes and a vertex shader. |
 | `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. The travel, zoom and dim become a scrubbed timeline; `dragEase` becomes its ease. |
 | `js/circuit.js` | A `<Circuit side gap />` component rendering the same SVG; the geometry functions carry over unchanged. |
+| `js/graph.js` | A `<Graph links>` component that measures its children with a ResizeObserver and renders the same traces; `layout()`'s targets feed the scene's scatter uniform. |
 | `css/tokens.css` | Unchanged. Tailwind v4 reads CSS custom properties directly. |
 | `css/main.css` | Component styles; the `[data-chapter]` block stays as-is. |
-| `index.html` | `page.tsx` plus a `Chapter` component (`is-side` / `is-full` as a prop), with the copy, projects, people and partners coming from the CMS. |
+| `index.html` | `page.tsx` plus a `Chapter` component (`is-side` / `is-graph` as a prop), with the copy, projects, people and partners coming from the CMS. |
 
 Nothing here depends on the DOM structure except `app.js`, and nothing in
 `neural.js` touches the page.

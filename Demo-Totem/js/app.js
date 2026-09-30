@@ -46,13 +46,14 @@
      drawn. Behind a full screen of copy it is bigger and much fainter; beside
      the copy it is smaller and at full strength.
 
-     Only Work and Collaborations are backdrops, and they are not adjacent —
-     Team sits between them with the model back out in front. An earlier pass
-     had four of these in a row, and consecutive screens of dimmed model read
-     as the model having been switched off rather than as a deliberate change
-     of register; the effect needs the model to come back to mean anything.
-     Separating them is what lets the wall have the whole viewport without the
-     middle of the page going flat.
+     `graph` marks the sections where the model is taken apart: Services,
+     Work and Partners. There the copy is a network of nodes (js/graph.js) and
+     the model's units leave it to bead the network's links and ring its cards
+     — see "taken apart" in paint(). They alternate with the sections where
+     it is whole, so the page reads as the model coming apart and being put
+     back together, three times over, before it closes on its core. Their `x`
+     is the centre: what is left of the model mid-crossing heads there while
+     its units fly out to the page.
 
      `skin` names the section's whole colour set — see css/tokens.css. The
      <section> wears it as a class so its band and copy are painted from it;
@@ -62,11 +63,11 @@
      agree. */
   var CHAPTERS = [
     { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper' },
-    { id: 'bloom',  x: 'left',  dim: 1.00, zoom: 0.82, skin: 'violet' },
+    { id: 'bloom',  x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'violet', graph: true },
     { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
-    { id: 'settle', x: 0.60,    dim: 0.34, zoom: 1.38, skin: 'lemon' },
+    { id: 'settle', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'lemon',  graph: true },
     { id: 'vault',  x: 'left',  dim: 1.00, zoom: 0.80, skin: 'paper' },
-    { id: 'ledger', x: 0.44,    dim: 0.42, zoom: 1.50, skin: 'cyan' },
+    { id: 'ledger', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'cyan',   graph: true },
     { id: 'core',   x: 'right', dim: 1.00, zoom: 0.88, skin: 'ember' }
   ];
 
@@ -95,6 +96,10 @@
   function smoothstep(t) { return t * t * (3 - 2 * t); }
   function lerp(a, b, t) { return a + (b - a) * t; }
   function wide() { return innerWidth >= 900; }
+  /* Wide enough and tall enough for a section to be a network rather than a
+     spine — the same query as the graph layouts in css/main.css. */
+  var graphMQ = matchMedia('(min-width: 1100px) and (min-height: 600px)');
+  function graphMode() { return graphMQ.matches; }
 
   function boot() {
     /* The artifact host wraps this file in its own document, so attributes
@@ -133,8 +138,20 @@
       var f = x === 'right' ? 0.73 : 0.27;
       return (innerL + innerW * f) / Math.max(1, innerWidth);
     }
-    function dimOf(i) { return wide() ? CHAPTERS[i].dim : PHONE.dim; }
-    function zoomOf(i) { return wide() ? CHAPTERS[i].zoom : PHONE.zoom; }
+    /* A graph section stacked as a spine (900–1100px, or a short screen) has
+       nowhere to send the model's units, so there the model is a backdrop,
+       as on a phone. */
+    function dimOf(i) {
+      if (!wide()) return PHONE.dim;
+      if (CHAPTERS[i].graph && !graphMode()) return 0.34;
+      return CHAPTERS[i].dim;
+    }
+    function zoomOf(i) {
+      if (!wide()) return PHONE.zoom;
+      if (CHAPTERS[i].graph && !graphMode()) return 1.3;
+      return CHAPTERS[i].zoom;
+    }
+    function scatterOf(i) { return CHAPTERS[i].graph && graphMode() ? 1 : 0; }
 
     /* Cumulative roll, signed by the direction of travel: the model turns the
        way it is being pulled. Recomputed on resize because the anchors are. */
@@ -247,6 +264,24 @@
       return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
     }
 
+    /* ---- section graphs --------------------------------------------------- */
+    /* Wired once; laid out again whenever the page changes shape. Each layout
+       also hands back where the model's units go in that section — measured
+       at the section's pinned position, so they can gather there before the
+       copy has arrived. */
+    var graphs = sections.map(function (el) {
+      var g = el.querySelector('.graph');
+      return g && window.SectionGraph ? SectionGraph.build(g) : null;
+    });
+    var graphTargets = sections.map(function () { return null; });
+
+    function layoutGraphs() {
+      var mode = graphMode() ? 'graph' : 'spine';
+      for (var i = 0; i < graphs.length; i++) {
+        if (graphs[i]) graphTargets[i] = SectionGraph.layout(graphs[i], mode, field.cfg.nodes);
+      }
+    }
+
     function drawCircuits() {
       if (!window.RigCircuit) return;
       for (var i = 0; i < rigs.length; i++) {
@@ -322,11 +357,13 @@
         requestAnimationFrame(function () {
           relayoutQueued = false;
           drawCircuits();
+          layoutGraphs();
           if (navCurrent >= 0) setNavCurrent(navCurrent);
         });
       });
       for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
       if (navList) ro.observe(navList);
+      for (var gi = 0; gi < graphs.length; gi++) if (graphs[gi]) ro.observe(graphs[gi].root);
     }
 
     /* ---- progress, measured from the viewport ----------------------------- */
@@ -449,6 +486,19 @@
       var crossing = smoothstep(clamp(e / 0.16, 0, 1)) * smoothstep(clamp((1 - e) / 0.16, 0, 1));
       if (lo === hi) crossing = 0;
 
+      /* Taken apart. Crossing into a graph section the model's units leave it
+         and fly out to that section's scaffold — beads on its links, a ring
+         round each card — on the same eased fraction as everything else; the
+         copy then slides up into the scaffold they have made. Crossing out,
+         they fly back and the next arrangement assembles from them. Graph
+         sections alternate with whole ones, so at most one of lo and hi is a
+         graph and it owns the targets. While units are in flight the model
+         does not recede: the flight is the thing to see. */
+      var scat = lo === hi ? scatterOf(lo) : lerp(scatterOf(lo), scatterOf(hi), e);
+      var owner = CHAPTERS[hi].graph ? hi : (CHAPTERS[lo].graph ? lo : -1);
+      field.setScatter(scat, owner >= 0 ? graphTargets[owner] : null);
+      var recede = owner >= 0 && graphMode() ? 0.12 : 0.72;
+
       var x = lerp(anchor(CHAPTERS[lo].x), anchor(CHAPTERS[hi].x), e);
       var base = lerp(dimOf(lo), dimOf(hi), e);
       field.originX = x;
@@ -464,14 +514,15 @@
          what is already invisible at that opacity. */
       field.detail = clamp(0.30 + base * 0.62 - (field.zoom - 1) * 0.30, 0, 1);
 
-      stage.style.opacity = (base * (1 - 0.72 * crossing)).toFixed(3);
+      stage.style.opacity = (base * (1 - recede * crossing)).toFixed(3);
       /* On .stage, not on :root. Both would work — .hud is a descendant — but
          a custom property written to the root every frame dirties style for
          the whole document, and this one is read by exactly one element. */
       stage.style.setProperty('--model-x', x.toFixed(4));
       /* The readout belongs to a model you are inspecting, not to one lying
          behind a screen of copy — it goes with the dimming. */
-      stage.style.setProperty('--hud-a', clamp((base - 0.55) / 0.45, 0, 1).toFixed(3));
+      stage.style.setProperty('--hud-a',
+        (clamp((base - 0.55) / 0.45, 0, 1) * (1 - scat)).toFixed(3));
 
       /* Parallax. The pinned copy lifts a little through its chapter, which
          gives the copy and the model separation while the model does the
@@ -620,7 +671,7 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); drawCircuits(); setMenu(false); paint(true);
+        measure(); computeSpin(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
         if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
@@ -630,6 +681,7 @@
     measure();
     computeSpin();
     drawCircuits();
+    layoutGraphs();
     field.originY = 0.5;
     paint(true);
     requestAnimationFrame(frame);
@@ -713,12 +765,10 @@
      straddle an <em> that runs across two lines.
 
      Headings, buttons, links and SVG are left whole: headings type, and the
-     others arrive with the box they sit in. So does the partner wall, whose
-     names are moving and have no line to be revealed on. */
+     others arrive with the box they sit in. */
   function skipWords(node, stop) {
     for (var el = node.parentNode; el && el !== stop; el = el.parentNode) {
       if (/^(H1|H2|H3|A|BUTTON|SVG|SCRIPT|STYLE)$/i.test(el.nodeName)) return true;
-      if (el.classList && el.classList.contains('wall')) return true;
     }
     return false;
   }
@@ -808,7 +858,7 @@
      SCAN_BEAM is the beam's height in css/main.css (.rig-beam::before): its
      leading edge is that element's bottom border. */
   var SCAN_SPEED = 220, SCAN_SPEED_NARROW = 440, SCAN_BEAM = 150, SCAN_RASTER = 0.12;
-  var BOXES = 'li, .card, .thumb, .portrait, .wall-row';
+  var BOXES = 'li, .card, .thumb, .portrait';
 
   /* Group a block's words into the lines they are actually laid out on. In
      document order a new line starts wherever a word sits lower than the line
@@ -867,6 +917,44 @@
     return items;
   }
 
+  /* A graph section has no panel and no beam: it assembles along its own
+     wiring instead. Every node carries a data-order; a node grows into place
+     at order × GRAPH_STEP, its lines land one after another just behind it,
+     its sub-headline types, and each link draws from its source towards the
+     next node as that one arrives (graph.js gives a link its source's order
+     plus a half). The same loop that runs the scan runs this. */
+  var GRAPH_STEP = 0.22, GRAPH_LINE = 0.08;
+
+  function orderOf(el) {
+    var o = el.closest('[data-order]');
+    return o ? parseFloat(o.getAttribute('data-order')) || 0 : 0;
+  }
+
+  function planGraph(entry) {
+    var items = [], k, j, t, end = 0;
+    function push(it) { items.push(it); if (it.t > end) end = it.t; }
+    for (k = 0; k < entry.boxes.length; k++) {
+      push({ kind: 'box', el: entry.boxes[k], t: orderOf(entry.boxes[k]) * GRAPH_STEP });
+    }
+    for (k = 0; k < entry.edges.length; k++) {
+      push({ kind: 'box', el: entry.edges[k], t: orderOf(entry.edges[k]) * GRAPH_STEP });
+    }
+    for (k = 0; k < entry.subs.length; k++) {
+      push({ kind: 'type', chars: entry.subs[k].chars,
+             t: orderOf(entry.subs[k].el) * GRAPH_STEP + 0.12 });
+    }
+    var R = entry.sec.getBoundingClientRect();
+    for (k = 0; k < entry.words.length; k++) {
+      var lines = [];
+      measureLines(entry.words[k], R, lines);
+      t = orderOf(entry.blocks[k]) * GRAPH_STEP + 0.14;
+      for (j = 0; j < lines.length; j++) { lines[j].t = t + j * GRAPH_LINE; push(lines[j]); }
+    }
+    items.sort(function (a, b) { return a.t - b.t; });
+    entry.scanDur = end + 0.9;
+    return items;
+  }
+
   function land(item, alive) {
     if (item.kind === 'box') item.el.classList.add('in');
     else if (item.kind === 'line') {
@@ -880,6 +968,7 @@
   function landAll(entry) {
     var k;
     for (k = 0; k < entry.boxes.length; k++) entry.boxes[k].classList.add('in');
+    for (k = 0; k < entry.edges.length; k++) entry.edges[k].classList.add('in');
     for (k = 0; k < entry.words.length; k++) {
       for (var w = 0; w < entry.words[k].length; w++) entry.words[k][w].classList.add('in');
     }
@@ -933,13 +1022,15 @@
     try {
       for (i = 0; i < chapters.length; i++) {
         var sec = chapters[i], h = sec.querySelector('h1, h2');
-        var col = sec.querySelector('.ch-col') || sec;
+        var graph = sec.querySelector('.graph');
+        var col = sec.querySelector('.ch-col') || graph || sec;
         var entry = { sec: sec, col: col, head: h || col, rig: sec.querySelector('.rig'),
-                      chars: h ? splitHeading(h) : null, subs: [], boxes: [], words: [],
+                      graph: !!graph, edges: [].slice.call(sec.querySelectorAll('.g-edge')),
+                      chars: h ? splitHeading(h) : null, subs: [], boxes: [], words: [], blocks: [],
                       title: 'hidden', body: 'hidden', tTok: 0, bTok: 0, scanDur: 0 };
         entries.push(entry);
 
-        var subs = sec.querySelectorAll('.ch-col h3');
+        var subs = sec.querySelectorAll('h3');
         for (k = 0; k < subs.length; k++) {
           var sc = splitHeading(subs[k]);
           if (sc) entry.subs.push({ el: subs[k], chars: sc });
@@ -949,9 +1040,8 @@
         for (k = 0; k < blocks.length; k++) {
           entry.boxes.push(blocks[k]);
           var inner = blocks[k].querySelectorAll(BOXES);
-          for (var b = 0; b < inner.length; b++) {
-            if (!inner[b].closest('.wall-belt')) entry.boxes.push(inner[b]);
-          }
+          for (var b = 0; b < inner.length; b++) entry.boxes.push(inner[b]);
+          entry.blocks.push(blocks[k]);
           entry.words.push(splitWords(blocks[k]));
         }
       }
@@ -984,6 +1074,7 @@
       hideChars(e.chars);
       for (j = 0; j < e.subs.length; j++) hideChars(e.subs[j].chars);
       for (j = 0; j < e.boxes.length; j++) e.boxes[j].classList.remove('in');
+      for (j = 0; j < e.edges.length; j++) e.edges[j].classList.remove('in');
       for (j = 0; j < e.words.length; j++) {
         for (w = 0; w < e.words[j].length; w++) e.words[j][w].classList.remove('in');
       }
@@ -1025,7 +1116,7 @@
     function scan(e) {
       var tok = ++e.bTok, alive = function () { return e.bTok === tok; };
       var plan;
-      try { plan = planScan(e); }
+      try { plan = e.graph ? planGraph(e) : planScan(e); }
       catch (err) { settle(e); throw err; }
       if (!plan) { settle(e); return; }
       e.body = 'scanning';

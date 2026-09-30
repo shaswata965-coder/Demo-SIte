@@ -20,14 +20,16 @@ python3 -m http.server 8000 --directory Demo-Totem
 - Seven sections wearing five **skins** — a skin is the whole colour set at
   once, so an alternate section floods the screen with violet, electric yellow
   or cyan rather than tinting it. Light and dark, toggled top right.
-- The model lives on one side of the content, not behind it, swaps sides as the
-  sections progress, and recolours with the skin — on the deep skins it flips
-  from plotted ink to additive light.
-- Every screen of copy sits in an instrument panel. Its headlines type in as
-  you land, then a scan beam passes and reveals the body copy a line at a time.
-  A circuit layer in the panel's margins wires the copy to the model: a PCB bus
-  down the outer edge, and a chip fanning into a small neural network pointed
-  at the model.
+- The model is **assembled and taken apart** as you scroll. On the white
+  sections (and the dark close) it stands whole beside a panel of copy. On the
+  flooded ones it comes apart: the copy is broken into nodes wired into a
+  network — feed-forward for Services, hub and spokes for Work, clusters for
+  Partners — and the model's own units fly out to bead the wiring and ring the
+  cards, then fly back to rebuild it for the next section.
+- Headlines type in as you land. On the panels a scan beam then reveals the
+  body copy a line at a time, and a circuit layer in the margins wires the copy
+  to the model; the networks instead assemble node by node along their own
+  wiring.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
 

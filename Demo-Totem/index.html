@@ -125,64 +125,52 @@
   </section>
 
   <!-- =================================================== 01 — services -->
-  <section class="chapter skin sk-violet is-side side-left" id="c1">
+  <section class="chapter skin sk-violet is-graph" id="c1">
     <span class="band" aria-hidden="true"></span>
-    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
-      <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
-      <div class="rig" aria-hidden="true">
-        <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
-        <div class="rig-strip">
-          <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
-            <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
-          </svg>
-          <i class="rig-meter"></i>
+    <div class="ch-body"><div class="ch-inner">
+      <!-- Taken apart: a feed-forward network. The claim is the input, the
+           four levers are the hidden layer, the result is the output; the
+           model's own units bead the links and ring the cards. Wired by
+           js/graph.js from data-links; laid out by CSS grid. -->
+      <div class="graph g-feed" data-links="title:b>claim:t claim:r>l1:l claim:r>l2:l claim:r>l3:l claim:r>l4:l l1:r>out:l l2:r>out:l l3:r>out:l l4:r>out:l">
+        <div class="g-node g-title" data-node="title" data-area="title">
+          <p class="marker rv-lead"><i></i> 01 &mdash; Services</p>
+          <h2>Four levers on the bill</h2>
+        </div>
+        <div class="g-node g-card g-claim rv" data-node="claim" data-area="claim" data-order="1">
+          <p>Most teams pull <em>one</em> of these and could pull all four. We take
+          the ones with headroom and <strong>leave the rest alone.</strong></p>
+        </div>
+        <article class="g-node g-card g-lever rv" data-node="l1" data-area="l1" data-order="2">
+          <span class="g-num">01</span>
+          <h3>Inference audit</h3>
+          <p>Two weeks instrumenting your live serving path. Out the far end: a
+          costed list of what to change, in order.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l2" data-area="l2" data-order="2.6">
+          <span class="g-num">02</span>
+          <h3>Model compression</h3>
+          <p>FP8 and 4-bit quantisation, distillation, speculative decoding &mdash;
+          each held to your own eval suite.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l3" data-area="l3" data-order="3.2">
+          <span class="g-num">03</span>
+          <h3>Serving architecture</h3>
+          <p>Continuous batching, paged KV cache, prefix reuse, and routing so the
+          big model only sees what needs it.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l4" data-area="l4" data-order="3.8">
+          <span class="g-num">04</span>
+          <h3>Capacity &amp; procurement</h3>
+          <p>Fleet right-sizing, the spot-to-reserved mix, and whether to leave the
+          hosted API at all.</p>
+        </article>
+        <div class="g-node g-round g-out rv" data-node="out" data-area="out" data-order="5">
+          <b class="g-out-v">&frac12;</b>
+          <span class="g-out-l">Same model,<br>half the bill</span>
         </div>
       </div>
-
-      <p class="marker rv-lead"><i></i> 01 &mdash; Services</p>
-      <h2>Four levers on the bill</h2>
-      <p class="rv">Most teams pull <em>one</em> of these and could pull all four. We take
-      the ones with headroom and <strong>leave the rest alone.</strong></p>
-
-      <ul class="svc rv">
-        <li>
-          <span class="svc-n">01</span>
-          <div>
-            <h3>Inference audit</h3>
-            <p>Two weeks instrumenting your live serving path. Out the far end: a
-            costed list of what to change, in order.</p>
-          </div>
-        </li>
-        <li>
-          <span class="svc-n">02</span>
-          <div>
-            <h3>Model compression</h3>
-            <p>FP8 and 4-bit quantisation, distillation, speculative decoding &mdash;
-            each held to your own eval suite.</p>
-          </div>
-        </li>
-        <li>
-          <span class="svc-n">03</span>
-          <div>
-            <h3>Serving architecture</h3>
-            <p>Continuous batching, paged KV cache, prefix reuse, and routing so the
-            big model only sees what needs it.</p>
-          </div>
-        </li>
-        <li>
-          <span class="svc-n">04</span>
-          <div>
-            <h3>Capacity &amp; procurement</h3>
-            <p>Fleet right-sizing, the spot-to-reserved mix, and whether to leave the
-            hosted API at all.</p>
-          </div>
-        </li>
-      </ul>
-
-    </div></div></div>
+    </div></div>
   </section>
 
   <!-- ===================================================== 02 — method -->
@@ -245,33 +233,21 @@
   </section>
 
   <!-- =============================================== 03 — selected work -->
-  <section class="chapter skin sk-lemon is-full" id="c3">
+  <section class="chapter skin sk-lemon is-graph" id="c3">
     <span class="band" aria-hidden="true"></span>
-    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
-      <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
-      <div class="rig" aria-hidden="true">
-        <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
-        <div class="rig-strip">
-          <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
-            <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
-          </svg>
-          <i class="rig-meter"></i>
+    <div class="ch-body"><div class="ch-inner">
+      <!-- Taken apart: a hub with three spokes. Each project is a node on a
+           spoke, and each of its figures is pulled out of the card into a node
+           of its own. -->
+      <div class="graph g-radial" data-links="hub:t>w1:r hub:t>w2:l hub:b>w3:t w1:b>m1a:t w1:b>m1b:t w2:b>m2a:t w2:b>m2b:t w3:l>m3a:r w3:r>m3b:l">
+        <div class="g-node g-title g-card g-hub" data-node="hub" data-area="hub">
+          <p class="marker rv-lead"><i></i> 03 &mdash; Selected work</p>
+          <h2>Projects</h2>
+          <p class="g-sub rv" data-order="1">Three of the last twelve. Every figure is the client's own
+          measurement, taken against <em>their</em> pre-AXON baseline. Imagery is
+          generated placeholder art.</p>
         </div>
-      </div>
-
-      <div class="head">
-        <p class="marker rv-lead"><i></i> 03 &mdash; Selected work</p>
-        <h2>Projects</h2>
-        <p class="head-p rv">Three of the last twelve. Every figure is the client's own
-        measurement, taken against <em>their</em> pre-AXON baseline. Imagery is
-        generated placeholder art.</p>
-      </div>
-
-      <div class="cards work rv">
-        <article class="card">
+        <article class="g-node g-card g-proj rv" data-node="w1" data-area="w1" data-order="2">
           <span class="thumb" aria-hidden="true">
             <svg viewBox="0 0 320 140" role="presentation">
               <g class="k-2" fill="none" stroke-width="1" opacity=".55">
@@ -302,12 +278,16 @@
           <p class="card-p">40M sessions a month on a frontier-sized model. Distilled
           to an 8B student, with a router that keeps the big model for the 4% of turns
           that need it.</p>
-          <dl class="card-figs">
-            <div><dt>Cost / 1k tokens</dt><dd>&minus;71<b>%</b></dd></div>
-            <div><dt>Eval delta</dt><dd>&minus;1.2<b>pt</b></dd></div>
-          </dl>
         </article>
-        <article class="card">
+        <div class="g-group" data-area="m1">
+          <div class="g-node g-round g-metric rv" data-node="m1a" data-order="3">
+            <b>&minus;71<span class="u">%</span></b><span class="g-ml">Cost / 1k tokens</span>
+          </div>
+          <div class="g-node g-round g-metric rv" data-node="m1b" data-order="3.4">
+            <b>&minus;1.2<span class="u">pt</span></b><span class="g-ml">Eval delta</span>
+          </div>
+        </div>
+        <article class="g-node g-card g-proj rv" data-node="w2" data-area="w2" data-order="4">
           <span class="thumb" aria-hidden="true">
             <svg viewBox="0 0 320 140" role="presentation">
               <g class="k-f" fill="none" stroke-width="1" opacity=".5">
@@ -341,12 +321,16 @@
           <p class="card-p">A support agent where every millisecond of time-to-first-token
           was audible. Prefix cache on the system prompt, speculative decoding, and a
           queue rebuilt around admission control.</p>
-          <dl class="card-figs">
-            <div><dt>TTFT p95</dt><dd>640<b>ms</b></dd></div>
-            <div><dt>Was</dt><dd>2.4<b>s</b></dd></div>
-          </dl>
         </article>
-        <article class="card">
+        <div class="g-group" data-area="m2">
+          <div class="g-node g-round g-metric rv" data-node="m2a" data-order="5">
+            <b>640<span class="u">ms</span></b><span class="g-ml">TTFT p95</span>
+          </div>
+          <div class="g-node g-round g-metric rv" data-node="m2b" data-order="5.4">
+            <b>2.4<span class="u">s</span></b><span class="g-ml">Was</span>
+          </div>
+        </div>
+        <article class="g-node g-card g-proj rv" data-node="w3" data-area="w3" data-order="6">
           <span class="thumb" aria-hidden="true">
             <svg viewBox="0 0 320 140" role="presentation">
               <defs>
@@ -374,14 +358,19 @@
           <p class="card-p">Overnight summarisation across 9M documents. Nothing wrong
           with the model &mdash; the fleet was sized for a peak concurrency it never saw.
           Rewritten as a batched, preemptible job.</p>
-          <dl class="card-figs">
-            <div><dt>GPUs</dt><dd>42 &rarr; 12</dd></div>
-            <div><dt>Window</dt><dd>&minus;38<b>%</b></dd></div>
-          </dl>
         </article>
+        <div class="g-group" data-area="m3a">
+          <div class="g-node g-round g-metric rv" data-node="m3a" data-order="7">
+            <b>42&thinsp;&rarr;&thinsp;12</b><span class="g-ml">GPUs</span>
+          </div>
+        </div>
+        <div class="g-group" data-area="m3b">
+          <div class="g-node g-round g-metric rv" data-node="m3b" data-order="7.4">
+            <b>&minus;38<span class="u">%</span></b><span class="g-ml">Window</span>
+          </div>
+        </div>
       </div>
-
-    </div></div></div>
+    </div></div>
   </section>
 
   <!-- ======================================================= 04 — team -->
@@ -473,23 +462,9 @@
   </section>
 
   <!-- ============================================== 05 — collaborations -->
-  <section class="chapter skin sk-cyan is-full" id="c5">
+  <section class="chapter skin sk-cyan is-graph" id="c5">
     <span class="band" aria-hidden="true"></span>
-    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
-      <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
-      <div class="rig" aria-hidden="true">
-        <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
-        <div class="rig-strip">
-          <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
-            <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
-          </svg>
-          <i class="rig-meter"></i>
-        </div>
-      </div>
-
+    <div class="ch-body"><div class="ch-inner">
       <svg class="sprite" aria-hidden="true" focusable="false">
         <symbol id="gx0" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="none" stroke-width="2"/><circle cx="16" cy="16" r="3.5"/></symbol>
         <symbol id="gx1" viewBox="0 0 32 32"><rect x="6" y="8" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="24" rx="1"/><rect x="22" y="12" width="4" height="8" rx="1"/></symbol>
@@ -505,41 +480,46 @@
         <symbol id="gx11" viewBox="0 0 32 32"><rect x="6" y="9" width="20" height="3.5" rx="1.5"/><rect x="6" y="15" width="14" height="3.5" rx="1.5"/><rect x="6" y="21" width="8" height="3.5" rx="1.5"/></symbol>
       </svg>
 
-      <div class="head">
-        <p class="marker rv-lead"><i></i> 05 &mdash; Collaborations</p>
-        <h2>Who we build with</h2>
-        <p class="head-p rv">A small team stays small by borrowing &mdash;
-        <strong>model labs, runtimes, accelerators, and the platforms our clients
-        are already running on.</strong></p>
-      </div>
-
-      <div class="wall rv">
-        <div class="wall-row" style="--dur:64s">
-          <ul class="wall-belt">
-            <li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li>
-            <li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li>
-          </ul>
+      <!-- Taken apart: clusters. Four kinds of collaborator, each a hub with
+           its names around it, all wired to the core. -->
+      <div class="graph g-cluster" data-links="core:l>labs:r core:r>run:l core:l>acc:r core:r>plat:l labs:l>anthropic:r labs:l>openai:r labs:l>xai:r labs:l>mistral:r run:r>vllm:l run:r>hf:l run:r>ray:l acc:l>nvidia:r acc:l>groq:r plat:r>together:l plat:r>modal:l plat:r>baseten:l">
+        <div class="g-node g-title g-card g-core" data-node="core" data-area="core">
+          <p class="marker rv-lead"><i></i> 05 &mdash; Collaborations</p>
+          <h2>Who we build with</h2>
+          <p class="g-sub rv" data-order="1">A small team stays small by borrowing &mdash;
+          <strong>model labs, runtimes, accelerators, and the platforms our clients
+          are already running on.</strong></p>
         </div>
-        <div class="wall-row" style="--dur:52s">
-          <ul class="wall-belt rev">
-            <li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li>
-            <li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li>
-          </ul>
+        <div class="g-node g-round g-cat rv" data-node="labs" data-area="labs" data-order="2"><span>Model labs</span></div>
+        <div class="g-group g-leaves g-leaves-l" data-area="labsL">
+          <div class="g-node g-leaf rv" data-node="anthropic" data-order="3"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></div>
+          <div class="g-node g-leaf rv" data-node="openai" data-order="3.25"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></div>
+          <div class="g-node g-leaf rv" data-node="xai" data-order="3.5"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></div>
+          <div class="g-node g-leaf rv" data-node="mistral" data-order="3.75"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></div>
         </div>
-        <div class="wall-row" style="--dur:74s">
-          <ul class="wall-belt">
-            <li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li><li><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li>
-            <li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx0"/></svg><span class="wm">Anthropic</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx1"/></svg><span class="wm">xAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx2"/></svg><span class="wm">OpenAI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx3"/></svg><span class="wm">Mistral AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></li><li class="dup" aria-hidden="true"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></li><li class="dup" aria-hidden="true"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></li><li class="dup" aria-hidden="true"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></li><li class="dup" aria-hidden="true"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></li>
-          </ul>
+        <div class="g-node g-round g-cat rv" data-node="run" data-area="run" data-order="2.3"><span>Runtimes</span></div>
+        <div class="g-group g-leaves g-leaves-r" data-area="runL">
+          <div class="g-node g-leaf rv" data-node="vllm" data-order="3.3"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx10"/></svg><span class="wm">vLLM</span></div>
+          <div class="g-node g-leaf rv" data-node="hf" data-order="3.55"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx4"/></svg><span class="wm">Hugging Face</span></div>
+          <div class="g-node g-leaf rv" data-node="ray" data-order="3.8"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx11"/></svg><span class="wm">Ray</span></div>
         </div>
-      </div>
-
-      <p class="note rv"><b>Placeholder marks.</b> Names are here to size the layout.
+        <div class="g-node g-round g-cat rv" data-node="acc" data-area="acc" data-order="2.6"><span>Accelerators</span></div>
+        <div class="g-group g-leaves g-leaves-l" data-area="accL">
+          <div class="g-node g-leaf rv" data-node="nvidia" data-order="3.6"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gx6"/></svg><span class="wm">NVIDIA</span></div>
+          <div class="g-node g-leaf rv" data-node="groq" data-order="3.85"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gx7"/></svg><span class="wm">Groq</span></div>
+        </div>
+        <div class="g-node g-round g-cat rv" data-node="plat" data-area="plat" data-order="2.9"><span>Platforms</span></div>
+        <div class="g-group g-leaves g-leaves-r" data-area="platL">
+          <div class="g-node g-leaf rv" data-node="together" data-order="3.9"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx5"/></svg><span class="wm">Together AI</span></div>
+          <div class="g-node g-leaf rv" data-node="modal" data-order="4.15"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gx8"/></svg><span class="wm">Modal</span></div>
+          <div class="g-node g-leaf rv" data-node="baseten" data-order="4.4"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gx9"/></svg><span class="wm">Baseten</span></div>
+        </div>
+        <p class="note rv" data-area="note" data-order="5"><b>Placeholder marks.</b> Names are here to size the layout.
       No affiliation, endorsement or partnership is implied &mdash; AXON is a
       fictional company and none of these are real relationships. The glyphs are
       generated, not anyone&rsquo;s logo.</p>
-
-    </div></div></div>
+      </div>
+    </div></div>
   </section>
 
   <!-- ==================================================== 06 — contact -->
@@ -601,6 +581,7 @@
 
 <script src="js/neural.js"></script>
 <script src="js/circuit.js"></script>
+<script src="js/graph.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

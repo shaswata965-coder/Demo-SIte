@@ -178,6 +178,11 @@
        an edge at 12% alpha behind a stage at 28% opacity is not visible, and
        edge fill area is the entire frame cost. See `detail` in js/app.js. */
     this.detail = 1;
+    /* How far the model has come apart into the page, 0..1, and where each
+       unit goes when it has: two numbers per unit, in viewport pixels. Both
+       are the page's to write, every frame — see "taken apart" in _project. */
+    this.scatter = 0;
+    this.targets = null;
     this.yawVel = 0; this.pitchVel = 0;
     this.energy = 0;
     this.t = 0;
@@ -294,6 +299,20 @@
     this.proj = new Float32Array(n * 4);   /* sx, sy, depth, visible */
     this.phase = new Float32Array(n);
     for (i = 0; i < n; i++) this.phase[i] = (i * 0.61803398875 % 1) * TAU;
+
+    /* Each unit leaves on its own beat and along its own arc, so the model
+       comes apart as a swarm rather than as one shape sliding across. sK is
+       how far each one has gone this frame; the edges read it. */
+    var sr = rng(97);
+    this.sDelay = new Float32Array(n);
+    this.sArcX = new Float32Array(n); this.sArcY = new Float32Array(n);
+    this.sK = new Float32Array(n);
+    for (i = 0; i < n; i++) {
+      this.sDelay[i] = sr() * 0.35;
+      var arc = sr() * TAU, reach = 30 + sr() * 80;
+      this.sArcX[i] = Math.cos(arc) * reach;
+      this.sArcY[i] = Math.sin(arc) * reach;
+    }
     this._edges(rand);
   };
 
@@ -645,6 +664,14 @@
     return Math.sqrt(m) * POSE_SCALE[s];
   };
 
+  /* Take the model apart into the page. `amount` 0 is the model whole, 1 is
+     every unit sitting on its target; `targets` is [x0, y0, x1, y1, …] in
+     viewport pixels, one pair per unit (reused round-robin if short). */
+  NeuralField.prototype.setScatter = function (amount, targets) {
+    this.scatter = clamp(amount, 0, 1);
+    if (targets) this.targets = targets;
+  };
+
   NeuralField.prototype.setProgress = function (p, immediate) {
     this.targetProgress = clamp(p, 0, NS - 1);
     if (immediate || this.reduced) this.progress = this.targetProgress;
@@ -722,6 +749,8 @@
     var kx = lerp(CA[0], CB[0], t), ky = lerp(CA[1], CB[1], t), kz = lerp(CA[2], CB[2], t);
 
     var T = this.t;
+    var tg = this.targets, S = tg && tg.length ? this.scatter : 0;
+    var tn = S ? tg.length >> 1 : 0, SK = this.sK;
     for (var i = 0; i < n; i++) {
       var i3 = i * 3, i4 = i * 4;
       var x = lerp(A[i3], B[i3], t) - kx,
@@ -738,6 +767,29 @@
       var px = ox + x1 * R * d, py = oy + y1 * R * d;
       if (px < minX) minX = px; if (px > maxX) maxX = px;
       if (py < minY) minY = py; if (py > maxY) maxY = py;
+
+      /* Taken apart. Past its own delay a unit leaves the arrangement and
+         travels — on an arc, eased — to the point the page has given it: a
+         bead on one of the section's links, or a place on the ring around one
+         of its cards. On arrival it is flat (depth 1, every unit facing you)
+         and keeps a pixel or two of its own wander, so the scaffold it forms
+         still breathes. The bounding box above is taken before this, so the
+         centring feedback only ever sees the model, never the page. */
+      var k = 0;
+      if (S > 0) {
+        k = clamp((S - this.sDelay[i]) / 0.65, 0, 1);
+        k = k * k * (3 - 2 * k);
+        if (k > 0) {
+          var j = (i % tn) * 2, bow = Math.sin(k * PI);
+          var tx = tg[j] + Math.sin(T * 0.9 + ph) * 1.8;
+          var ty = tg[j + 1] + Math.cos(T * 0.7 + ph * 1.3) * 1.8;
+          px += (tx - px) * k + this.sArcX[i] * bow;
+          py += (ty - py) * k + this.sArcY[i] * bow;
+          d += (1 - d) * k;
+        }
+      }
+      SK[i] = k;
+
       this.proj[i4] = px;
       this.proj[i4 + 1] = py;
       this.proj[i4 + 2] = d;
@@ -785,6 +837,7 @@
        is dimmed — the edges dropped are the ones already below the threshold
        of visible at that opacity. Full strength keeps the original 0.115. */
     var cut = 0.115 + (1 - clamp(this.detail, 0, 1)) * 0.38;
+    var SKr = this.sK, whole = 1 - this.scatter;
     var B = 3, lanes = [], used = [], hotPath = null, hotVis = 0;
     for (var q = 0; q < PAL.length; q++) {
       lanes.push([]); used.push([]);
@@ -796,8 +849,12 @@
       var vis = lerp(this.eVis[base + lo], this.eVis[base + hi], t);
       if (vis < 0.05) continue;
       var a4 = this.eA[e] * 4, b4 = this.eB[e] * 4;
+      /* A unit that has left the model takes its edges with it — drawn between
+         two points of the page they would be streaks across the screen. */
+      var gone = SKr[this.eA[e]] > SKr[this.eB[e]] ? SKr[this.eA[e]] : SKr[this.eB[e]];
+      if (gone > 0.85) continue;
       var depth = (P[a4 + 2] + P[b4 + 2]) * 0.5;
-      var alpha = vis * (depth - 0.52) * 1.45;
+      var alpha = vis * (depth - 0.52) * 1.45 * (1 - gone) * (1 - gone);
       if (alpha < cut) continue;
       var bi = clamp((alpha * B) | 0, 0, B - 1);
       var lc = this.eColor[e];
@@ -841,7 +898,7 @@
     /* The traced inference, over the top of the rest of the stack. */
     if (hotPath) {
       ctx.lineWidth = Math.min(2.6, 1.2 + this.u * 0.7);
-      ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.9 : 0.95));
+      ctx.globalAlpha = Math.min(1, hotVis * (ink ? 0.9 : 0.95)) * whole * whole;
       ctx.strokeStyle = PAL[C_SIGNAL];
       ctx.stroke(hotPath);
     }
@@ -933,7 +990,8 @@
     /* ---- signal pulses --------------------------------------------------- */
     for (var u = 0; u < this.pulses.length; u++) {
       var pu = this.pulses[u], eb = pu.e * NS;
-      var pv = lerp(this.eVis[eb + lo], this.eVis[eb + hi], t);
+      var pv = lerp(this.eVis[eb + lo], this.eVis[eb + hi], t)
+             * (1 - Math.max(SKr[this.eA[pu.e]], SKr[this.eB[pu.e]]));
       if (pv < 0.25) continue;
       var pa = this.eA[pu.e] * 4, pb = this.eB[pu.e] * 4;
       var px2 = lerp(P[pa], P[pb], pu.t), py2 = lerp(P[pa + 1], P[pb + 1], pu.t);
