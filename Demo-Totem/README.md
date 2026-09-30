@@ -87,8 +87,10 @@ trick behind the model appearing to rewire itself.
 squares, hidden units as dots. There are no labels on the model: an earlier
 pass pinned one annotation per arrangement on a leader line (`σ activation`,
 `corridor 41`) and framed the model with a readout of its name and unit count;
-both went, along with the readout under the copy, so the only words on screen
-are the copy's own.
+both went, along with the readout under the copy, the numbered section labels
+over each title ("01 — Services") and the closing colophon, so the only words
+on screen are the copy's own. The one piece of small print kept is the partner
+disclaimer, beside the names it is about.
 
 **Viewing poses.** Scroll spin alone can present an arrangement edge-on; the
 layered stack was being viewed straight down its own axis. Each arrangement
@@ -124,7 +126,7 @@ Within a skin, colour is still assigned by *role*, never by position:
 | | Role |
 |---|---|
 | `--accent` / `--c-primary` | Action: the call to action, the focus ring, the marker rule, `<em>`, and the arrangement's own body — the coil and the proximity mesh. |
-| `--c-second` → `--contrast` | The workhorse: eyebrows, role labels, step numbers, partner marks, `<strong>`, and the wiring that runs *between* structures. |
+| `--c-second` → `--contrast` | The workhorse: role labels, step numbers, partner marks, `<strong>`, and the wiring that runs *between* structures. |
 | `--c-third` → `--data` | Things being counted — every figure on the page — and the frames the model is held in, the lattice and the risers. |
 | `--c-signal` | What is **live**: the traced inference, the pulses, the output terminals. |
 
@@ -269,6 +271,18 @@ unsticks at exactly the point the next band reaches the bottom of the viewport,
 so a section's copy is never left sitting on the next section's ground — which
 is what makes a near-white section legible right up against a deep violet one.
 
+**Boundaries are seams, not edges.** A section's colour does not start at its
+top edge; it grows out of the one before it across `--seam` (64svh pinned,
+34svh on narrow screens), half above the edge and half below. Each section
+names the skin it blends out of (`data-from="paper"`), and its band's
+`::before` paints the gradient over the end of the previous band — same
+z-index, later in the document. The gradient is eased (five stops on a
+smoothstep) and mixed in OKLab, so paper-to-violet passes through a clean
+lavender rather than a grey. Half a seam sits inside each section's own
+padding, so the copy leaving is at most ~40% of the way across when it scrolls
+over it and the title arriving is ~80% into its own colour: both stay on a
+ground they were toned for.
+
 Getting the band *behind* the model took a specific stacking arrangement, worth
 knowing before you touch it:
 
@@ -287,35 +301,45 @@ wrapper rather than sitting directly in the section.
 
 ## Navigation
 
-One floating glass bar replaces the full-width strip and the rail of dashes
-that used to sit at the top of the page:
+Two states, and the move between them is the design:
 
 ```
-[mark AXON]        Services  Method  Work  Team  Partners  Contact        (☾)  [BOOK A TEARDOWN →]
-                              ───────                    (progress along the bottom edge)
+at the top     [mark AXON]      Services  Method  Work  Team  Partners  Contact      (☾) [Book a teardown (→)]
+
+scrolled                 ( [mark]  Services  Method  (Work)  Team  Partners  Contact  (☾) [Book a teardown (→)] )
+                            ─────────────── progress ───────────────
 ```
 
-- **Drawn from the root's skin.** Its panel colour and ink come from whatever
-  section is underneath, so it is a violet bar over the violet section and a
-  pale one over the paper ones — glass (`backdrop-filter`) over a 72% panel,
-  with its own border and shadow, rather than a scrim fading into the page.
-- **The current section is a pill** that slides between the links, lit by a
-  small accent dot. `setNavCurrent()` in `app.js` sizes it from the current
-  link's own box, so it lands exactly whatever the labels' widths; it is
-  re-placed when the links resize (the webfont landing, a window resize). On
-  the intro nothing is current — the mark is home — and the pill fades out
-  where it stands.
-- **The bottom edge is a progress line**, filled with the same `progress` the
-  rest of the page runs on, inset to the straight run of the pill.
+- **At the very top it is a plain header** — no box, the mark, links and
+  actions sitting straight on the intro in the page's own ink.
+- **Once you scroll it condenses into an island:** a compact, centred capsule
+  of dark glass (86% near-black under a 22px blur), the same over every
+  section while the page changes colour underneath it. Width, ground, ink and
+  wordmark all transition — the wordmark folds into the mark — so the header
+  visibly gathers itself into the island rather than swapping. `app.js` toggles
+  `.is-stuck` from the first 2% of the intro's scroll.
+- **Columns are `auto 1fr auto`**, not `1fr auto 1fr`: the links centre in the
+  space between the mark and the actions, so the island has no dead gap on
+  its narrower side, and as the wordmark folds away the links drift over to
+  meet the mark.
+- **The current section is a pill** that slides between the links; on hover it
+  follows the pointer across them and returns to the current one when the
+  pointer leaves. `placeInd()` sizes it from a link's own box, so it lands
+  exactly whatever the labels' widths. On the intro nothing is current — the
+  mark is home — and the pill fades out where it stands.
+- **The call to action** is sentence case with its arrow in a chip that turns
+  to point out of the page on hover.
+- **The island's bottom edge is a progress line**, filled with the same
+  `progress` the rest of the page runs on.
 - **The theme toggle** is an icon: a moon in light, a sun in dark — it shows
   where a click takes you. It is a toggle button with a fixed name ("Dark
   theme") whose `aria-pressed` says whether dark is on.
-- **Below 1024px the links fold into a menu** under the bar, opened from a
-  button that turns into a close mark. It closes on a link, on Escape (focus
-  goes back to the button), on a click outside, and on resize. It is
-  near-opaque rather than glass: a backdrop filter nested inside the bar's
-  own only sees the bar, so a translucent menu let the copy underneath read
-  through it.
+- **Below 1024px it is always the island**, full width, with the links folded
+  into a menu opened from a button that turns into a close mark. It closes on
+  a link, on Escape (focus goes back to the button), on a click outside, and on
+  resize. The menu is near-opaque rather than glass: a backdrop filter nested
+  inside the island's own only sees the island, so a translucent menu let the
+  copy underneath read through it.
 
 The links are real anchors (`href="#c3"`), so the page still navigates with
 scripts off; with scripts on they route through the same glide as every other
@@ -325,7 +349,7 @@ call to action.
 
 Each screen runs one sequence, and everything on it waits its turn:
 
-1. the eyebrow arrives — `.arming` on the `<section>`
+1. the section arms — `.arming` on the `<section>`
 2. the title types, character by character, with a caret
 3. the caret stops, the instrument rig comes in and its beam makes one pass —
    `.typed` on the `<section>`
@@ -431,9 +455,8 @@ the lists and cards, 120ms for body copy, 160ms for the intro's lede.
   whole bar sitting there empty ahead of its text. Each word's fill reaches
   further than a word space in any face, fallbacks included, so it still reads
   as one bar.
-- **It starts at the first line, not the top of the panel.** The eyebrow and
-  title are already on screen; sweeping over them first was a second of nothing
-  happening.
+- **It starts at the first line, not the top of the panel.** The title is
+  already on screen; sweeping over it first was a second of nothing happening.
 - **A raster, not a curtain.** Lines at the same height in two columns (the
   project cards, the method steps, the contact figures) are offset by up to
   `SCAN_RASTER` across the panel's width, left first.
@@ -571,13 +594,13 @@ large sparse cluster distilling into a small dense one, a latency histogram
 falling and then flattening past a marker, a fleet grid with two thirds of its
 tiles switched off. The portraits vary by tone, build, tilt and halo count so
 four people read as four people. All of it is labelled as generated on the page
-itself, in each section's standfirst and again in the colophon; none of it is
-passed off as a photograph of anyone.
+itself, in each section's standfirst; none of it is passed off as a photograph
+of anyone.
 
 **The partner section carries real company names as placeholders**, which needs
 saying out loud. The twelve marks are neutral geometry in this page's own
 palette — deliberately *not* reproductions of anyone's logo — and the section
-carries a disclaimer on the page, not buried in the colophon: names are there
+carries a disclaimer on the page, beside the names: names are there
 to size the layout, no affiliation or endorsement is implied, and AXON is
 fictional. Swap the names before this goes anywhere public. The testimonial
 moved to the closing section for the same reason: attributing an invented quote
@@ -702,12 +725,15 @@ back to build the next arrangement. A unit in flight takes its edges with it
 (an edge between two points on the page would be a streak across the screen),
 and the centring feedback only ever sees the model, never the page.
 
-**It assembles along its own wiring.** Every node carries a `data-order`. When
-the title has typed, a node grows into place at `order × 0.22s`, its lines land
-one after another just behind it, its sub-headline types, and each link draws
-from its source towards the next node as that one arrives. There is no scan
-beam here — the network is the reveal. Rewinding and replaying work exactly as
-they do for the panels.
+**It assembles along its own wiring, quickly.** Every node carries a
+`data-order`. When the title has typed, a node grows into place at
+`order × 0.075s`, its lines land 28ms apart just behind it, its sub-headline
+types, and each link draws from its source towards the next node as that one
+arrives. There is no scan beam here — the network is the reveal. The networks
+run on their own, faster clock (`TYPE_NET`, `SUB_NET`, `GRAPH_*`): their copy is
+short and broken into many small nodes, and at panel speed it took 2.3–2.6s to
+finish arriving; it now takes 1.1–1.2s from landing, title included. Rewinding
+and replaying work exactly as they do for the panels.
 
 **Below 1100px wide, or 600px tall, a network is a spine:** the nodes stacked
 in reading order down a single wire, each with a port on it, scrolling rather

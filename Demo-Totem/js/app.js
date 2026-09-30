@@ -18,8 +18,8 @@
    morph, which is why the two kinds of section transition into each other
    instead of cutting.
 
-   Each screen also plays a reveal when it lands: the eyebrow arrives, the
-   title types, then the rig comes in and its beam makes one pass that reveals
+   Each screen also plays a reveal when it lands: the title types, then the
+   rig comes in and its beam makes one pass that reveals
    the rest a line at a time — sub-headlines typing as it reaches them. That
    is read off where the title actually is on screen, every frame, and it
    rewinds once the screen has gone, so landing on it again plays it again.
@@ -302,26 +302,50 @@
     var nav = $('nav'), navMenu = $('navMenu'), navProgress = $('navProgress');
     var navList = $('navLinks'), navInd = nav ? nav.querySelector('.nav-ind') : null;
     var navLinks = navList ? [].slice.call(navList.querySelectorAll('a')) : [];
-    var navCurrent = -1, navP = -1;
+    var navCurrent = -1, navP = -1, navOn = null, navPeek = null, navStuck = null;
+    /* The header condenses into the island once you leave the top; below
+       1024px it is always the island. */
+    var navDesk = matchMedia('(min-width: 1024px)');
+
+    /* The pill: sized from a link's own box, so it lands exactly whatever the
+       labels' widths. On the intro nothing is current — the mark is home — so
+       it fades out where it stands rather than sliding off to nowhere. */
+    function placeInd(a) {
+      if (!navInd) return;
+      if (!a || !a.offsetWidth) { navInd.classList.remove('on'); return; }
+      navInd.style.width = a.offsetWidth + 'px';
+      navInd.style.transform = 'translateX(' + a.offsetLeft + 'px)';
+      navInd.classList.add('on');
+    }
 
     function setNavCurrent(idx) {
       navCurrent = idx;
-      var on = null;
+      navOn = null;
       for (var k = 0; k < navLinks.length; k++) {
         if (parseInt(navLinks[k].getAttribute('data-goto'), 10) === idx) {
-          on = navLinks[k];
+          navOn = navLinks[k];
           navLinks[k].setAttribute('aria-current', 'location');
         } else {
           navLinks[k].removeAttribute('aria-current');
         }
       }
-      if (!navInd) return;
-      /* On the intro nothing is current — the mark is home — so the pill
-         fades out where it stands rather than sliding off to nowhere. */
-      if (!on || !on.offsetWidth) { navInd.classList.remove('on'); return; }
-      navInd.style.width = on.offsetWidth + 'px';
-      navInd.style.transform = 'translateX(' + on.offsetLeft + 'px)';
-      navInd.classList.add('on');
+      if (!navPeek) placeInd(navOn);
+    }
+
+    /* On hover the pill follows the pointer across the links, and goes back
+       to the current one when the pointer leaves them. */
+    if (navList) {
+      navLinks.forEach(function (a) {
+        a.addEventListener('pointerenter', function (e) {
+          if (e.pointerType === 'touch' || !navDesk.matches) return;
+          if (navPeek) navPeek.classList.remove('is-peek');
+          navPeek = a; a.classList.add('is-peek'); placeInd(a);
+        });
+      });
+      navList.addEventListener('pointerleave', function () {
+        if (navPeek) navPeek.classList.remove('is-peek');
+        navPeek = null; placeInd(navOn);
+      });
     }
 
     function setMenu(open) {
@@ -464,6 +488,10 @@
       if (sections[liveSec] && (force || ++meterTick % 5 === 0)) {
         writeMeter(sections[liveSec], liveSec, scrollP);
       }
+
+      /* Header at the very top, island from the first bit of scroll. */
+      var stuck = scrollP > 0.02 || !navDesk.matches;
+      if (nav && stuck !== navStuck) { navStuck = stuck; nav.classList.toggle('is-stuck', stuck); }
 
       /* The nav's hairline: how far down the whole page you are. */
       var np = Math.round(clamp(scrollP / (CHAPTERS.length - 1), 0, 1) * 1000) / 1000;
@@ -690,7 +718,7 @@
   /* ---- reveals: type the title, then scan the screen in -------------------
      One sequence per section, in this order:
 
-       1. the eyebrow arrives      (.arming on the <section>)
+       1. the section arms          (.arming on the <section>)
        2. the title types, character by character
        3. the rig comes in and its beam makes one pass   (.typed on the <section>)
        4. as the beam's leading edge crosses each piece of the screen, that
@@ -817,6 +845,11 @@
      it was started under goes stale and the next step quietly does nothing. */
   var TYPE = { per: 42, min: 560, max: 900, hold: 260 };
   var SUB = { per: 28, min: 300, max: 520, hold: 110 };
+  /* The networks run quicker: their copy is short and broken into many small
+     nodes, and at panel speed it took the best part of three seconds to
+     finish arriving. */
+  var TYPE_NET = { per: 30, min: 340, max: 560, hold: 120 };
+  var SUB_NET = { per: 16, min: 160, max: 300, hold: 50 };
 
   function typeHeading(chars, done, speed, alive) {
     var n = chars.length;
@@ -898,7 +931,7 @@
     if (!items.length) return items;
 
     /* The pass starts just above the first thing it has to reveal rather than
-       at the top of the panel: the eyebrow and the title are already there,
+       at the top of the panel: the title is already there,
        and sweeping over them first would be a second of nothing happening. */
     var y0 = Infinity;
     for (k = 0; k < items.length; k++) y0 = Math.min(y0, items[k].y);
@@ -923,7 +956,7 @@
      its sub-headline types, and each link draws from its source towards the
      next node as that one arrives (graph.js gives a link its source's order
      plus a half). The same loop that runs the scan runs this. */
-  var GRAPH_STEP = 0.22, GRAPH_LINE = 0.08;
+  var GRAPH_STEP = 0.075, GRAPH_LINE = 0.028;
 
   function orderOf(el) {
     var o = el.closest('[data-order]');
@@ -940,18 +973,18 @@
       push({ kind: 'box', el: entry.edges[k], t: orderOf(entry.edges[k]) * GRAPH_STEP });
     }
     for (k = 0; k < entry.subs.length; k++) {
-      push({ kind: 'type', chars: entry.subs[k].chars,
-             t: orderOf(entry.subs[k].el) * GRAPH_STEP + 0.12 });
+      push({ kind: 'type', chars: entry.subs[k].chars, speed: SUB_NET,
+             t: orderOf(entry.subs[k].el) * GRAPH_STEP + 0.04 });
     }
     var R = entry.sec.getBoundingClientRect();
     for (k = 0; k < entry.words.length; k++) {
       var lines = [];
       measureLines(entry.words[k], R, lines);
-      t = orderOf(entry.blocks[k]) * GRAPH_STEP + 0.14;
+      t = orderOf(entry.blocks[k]) * GRAPH_STEP + 0.05;
       for (j = 0; j < lines.length; j++) { lines[j].t = t + j * GRAPH_LINE; push(lines[j]); }
     }
     items.sort(function (a, b) { return a.t - b.t; });
-    entry.scanDur = end + 0.9;
+    entry.scanDur = end + 0.5;
     return items;
   }
 
@@ -960,7 +993,7 @@
     else if (item.kind === 'line') {
       for (var k = 0; k < item.els.length; k++) item.els[k].classList.add('in');
     } else {
-      try { typeHeading(item.chars, null, SUB, alive); }
+      try { typeHeading(item.chars, null, item.speed || SUB, alive); }
       catch (e) { showAll(item.chars); throw e; }
     }
   }
@@ -1106,7 +1139,8 @@
       }
       if (!e.chars) { then(); return; }
       try {
-        typeHeading(e.chars, then, TYPE, function () { return e.tTok === tok; });
+        typeHeading(e.chars, then, e.graph ? TYPE_NET : TYPE,
+                    function () { return e.tTok === tok; });
       } catch (err) {
         showAll(e.chars); then();
         throw err;
