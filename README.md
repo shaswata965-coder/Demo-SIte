@@ -17,6 +17,18 @@ works and how it ports to React.
 python3 -m http.server 8000 --directory Demo-Totem
 ```
 
+**[`demo-crafted/`](demo-crafted/)**: the same AXON content, skins and
+generated assets, re-staged as a flight through depth in the pattern of
+[2018.craftedbygc.com](https://2018.craftedbygc.com/). Enter, then scroll or
+drag forward through seven rooms that each flood the screen in their own skin.
+Cards open in place, and a dial jumps between rooms. Its
+[README](demo-crafted/README.md) maps each part of the pattern to how it is
+built here.
+
+```sh
+python3 -m http.server 8000 --directory demo-crafted
+```
+
 - Seven sections wearing five **skins** — a skin is the whole colour set at
   once, so an alternate section floods the screen with violet, electric yellow
   or cyan rather than tinting it. Light and dark, toggled top right.

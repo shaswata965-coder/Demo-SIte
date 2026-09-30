@@ -1,0 +1,489 @@
+/* ===========================================================================
+   DEMO-CRAFTED — the flight
+   ---------------------------------------------------------------------------
+   One number, c, is where the camera is along the corridor. Everything reads
+   off it:
+
+   · the world is translated by c on z, so rooms come toward you;
+   · each item's opacity is its fog: it condenses out of the distance,
+     holds while it is near, and thins out just before it would pass through
+     the lens;
+   · the ground and every --g-* colour are the two nearest rooms' skins mixed
+     in OKLab by how far across the seam between them the camera is;
+   · the network canvas projects its nodes with the same focal length as the
+     CSS perspective, so drawn nodes and DOM cards share one space.
+
+   Input never moves c directly. Wheel, drag, keys and jumps move a target;
+   c chases it with a time constant, so all input lands as one smooth glide.
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  const root = document.documentElement;
+  const vp = document.getElementById('viewport');
+  const world = document.getElementById('world');
+  const canvas = document.getElementById('net');
+  const ctx = canvas.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* data-d values are authored for a 900px focal length; k rescales them. */
+  const U = 900;
+  const TAU = 0.3;            // seconds for c to cover 63% of the way to target
+  const WHEEL_GAIN = 1.7;
+  const DRAG_GAIN = 2.6;
+
+  /* Fog, as multiples of the focal length: [nearZero, nearFull]. */
+  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.14, 0.44], itNarrow: [0.5, 0.86] };
+  /* ...and how far out things condense: [full, zero]. Items are kept close so
+     the far ones never pile up on the vanishing point behind the title you
+     are reading; the network is let see further, so the corridor has depth. */
+  const FAR_ITEM = [1.6, 2.25], FAR_NET = [2.6, 3.6];
+
+  let W = 0, H = 0, f = U, k = 1, dpr = 1, portrait = false;
+  const rooms = [], items = [], chains = new Map();
+  let cMin = 0, cMax = 0;
+
+  const cam = { c: 0, target: 0, v: 0, px: 0, py: 0, tx: 0, ty: 0 };
+  let tween = null, locked = false, started = false, last = 0;
+  const listeners = { frame: [], room: [] };
+  let roomIndex = -1;
+
+  /* ---------------------------------------------------------------- colour */
+  const hex = (s) => {
+    s = s.trim();
+    if (s.startsWith('rgb')) return s.match(/[\d.]+/g).slice(0, 3).map((n) => +n / 255);
+    s = s.replace('#', '');
+    if (s.length === 3) s = s.split('').map((ch) => ch + ch).join('');
+    const n = parseInt(s, 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  };
+  const lin = (u) => (u <= 0.04045 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4));
+  const gam = (u) => (u <= 0.0031308 ? 12.92 * u : 1.055 * Math.pow(u, 1 / 2.4) - 0.055);
+  function toOk(rgb) {
+    const [r, g, b] = rgb.map(lin);
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s];
+  }
+  function fromOk([L, A, B]) {
+    const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+    const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+    const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+    return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+            -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+            -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s]
+      .map((u) => Math.round(Math.min(1, Math.max(0, gam(u))) * 255));
+  }
+  const KEYS = { bg: '--bg', panel: '--panel', ink: '--ink', acc: '--accent', accInk: '--accent-ink',
+                 onAcc: '--on-accent', con: '--c-second', data: '--c-third', sig: '--c-signal' };
+  const GLOBAL = { bg: '--g-bg', panel: '--g-panel', ink: '--g-ink', acc: '--g-acc', accInk: '--g-acc-ink',
+                   onAcc: '--g-on-acc', con: '--g-con', data: '--g-data', sig: '--g-sig' };
+  let blended = {}, written = '';
+
+  /* Each room's skin is read from its own computed style, so the CSS stays
+     the one place colour is defined. Re-read whenever the theme changes. */
+  function readSkins() {
+    for (const r of rooms) {
+      const cs = getComputedStyle(r.el);
+      r.skin = {};
+      for (const key in KEYS) r.skin[key] = toOk(hex(cs.getPropertyValue(KEYS[key]) || '#888'));
+    }
+    written = '';
+  }
+
+  function mixSkins(a, b, t) {
+    const out = {};
+    for (const key in KEYS) {
+      const p = a.skin[key], q = b.skin[key];
+      out[key] = fromOk([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]);
+    }
+    return out;
+  }
+
+  /* The seam into room i runs from 1.6f to 0.7f before its title, so the
+     ground has changed by the time the title is legible. */
+  function paintGround() {
+    let i = 0;
+    for (let j = 1; j < rooms.length; j++) if (cam.c > rooms[j].start - 1.6 * f) i = j;
+    let t = 0;
+    if (i > 0) t = smooth((cam.c - (rooms[i].start - 1.6 * f)) / (0.9 * f));
+    blended = i > 0 && t < 1 ? mixSkins(rooms[i - 1], rooms[i], t) : mixSkins(rooms[i], rooms[i], 0);
+    const css = Object.keys(GLOBAL).map((key) => `${GLOBAL[key]}:rgb(${blended[key].join(' ')})`).join(';');
+    if (css !== written) {
+      written = css;
+      for (const key in GLOBAL) root.style.setProperty(GLOBAL[key], `rgb(${blended[key].join(' ')})`);
+    }
+  }
+
+  /* ---------------------------------------------------------------- helpers */
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+  function fog(D, near, far = FAR_ITEM) {
+    if (D <= near[0] * f || D >= far[1] * f) return 0;
+    const a = clamp((far[1] * f - D) / ((far[1] - far[0]) * f), 0, 1);
+    const b = clamp((D - near[0] * f) / ((near[1] - near[0]) * f), 0, 1);
+    return smooth(a) * smooth(b);
+  }
+
+  /* ---------------------------------------------------------------- layout */
+  function collect() {
+    document.querySelectorAll('.room').forEach((el, i) => {
+      const room = { el, i, id: el.id, name: el.dataset.name, len: +el.dataset.len || 2800, start: 0, skin: null };
+      rooms.push(room);
+      el.querySelectorAll(':scope > .it').forEach((it) => {
+        const centred = !+it.dataset.x;
+        const kind = it.classList.contains('title') ? 'title' : it.classList.contains('badge') ? 'badge' : centred ? 'centre' : 'it';
+        const item = { el: it, room, d: +it.dataset.d || 0, x: +it.dataset.x || 0, y: +it.dataset.y || 0,
+                       kind, near: NEAR[kind], X: 0, Y: 0, Z: 0, op: -1, off: null };
+        items.push(item);
+        it._flight = item;
+        const ch = it.dataset.chain;
+        if (ch) { if (!chains.has(ch)) chains.set(ch, []); chains.get(ch).push(item); }
+      });
+    });
+    for (const list of chains.values()) list.sort((a, b) => a.d - b.d);
+  }
+
+  function layout() {
+    W = innerWidth; H = innerHeight;
+    portrait = W / H < 0.8;
+    f = Math.round(clamp(Math.max(H, W * 0.62), 640, 1300));
+    k = f / U;
+    vp.style.perspective = f + 'px';
+    let s = 0;
+    for (const r of rooms) { r.start = s; s += r.len * k; }
+    const hw = W / 2, hh = H / 2;
+    for (const it of items) {
+      if (portrait) {
+        const side = it.x === 0 ? 0 : it.x > 0 ? 1 : -1;
+        it.X = it.x * 0.2 * hw;
+        it.Y = (it.y * 0.32 + side * (it.y >= 0 ? 0.3 : -0.3)) * hh;
+      } else {
+        it.X = it.x * hw; it.Y = it.y * hh;
+      }
+      it.Z = it.room.start + it.d * k;
+      /* On a portrait screen a card is most of the width, so it has to thin
+         out while it is still well in front of the lens. */
+      it.near = portrait && it.kind === 'it' ? NEAR.itNarrow : NEAR[it.kind];
+      it.el.style.transform = `translate3d(${it.X.toFixed(1)}px,${it.Y.toFixed(1)}px,${(-it.Z).toFixed(1)}px) translate(-50%,-50%)`;
+    }
+    const lastRoom = rooms[rooms.length - 1];
+    const finale = items.filter((it) => it.room === lastRoom && it.el.classList.contains('finale'))[0];
+    cMin = -0.45 * f;
+    cMax = finale ? finale.Z - 0.22 * f : s;
+    cam.target = clamp(cam.target, cMin, cMax);
+    dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    buildNet();
+  }
+
+  /* ---------------------------------------------------------------- network
+     A seeded field of nodes lining the corridor walls, a ring of nodes as a
+     portal at the start of every room, and pulses that run along the links.
+     Positions are stored as fractions of the half-screen and units of depth,
+     so a resize rescales rather than regenerates. */
+  const net = { nodes: [], edges: [], pulses: [] };
+  let netSeed = null;
+  function seedNet() {
+    let seed = 2018;
+    const rnd = () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const total = rooms.reduce((a, r) => a + r.len, 0);
+    const nodes = [], edges = [];
+    for (let z = -700; z < total + 900; z += 36 + rnd() * 50) {
+      const a = rnd() * Math.PI * 2, r = 0.62 + rnd() * 0.75;
+      nodes.push({ fx: Math.cos(a) * r, fy: Math.sin(a) * r * 0.9, u: z, hue: Math.floor(rnd() * 4), s: 0.7 + rnd() * 0.9 });
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      const cand = [];
+      for (let j = i + 1; j < Math.min(nodes.length, i + 16); j++) {
+        const p = nodes[i], q = nodes[j];
+        cand.push([j, (p.fx - q.fx) ** 2 + (p.fy - q.fy) ** 2 + ((p.u - q.u) / 700) ** 2]);
+      }
+      cand.sort((a, b) => a[1] - b[1]).slice(0, 2).forEach(([j]) => edges.push([i, j, nodes[i].hue]));
+    }
+    /* Portals: one ring per room, just ahead of its title. */
+    let u = 0;
+    rooms.forEach((r, ri) => {
+      if (ri > 0) {
+        const n0 = nodes.length, n = 22;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          nodes.push({ fx: Math.cos(a) * 0.98, fy: Math.sin(a) * 0.92, u: u - 140, hue: 0, s: 1.3, ring: true });
+          edges.push([n0 + i, n0 + ((i + 1) % n), 0, true]);
+        }
+      }
+      u += r.len;
+    });
+    netSeed = { nodes, edges };
+    net.pulses = Array.from({ length: 46 }, () => ({ e: Math.floor(rnd() * edges.length), t: rnd(), v: 0.25 + rnd() * 0.5 }));
+  }
+  function buildNet() {
+    if (!netSeed) seedNet();
+    const hw = W / 2, hh = H / 2;
+    net.nodes = netSeed.nodes.map((n) => ({ ...n, X: n.fx * hw * (portrait ? 1.1 : 1), Y: n.fy * hh, Z: n.u * k }));
+    net.edges = netSeed.edges;
+  }
+
+  const P = new Float32Array(6);   // scratch for projection
+  function project(X, Y, Z) {
+    const D = f + Z - cam.c;
+    if (D < 20) return null;
+    const s = f / D;
+    P[0] = W / 2 + (X + cam.tx) * s; P[1] = H / 2 + (Y + cam.ty) * s; P[2] = s; P[3] = D;
+    return P;
+  }
+
+  function drawNet(time) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const hues = [blended.acc, blended.con, blended.data, blended.sig];
+    const ink = blended.ink;
+    const near = [0.05, 0.25];
+    const proj = new Array(net.nodes.length);
+    for (let i = 0; i < net.nodes.length; i++) {
+      const n = net.nodes[i];
+      const p = project(n.X, n.Y, n.Z);
+      if (!p) { proj[i] = null; continue; }
+      const a = fog(p[3], near, FAR_NET);
+      proj[i] = a > 0.01 ? [p[0], p[1], p[2], a] : null;
+    }
+    /* Links */
+    ctx.lineCap = 'round';
+    for (const [i, j, h, ring] of net.edges) {
+      const p = proj[i], q = proj[j];
+      if (!p || !q) continue;
+      const a = Math.min(p[3], q[3]) * (ring ? 0.55 : 0.32);
+      const c = ring ? hues[0] : ink;
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+      ctx.lineWidth = Math.min(3, (ring ? 1.4 : 0.9) * Math.sqrt(p[2]));
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    }
+    /* Chains between related items: services into the half, the four
+       weeks in order, each project out to its figures. */
+    ctx.setLineDash([5, 7]);
+    ctx.lineDashOffset = -time * 0.03;
+    for (const list of chains.values()) {
+      for (let n = 0; n < list.length - 1; n++) {
+        const A = list[n], B = list[n + 1];
+        if (A.op <= 0.02 && B.op <= 0.02) continue;
+        const p = project(A.X, A.Y, A.Z); if (!p) continue;
+        const p0 = [p[0], p[1], p[2]];
+        const q = project(B.X, B.Y, B.Z); if (!q) continue;
+        const a = Math.max(0, Math.min(A.op, B.op, 1)) * 0.8;
+        if (a < 0.02) continue;
+        ctx.strokeStyle = `rgba(${hues[0][0]},${hues[0][1]},${hues[0][2]},${a})`;
+        ctx.lineWidth = Math.min(3, 1.4 * Math.sqrt(p0[2]));
+        ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+    /* Nodes */
+    for (let i = 0; i < net.nodes.length; i++) {
+      const p = proj[i]; if (!p) continue;
+      const n = net.nodes[i], c = hues[n.hue];
+      const r = Math.min(14, (n.ring ? 2.6 : 1.9) * n.s * p[2]);
+      ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${p[3] * 0.9})`;
+      ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fill();
+    }
+    /* Pulses */
+    const sig = hues[3];
+    for (const pu of net.pulses) {
+      const e = net.edges[pu.e];
+      const p = proj[e[0]], q = proj[e[1]];
+      if (!p || !q) continue;
+      const x = p[0] + (q[0] - p[0]) * pu.t, y = p[1] + (q[1] - p[1]) * pu.t;
+      const a = Math.min(p[3], q[3]);
+      ctx.fillStyle = `rgba(${sig[0]},${sig[1]},${sig[2]},${a})`;
+      ctx.beginPath(); ctx.arc(x, y, Math.min(8, 2.6 * Math.max(p[2], q[2])), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function stepPulses(dt) {
+    if (reduce.matches) return;
+    for (const pu of net.pulses) {
+      pu.t += pu.v * dt;
+      if (pu.t >= 1) {
+        const end = net.edges[pu.e][1];
+        const next = [];
+        for (let i = 0; i < net.edges.length && next.length < 3; i++) if (net.edges[i][0] === end) next.push(i);
+        pu.e = next.length ? next[Math.floor(Math.random() * next.length)] : Math.floor(Math.random() * net.edges.length);
+        pu.t = 0;
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------- frame */
+  function frame(now) {
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016);
+    last = now;
+
+    if (tween) {
+      const t = clamp((now - tween.t0) / tween.dur, 0, 1);
+      cam.target = tween.from + (tween.to - tween.from) * ease(t);
+      if (t >= 1) tween = null;
+    }
+    if (!dragging && Math.abs(cam.v) > 0.05) {
+      cam.target += cam.v;
+      cam.v *= Math.pow(0.9, dt * 60);
+    }
+    cam.target = clamp(cam.target, cMin, cMax);
+    const tau = reduce.matches ? 0.08 : tween ? 0.12 : TAU;
+    cam.c += (cam.target - cam.c) * (1 - Math.exp(-dt / tau));
+    if (Math.abs(cam.target - cam.c) < 0.05) cam.c = cam.target;
+
+    /* Parallax: the world shifts against the pointer, so nearer things
+       move further than distant ones. */
+    const pk = reduce.matches || locked ? 0 : 1;
+    const lx = 1 - Math.exp(-dt / 0.5);
+    cam.tx += (-cam.px * 46 * pk - cam.tx) * lx;
+    cam.ty += (-cam.py * 30 * pk - cam.ty) * lx;
+    world.style.transform = `translate3d(${cam.tx.toFixed(2)}px,${cam.ty.toFixed(2)}px,${cam.c.toFixed(2)}px)`;
+
+    for (const it of items) {
+      const D = f + it.Z - cam.c;
+      const o = fog(D, it.near);
+      if (Math.abs(o - it.op) > 0.004 || (o === 0) !== (it.op === 0)) {
+        it.op = o;
+        it.el.style.opacity = o.toFixed(3);
+        it.el.style.visibility = o > 0.001 ? 'visible' : 'hidden';
+        const off = o < 0.4;
+        if (off !== it.off) { it.off = off; it.el.classList.toggle('off', off); }
+      }
+    }
+
+    paintGround();
+    stepPulses(dt);
+    drawNet(now);
+
+    let ri = 0;
+    for (let j = 0; j < rooms.length; j++) if (cam.c >= rooms[j].start - 1.15 * f) ri = j;
+    if (ri !== roomIndex) { roomIndex = ri; listeners.room.forEach((fn) => fn(ri, rooms[ri])); }
+    const state = { c: cam.c, f, progress: clamp((cam.c - cMin) / (cMax - cMin), 0, 1), room: ri };
+    listeners.frame.forEach((fn) => fn(state));
+
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------------------------------------------------------------- input */
+  function nudge(dist) {
+    if (locked || !started) return;
+    tween = null;
+    cam.target = clamp(cam.target + dist, cMin, cMax);
+  }
+
+  addEventListener('wheel', (e) => {
+    if (!started) return;
+    if (e.target.closest && e.target.closest('.sheet-body, .menu')) return;
+    e.preventDefault();
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 33; else if (e.deltaMode === 2) d *= H;
+    cam.v = 0;
+    nudge(clamp(d, -320, 320) * WHEEL_GAIN * k);
+  }, { passive: false });
+
+  let dragging = false, moved = false, lastY = 0, lastT = 0, vel = 0, pid = null;
+  vp.addEventListener('pointerdown', (e) => {
+    if (locked || !started || e.button > 0) return;
+    dragging = true; moved = false; lastY = e.clientY; lastT = performance.now(); vel = 0; pid = e.pointerId;
+    cam.v = 0; tween = null;
+  });
+  addEventListener('pointermove', (e) => {
+    cam.px = (e.clientX / W) * 2 - 1;
+    cam.py = (e.clientY / H) * 2 - 1;
+    if (!dragging || e.pointerId !== pid) return;
+    const dy = e.clientY - lastY;
+    if (!moved && Math.abs(dy) > 6) {
+      moved = true;
+      try { vp.setPointerCapture(pid); } catch (_) { /* capture is optional */ }
+      root.classList.add('dragging');
+    }
+    if (!moved) return;
+    const now = performance.now();
+    const step = -dy * DRAG_GAIN * k;
+    cam.target = clamp(cam.target + step, cMin, cMax);
+    vel = 0.7 * vel + 0.3 * (step / Math.max(1, now - lastT)) * 16;
+    lastY = e.clientY; lastT = now;
+  });
+  function endDrag(e) {
+    if (!dragging || (e && e.pointerId !== pid)) return;
+    dragging = false;
+    if (moved) cam.v = clamp(vel, -120 * k, 120 * k);
+    root.classList.remove('dragging');
+    setTimeout(() => { moved = false; }, 0);
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+  /* A drag that started on a card must not also open it. */
+  addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); } }, true);
+
+  addEventListener('keydown', (e) => {
+    if (locked || !started || e.defaultPrevented) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    const onControl = tag === 'button' || tag === 'a' || tag === 'input' || e.target.getAttribute('role') === 'button' || e.target.hasAttribute('data-open');
+    const step = 0.85 * f;
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !onControl && !e.shiftKey)) { e.preventDefault(); API.glide(cam.target + step, 420); }
+    else if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && !onControl && e.shiftKey)) { e.preventDefault(); API.glide(cam.target - step, 420); }
+    else if (e.key === 'Home') { e.preventDefault(); API.goTo(0); }
+    else if (e.key === 'End') { e.preventDefault(); API.glide(cMax); }
+  });
+
+  /* Tabbing to something in the corridor flies the camera to it. */
+  document.addEventListener('focusin', (e) => {
+    if (!started || locked) return;
+    const el = e.target.closest && e.target.closest('.it');
+    if (!el || !el._flight) return;
+    const it = el._flight;
+    const D = f + it.Z - cam.target;
+    if (D < 0.9 * f || D > 1.9 * f) API.glide(it.Z - (it.kind === 'title' ? 0.3 : 0.28) * f, 700);
+  });
+
+  addEventListener('resize', () => { layout(); });
+
+  /* ---------------------------------------------------------------- API */
+  const API = {
+    init() {
+      collect();
+      readSkins();
+      layout();
+      cam.c = cam.target = cMin - 1.4 * f;
+      paintGround();
+      requestAnimationFrame(frame);
+    },
+    /* Arrive: fly in from behind the start. */
+    start(roomId) {
+      started = true;
+      const idx = Math.max(0, rooms.findIndex((r) => r.id === roomId));
+      API.glide(idx > 0 ? rooms[idx].start - 0.3 * f : cMin + 0.1 * f, idx > 0 ? undefined : 1500);
+    },
+    glide(to, dur) {
+      to = clamp(to, cMin, cMax);
+      const dist = Math.abs(to - cam.c);
+      tween = { from: cam.c, to, t0: performance.now(), dur: dur || clamp(700 + dist / (6 * k), 700, 2600) };
+      cam.v = 0;
+    },
+    goTo(ref) {
+      const r = typeof ref === 'number' ? rooms[ref] : rooms.find((x) => x.id === ref);
+      if (r) API.glide(r.i === 0 ? cMin + 0.1 * f : r.start - 0.3 * f);
+    },
+    /* Bring one item to a comfortable distance (used when paging open cards). */
+    bring(el) { const it = el && el._flight; if (it) API.glide(it.Z - 0.28 * f, 600); },
+    lock(v) { locked = v; if (v) { cam.v = 0; dragging = false; } },
+    refreshSkins() { readSkins(); },
+    /* Where a room's arrival point sits along the whole flight, 0..1. */
+    arrival(i) { const r = rooms[i]; const at = i === 0 ? cMin + 0.1 * f : r.start - 0.3 * f; return clamp((at - cMin) / (cMax - cMin), 0, 1); },
+    on(type, fn) { listeners[type].push(fn); },
+    get rooms() { return rooms; },
+    get moved() { return moved; },
+  };
+  window.AxonFlight = API;
+})();

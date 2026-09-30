@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AXON Flight</title>
+<meta name="description" content="AXON, a fictional LLM inference consultancy, as a flight through seven rooms: scroll or drag to travel forward through depth, open any card, and watch the ground change colour room by room.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23FF5F0C'/%3E%3Cg stroke='%23FAF6F0' stroke-width='1.4' fill='%23FAF6F0'%3E%3Cpath d='M9 22 L16 9 L23 22' fill='none'/%3E%3Cpath d='M11.6 17.2 H20.4' fill='none'/%3E%3Ccircle cx='16' cy='9' r='2.1'/%3E%3Ccircle cx='9' cy='22' r='2.1'/%3E%3Ccircle cx='23' cy='22' r='2.1'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/skins.css">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<script>
+  /* Flight mode is opt-in: if the scripts never report ready, fall back to
+     the plain stacked page rather than leave anything hidden. */
+  document.documentElement.classList.add('js');
+  setTimeout(function () { if (!window.__axonReady) document.documentElement.classList.remove('js'); }, 8000);
+</script>
+
+<!-- ======================================================================
+     The loader. Real work happens behind the ring: fonts, the generated
+     artwork, the room colours and the network are all built here, and the
+     percentage tracks those steps. Enter starts the flight.
+     ==================================================================== -->
+<div class="loader" id="loader">
+  <p class="ld-eyebrow">AXON · inference engineering</p>
+  <p class="ld-line">Seven rooms, one model. Fly through what we do, how we work and who does the work.</p>
+  <div class="ld-ring">
+    <svg viewBox="-110 -110 220 220" aria-hidden="true">
+      <defs><path id="ldPath" d="M 0 -92 a 92 92 0 1 1 -0.01 0"/></defs>
+      <circle class="ld-track" r="70"/>
+      <circle class="ld-bar" id="ldBar" r="70" pathLength="1"/>
+      <g class="ld-spin"><text><textPath href="#ldPath" id="ldText" textLength="570">GENERATING ASSETS · WIRING THE NETWORK · MIXING THE ROOMS · </textPath></text></g>
+    </svg>
+    <span class="ld-pct" id="ldPct" aria-live="polite">0%</span>
+    <button class="ld-enter" id="enter" type="button" hidden>Enter</button>
+  </div>
+  <p class="ld-hint">Scroll, drag or use the arrow keys to fly. Open any card.</p>
+</div>
+
+<!-- ======================================================================
+     Fixed chrome. Everything here paints with the --g-* globals, so it
+     changes colour with the room the camera is in.
+     ==================================================================== -->
+<header class="hud-top">
+  <a class="brand" href="#intro" data-go="intro" aria-label="AXON, fly to the start">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 24 L16 8 L24 24 M11 18.5 H21"/><circle cx="16" cy="8" r="2.4"/><circle cx="8" cy="24" r="2.4"/><circle cx="24" cy="24" r="2.4"/></svg>
+    <span>AXON</span>
+  </a>
+  <a class="hello" href="#contact" data-go="contact">Say hello<span class="ul" aria-hidden="true"></span></a>
+</header>
+
+<div class="edge edge-l" aria-hidden="true">Same model · Half the bill</div>
+<div class="edge edge-r" aria-hidden="true"><span id="edgeName">Intro</span></div>
+
+<div class="hud-bl">
+  <p class="where"><span class="n"><b id="roomNum">01</b> / 07</span> <span id="roomName">Intro</span></p>
+  <span class="bar" aria-hidden="true"><i id="bar"></i></span>
+  <button class="theme" id="theme" type="button" aria-label="Switch between light and dark">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4 a8 8 0 0 1 0 16 z"/></svg>
+  </button>
+</div>
+
+<div class="hud-br">
+  <nav class="menu" id="menu" aria-label="Rooms" hidden>
+    <ol>
+      <li><button type="button" data-go="intro"><span>01</span>Intro</button></li>
+      <li><button type="button" data-go="services"><span>02</span>Services</button></li>
+      <li><button type="button" data-go="method"><span>03</span>Method</button></li>
+      <li><button type="button" data-go="work"><span>04</span>Work</button></li>
+      <li><button type="button" data-go="team"><span>05</span>Team</button></li>
+      <li><button type="button" data-go="partners"><span>06</span>Partners</button></li>
+      <li><button type="button" data-go="contact"><span>07</span>Contact</button></li>
+    </ol>
+  </nav>
+  <button class="dial" id="dial" type="button" aria-label="Rooms" aria-controls="menu" aria-expanded="false">
+    <svg viewBox="-50 -50 100 100" aria-hidden="true">
+      <circle class="d-ring" r="44"/>
+      <g id="dialTicks"></g>
+      <g id="dialNeedle"><path class="d-needle" d="M0 -36 L5 0 L0 8 L-5 0 Z"/></g>
+      <circle class="d-hub" r="3.2"/>
+    </svg>
+  </button>
+</div>
+
+<p class="hint" id="hint" aria-hidden="true"><span>Scroll or drag to fly</span><i></i></p>
+
+<!-- ======================================================================
+     The flight. Each room is a band of depth. Every .it inside it carries
+     data-d (how far into the room, authored at a 900px focal length),
+     data-x and data-y (offset from centre as a fraction of the half-screen).
+     js/flight.js places them; without it this is a readable stacked page.
+     ==================================================================== -->
+<main class="viewport" id="viewport">
+  <canvas class="net" id="net" aria-hidden="true"></canvas>
+  <div class="world" id="world">
+
+    <!-- 01 · INTRO ···································· paper -->
+    <section class="room sk-paper" id="intro" data-name="Intro" data-len="2700" aria-labelledby="t-intro">
+      <div class="it badge" data-d="700" data-x="0" data-y="0" data-art="badge" aria-hidden="true"></div>
+      <header class="it title hero" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>01</span> AXON · inference engineering</p>
+        <h1 id="t-intro">Same model.<br>Half the bill.</h1>
+        <p class="stand">A four-person consultancy that makes large language models cheaper to serve, measured against your p99 and your evals.</p>
+        <a class="cta" href="#contact" data-go="contact">Book an inference teardown <span aria-hidden="true">→</span></a>
+      </header>
+      <p class="it token" data-d="1150" data-x="-0.56" data-y="-0.34"><b>42</b><span>engagements</span></p>
+      <p class="it token" data-d="1550" data-x="0.56" data-y="0.3"><b>3.1×</b><span>median throughput gain</span></p>
+      <p class="it token" data-d="1950" data-x="-0.5" data-y="0.34"><b>4 wk</b><span>typical build</span></p>
+    </section>
+
+    <!-- 02 · SERVICES ································· violet -->
+    <section class="room sk-violet" id="services" data-name="Services" data-len="3300" aria-labelledby="t-services">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>02</span> Services</p>
+        <h2 id="t-services">Four levers on the bill</h2>
+        <p class="stand">We find the ones with headroom and leave the rest alone.</p>
+      </header>
+      <article class="it card" data-d="760" data-x="-0.5" data-y="-0.12" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art" data-art="audit" aria-hidden="true"></div>
+          <p class="tag">Measure · two weeks</p>
+          <h3>Inference audit</h3>
+          <p>Two weeks instrumenting your live serving path. You get a costed list of what to change, in order.</p>
+          <div class="more">
+            <p>We trace every hop: token mix, batch occupancy, KV-cache hit rate, queue depth, and where the GPU actually idles.</p>
+            <ul class="facts"><li><b>Output</b> a ranked change list</li><li><b>Each line</b> cost delta + the eval it must hold</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card" data-d="1220" data-x="0.5" data-y="0.14" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art" data-art="compress" aria-hidden="true"></div>
+          <p class="tag">Model · held to your evals</p>
+          <h3>Model compression</h3>
+          <p>FP8 and 4-bit quantisation, distillation and speculative decoding, each held to your own eval suite.</p>
+          <div class="more">
+            <p>Candidates run against your evals, not ours. Anything that costs more than a point of quality is dropped before it reaches a GPU budget.</p>
+            <ul class="facts"><li><b>Weights</b> FP16 → FP8 → INT4</li><li><b>Students</b> distilled per task</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card" data-d="1680" data-x="-0.48" data-y="0.18" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art" data-art="serve" aria-hidden="true"></div>
+          <p class="tag">Serving · batching and routing</p>
+          <h3>Serving architecture</h3>
+          <p>Continuous batching, paged KV cache, prefix reuse, and routing so the big model only sees what needs it.</p>
+          <div class="more">
+            <p>Long system prompts are cached once and reused. Easy turns go to a small model; the frontier model sees the few that need it.</p>
+            <ul class="facts"><li><b>Batching</b> continuous, admission-controlled</li><li><b>Cache</b> paged, prefix-aware</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card" data-d="2140" data-x="0.5" data-y="-0.16" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art" data-art="capacity" aria-hidden="true"></div>
+          <p class="tag">Fleet · right-sizing</p>
+          <h3>Capacity &amp; procurement</h3>
+          <p>Fleet right-sizing, the spot-to-reserved mix, and whether to leave the hosted API at all.</p>
+          <div class="more">
+            <p>Most fleets are sized for a peak they never see. We size to the measured curve and buy the difference as spot.</p>
+            <ul class="facts"><li><b>Sizing</b> to measured concurrency</li><li><b>Buying</b> reserved base, spot peak</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <p class="it token node" data-d="2600" data-x="0" data-y="0" data-chain="svc"><b>½</b><span>Same model, half the bill</span></p>
+    </section>
+
+    <!-- 03 · METHOD ··································· paper -->
+    <section class="room sk-paper" id="method" data-name="Method" data-len="2800" aria-labelledby="t-method">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>03</span> Method</p>
+        <h2 id="t-method">Four weeks, measure to shipped</h2>
+        <p class="stand">One engagement, one fixed shape. The numbers land in week one, so you can stop after it if they are boring.</p>
+      </header>
+      <article class="it card week" data-d="760" data-x="0.5" data-y="-0.2" data-chain="wk">
+        <div class="card-in">
+          <div class="art" data-art="weeks" data-week="1" aria-hidden="true"></div>
+          <p class="tag">Week 1</p>
+          <h3>Measure</h3>
+          <p>Traces on every hop. Token mix, batch occupancy, cache hit rate, where the GPU actually idles.</p>
+          <p class="out">→ a baseline you can argue with</p>
+        </div>
+      </article>
+      <article class="it card week" data-d="1170" data-x="-0.5" data-y="-0.14" data-chain="wk">
+        <div class="card-in">
+          <div class="art" data-art="weeks" data-week="2" aria-hidden="true"></div>
+          <p class="tag">Week 2</p>
+          <h3>Model</h3>
+          <p>Candidates run against your evals. Anything costing more than a point of quality is dropped.</p>
+          <p class="out">→ two or three live candidates</p>
+        </div>
+      </article>
+      <article class="it card week" data-d="1580" data-x="0.48" data-y="0.2" data-chain="wk">
+        <div class="card-in">
+          <div class="art" data-art="weeks" data-week="3" aria-hidden="true"></div>
+          <p class="tag">Week 3</p>
+          <h3>Rebuild</h3>
+          <p>The serving path goes back together around the winner: batching, cache policy, routing, autoscaling.</p>
+          <p class="out">→ a shadow deployment</p>
+        </div>
+      </article>
+      <article class="it card week" data-d="1990" data-x="-0.48" data-y="0.2" data-chain="wk">
+        <div class="card-in">
+          <div class="art" data-art="weeks" data-week="4" aria-hidden="true"></div>
+          <p class="tag">Week 4</p>
+          <h3>Prove</h3>
+          <p>Shadow traffic until the delta holds a full week, then a cutover your on-call team runs, not us.</p>
+          <p class="out">→ a signed-off cost delta</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- 04 · WORK ····································· lemon -->
+    <section class="room sk-lemon" id="work" data-name="Work" data-len="3400" aria-labelledby="t-work">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>04</span> Work</p>
+        <h2 id="t-work">Three of the last twelve</h2>
+        <p class="stand">Every figure is the client's own measurement. Thumbnails are generated.</p>
+      </header>
+
+      <article class="it card project" data-d="820" data-x="-0.44" data-y="-0.02" data-chain="p1" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art wide" data-art="distill" aria-hidden="true"></div>
+          <p class="tag">Marketplace · EU · 2025</p>
+          <h3>A 70B assistant, distilled to 8B</h3>
+          <p>40M sessions a month on a frontier-sized model, moved to an 8B student.</p>
+          <div class="more">
+            <p>A router keeps the big model for the 4% of turns that need it. The student handles the rest, checked weekly against the client's eval suite.</p>
+            <ul class="facts"><li><b>−71%</b> cost per 1k tokens</li><li><b>−1.2 pt</b> eval delta</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <p class="it token fig" data-d="1060" data-x="0.52" data-y="-0.3" data-chain="p1"><b>−71%</b><span>cost per 1k tokens</span></p>
+      <p class="it token fig" data-d="1180" data-x="0.44" data-y="0.34" data-chain="p1"><b>−1.2 pt</b><span>eval delta</span></p>
+
+      <article class="it card project" data-d="1520" data-x="0.46" data-y="0.02" data-chain="p2" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art wide" data-art="ttft" aria-hidden="true"></div>
+          <p class="tag">Voice agent · US · 2025</p>
+          <h3>First token under a heartbeat</h3>
+          <p>A support agent where every millisecond of time-to-first-token was audible.</p>
+          <div class="more">
+            <p>Prefix cache on the system prompt, speculative decoding, and a queue rebuilt around admission control.</p>
+            <ul class="facts"><li><b>640 ms</b> TTFT p95</li><li><b>2.4 s</b> before</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <p class="it token fig" data-d="1760" data-x="-0.52" data-y="-0.3" data-chain="p2"><b>640 ms</b><span>TTFT p95</span></p>
+      <p class="it token fig" data-d="1880" data-x="-0.44" data-y="0.34" data-chain="p2"><b>2.4 s</b><span>before</span></p>
+
+      <article class="it card project" data-d="2220" data-x="-0.44" data-y="0.04" data-chain="p3" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art wide" data-art="fleet" aria-hidden="true"></div>
+          <p class="tag">Document platform · UK · 2024</p>
+          <h3>A batch fleet, two thirds smaller</h3>
+          <p>Overnight summarisation across 9M documents, sized for a peak it never saw.</p>
+          <div class="more">
+            <p>Nothing was wrong with the model. The job was rewritten as a batched, preemptible run that fills a much smaller fleet.</p>
+            <ul class="facts"><li><b>42 → 12</b> GPUs</li><li><b>−38%</b> batch window</li></ul>
+          </div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <p class="it token fig" data-d="2460" data-x="0.52" data-y="-0.3" data-chain="p3"><b>42 → 12</b><span>GPUs</span></p>
+      <p class="it token fig" data-d="2580" data-x="0.44" data-y="0.34" data-chain="p3"><b>−38%</b><span>batch window</span></p>
+    </section>
+
+    <!-- 05 · TEAM ····································· paper -->
+    <section class="room sk-paper" id="team" data-name="Team" data-len="2800" aria-labelledby="t-team">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>05</span> Team</p>
+        <h2 id="t-team">Four people, no bench</h2>
+        <p class="stand">Everyone you meet in the first call is on the work. We run two engagements at a time and say no to the third.</p>
+      </header>
+      <article class="it card person" data-d="760" data-x="-0.5" data-y="-0.16" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art portrait" data-art="portrait" data-who="0" aria-hidden="true"></div>
+          <p class="tag">Principal · serving systems</p>
+          <h3>Mara Ostrowski</h3>
+          <div class="more"><p>Ten years inside inference runtimes; built the continuous batching layer at a large GPU cloud.</p></div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card person" data-d="1160" data-x="0.5" data-y="-0.1" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art portrait" data-art="portrait" data-who="1" aria-hidden="true"></div>
+          <p class="tag">Quantisation lead</p>
+          <h3>Ifeanyi Balogun</h3>
+          <div class="more"><p>Publishes on low-bit attention, and keeps the eval harness honest when a compression result looks too good.</p></div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card person" data-d="1560" data-x="-0.48" data-y="0.2" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art portrait" data-art="portrait" data-who="2" aria-hidden="true"></div>
+          <p class="tag">Applied research</p>
+          <h3>June Park</h3>
+          <div class="more"><p>Distillation and speculative decoding. Came from ranking, so treats every quality claim as an A/B test until proven.</p></div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+      <article class="it card person" data-d="1960" data-x="0.5" data-y="0.18" data-open tabindex="0" aria-haspopup="dialog">
+        <div class="card-in">
+          <div class="art portrait" data-art="portrait" data-who="3" aria-hidden="true"></div>
+          <p class="tag">Infrastructure &amp; cost</p>
+          <h3>Tomáš Vrba</h3>
+          <div class="more"><p>Schedulers, fleet economics, and the spreadsheet that decides whether any of the above was worth doing.</p></div>
+          <span class="open-hint">Open</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- 06 · PARTNERS ································· cyan -->
+    <section class="room sk-cyan" id="partners" data-name="Partners" data-len="3100" aria-labelledby="t-partners">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>06</span> Partners</p>
+        <h2 id="t-partners">Who we build with</h2>
+        <p class="stand">A small team stays small by borrowing: model labs, runtimes, accelerators, and the platforms our clients already run on.</p>
+      </header>
+      <div class="it cluster" data-d="760" data-x="-0.48" data-y="-0.2">
+        <h3>Model labs</h3>
+        <ul><li><i data-art="glyph" data-g="0"></i>Halden Labs</li><li><i data-art="glyph" data-g="1"></i>Meridian AI</li><li><i data-art="glyph" data-g="2"></i>Oriel Research</li><li><i data-art="glyph" data-g="3"></i>Kestrel Models</li></ul>
+      </div>
+      <div class="it cluster" data-d="1210" data-x="0.5" data-y="0.16">
+        <h3>Runtimes</h3>
+        <ul><li><i data-art="glyph" data-g="4"></i>Tessel Runtime</li><li><i data-art="glyph" data-g="5"></i>Lattice Serve</li><li><i data-art="glyph" data-g="6"></i>Quill Orchestrator</li></ul>
+      </div>
+      <div class="it cluster" data-d="1660" data-x="-0.46" data-y="0.22">
+        <h3>Accelerators</h3>
+        <ul><li><i data-art="glyph" data-g="7"></i>Arclight Silicon</li><li><i data-art="glyph" data-g="8"></i>Northgate Compute</li></ul>
+      </div>
+      <div class="it cluster" data-d="2110" data-x="0.48" data-y="-0.22">
+        <h3>Platforms</h3>
+        <ul><li><i data-art="glyph" data-g="9"></i>Harbor Cloud</li><li><i data-art="glyph" data-g="10"></i>Fathom GPU</li><li><i data-art="glyph" data-g="11"></i>Keel Deploy</li></ul>
+      </div>
+      <p class="it note" data-d="2560" data-x="0" data-y="0.3">Every partner here is a fictional placeholder, like AXON itself. The marks are generated, not anyone's logo.</p>
+    </section>
+
+    <!-- 07 · CONTACT ·································· ember -->
+    <section class="room sk-ember" id="contact" data-name="Contact" data-len="2800" aria-labelledby="t-contact">
+      <header class="it title" data-d="0" data-x="0" data-y="0">
+        <p class="eyebrow"><span>07</span> Contact</p>
+        <h2 id="t-contact">Send us your p99</h2>
+        <p class="stand">One page on what you serve and where it hurts. We answer inside two working days with whether we can help, and if we can't, who can.</p>
+      </header>
+      <figure class="it card quote" data-d="720" data-x="-0.48" data-y="-0.1">
+        <div class="card-in">
+          <blockquote>They spent the first week telling us which of our assumptions were wrong, and the last week proving it in production. We kept the model. We stopped paying for it twice.</blockquote>
+          <figcaption>Dana Whitlock, VP Engineering, Northwind Cloud <em>(fictional)</em></figcaption>
+        </div>
+      </figure>
+      <div class="it card facts-card" data-d="1160" data-x="0.5" data-y="0.12">
+        <div class="card-in">
+          <dl>
+            <div><dt>Typical engagement</dt><dd>4 wk</dd></div>
+            <div><dt>Next opening</dt><dd>Nov</dd></div>
+            <div><dt>Based in</dt><dd>Berlin</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="it badge end" data-d="2250" data-x="0" data-y="0" data-art="badge" data-variant="ring" aria-hidden="true"></div>
+      <div class="it finale" data-d="2150" data-x="0" data-y="0">
+        <h3>Book an inference teardown</h3>
+        <p class="mail"><span class="addr" id="addr">hello@axon.example</span> <button type="button" class="copy" id="copy">Copy address</button></p>
+        <p class="fine">AXON is fictional. Every name and figure is invented, and all imagery is generated.</p>
+        <button type="button" class="again" data-go="intro">Fly back to the start <span aria-hidden="true">↺</span></button>
+      </div>
+    </section>
+
+  </div>
+  <div class="vignette" aria-hidden="true"></div>
+</main>
+
+<!-- The open card. js/app.js fills it from the card that was opened and
+     grows it out of that card's place on screen. -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-back" id="sheetBack"></div>
+  <div class="sheet-card" id="sheetCard" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-bar">
+      <button type="button" class="sb-btn" id="prev" aria-label="Previous card">←</button>
+      <span class="sb-count" id="sheetCount">1 / 4</span>
+      <button type="button" class="sb-btn" id="next" aria-label="Next card">→</button>
+      <button type="button" class="sb-close" id="close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- The cursor: a ring that trails, a dot that doesn't, and a label. Its
+     state names what a click will do where it is. -->
+<div class="cursor" id="cursor" aria-hidden="true">
+  <span class="c-ring"></span>
+  <span class="c-dot"></span>
+  <span class="c-label" id="cLabel"></span>
+</div>
+
+<script src="js/art.js"></script>
+<script src="js/flight.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

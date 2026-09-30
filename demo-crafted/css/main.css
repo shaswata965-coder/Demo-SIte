@@ -1,0 +1,444 @@
+/* ===========================================================================
+   DEMO-CRAFTED — main
+   ---------------------------------------------------------------------------
+   Layout concept: a flight. The page is one fixed viewport with a CSS
+   perspective; the rooms sit one behind another along the z axis and the
+   camera moves forward through them. Titles hang in the middle of the
+   corridor, cards pass on alternating sides, and a generated network lines
+   the walls on a canvas projected with the same focal length.
+
+   Without JS (no .js on <html>) none of that applies and the same markup is
+   a plain stacked page, one skin per section.
+   ========================================================================= */
+
+:root {
+  --f-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --f-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+  --t-hero: clamp(2.9rem, 9.2vw, 9.6rem);
+  --t-room: clamp(2.3rem, 6.8vw, 7rem);
+  --t-card: 1.32rem;
+  --t-body: 0.97rem;
+  --t-label: 0.72rem;
+
+  --card-w: clamp(250px, 25vw, 360px);
+  --radius: 12px;
+  --e-out: cubic-bezier(.16, 1, .3, 1);
+
+  /* Ink at lower strength, derived from the globals so it follows the room. */
+  --g-ink-2: color-mix(in srgb, var(--g-ink) 72%, var(--g-bg));
+  --g-rule: color-mix(in srgb, var(--g-ink) 16%, transparent);
+}
+
+/* Skins give every room its own derived tones, the same way the cards read. */
+.skin-derived, .room, .sheet-card {
+  --ink-2: color-mix(in srgb, var(--ink) 74%, var(--panel));
+  --rule: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--g-bg); }
+body {
+  margin: 0;
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font: 400 var(--t-body)/1.55 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--g-acc); outline-offset: 3px; }
+
+/* ---------------------------------------------------------------------------
+   Generated-art colour classes. The SVGs in js/art.js name a role, and the
+   nearest skin decides what that role is, in both themes.
+   ------------------------------------------------------------------------- */
+.fa { fill: var(--accent); }   .sa { stroke: var(--accent); }
+.fc { fill: var(--c-second); } .sc { stroke: var(--c-second); }
+.fd { fill: var(--c-third); }  .sd { stroke: var(--c-third); }
+.fs { fill: var(--c-signal); } .ss { stroke: var(--c-signal); }
+.fi { fill: var(--ink); }      .si { stroke: var(--ink); }
+.fp { fill: var(--panel); }
+.fw { fill: color-mix(in oklab, var(--c-second) 16%, var(--panel)); }
+.fx { fill: none; }
+svg text { font-family: var(--f-mono); }
+
+/* ===========================================================================
+   STATIC PAGE (no JS): readable, one skin per room.
+   ========================================================================= */
+.loader, .hud-top, .edge, .hud-bl, .hud-br, .hint, .sheet, .cursor, .net, .vignette { display: none; }
+
+html:not(.js) .room {
+  background: var(--bg);
+  color: var(--ink);
+  padding: 12vh 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+}
+html:not(.js) .room > .it { width: min(100%, 640px); }
+html:not(.js) .room > .badge { width: min(60vw, 280px); }
+
+/* ===========================================================================
+   COMMON PIECES (both modes)
+   ========================================================================= */
+.eyebrow {
+  font: 500 var(--t-label)/1 var(--f-mono);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent-ink);
+  display: inline-flex; gap: .8em; align-items: center;
+}
+.eyebrow span { opacity: .75; }
+
+.title { text-align: center; display: grid; justify-items: center; gap: 18px; }
+.title h1 { font-size: var(--t-hero); font-weight: 850; font-stretch: 118%; line-height: .9; letter-spacing: -.035em; }
+.title h2 { font-size: var(--t-room); font-weight: 800; font-stretch: 112%; line-height: .94; letter-spacing: -.03em; }
+.stand { font-size: 1.08rem; max-width: 44ch; color: var(--ink-2); }
+
+.cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--accent); color: var(--on-accent);
+  padding: 12px 20px; border-radius: 999px;
+  font-weight: 600; text-decoration: none; font-size: .95rem;
+  transition: transform .3s var(--e-out);
+}
+.cta span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--on-accent) 14%, transparent); transition: transform .3s var(--e-out); }
+.cta:hover span { transform: translateX(3px); }
+
+.token { display: grid; gap: 4px; text-align: left; }
+.token b { font: 800 clamp(2.6rem, 6vw, 5.6rem)/.9 var(--f-display); font-stretch: 110%; letter-spacing: -.03em; color: var(--c-third); }
+.token span { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.token.node { justify-items: center; text-align: center; }
+.token.node b {
+  display: grid; place-items: center;
+  width: clamp(120px, 12vw, 170px); aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid var(--accent); color: var(--accent-ink);
+}
+
+/* Cards: lit by two soft glows in the room's own hues over its panel. */
+.card { width: var(--card-w); max-width: 100%; }
+.card-in {
+  position: relative;
+  display: grid; gap: 8px; align-content: start;
+  padding: 14px 14px 16px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--c-second) 15%, transparent), transparent 62%),
+    radial-gradient(110% 80% at 100% 100%, color-mix(in oklab, var(--c-third) 13%, transparent), transparent 62%),
+    var(--panel);
+  border: 1px solid var(--rule);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent), 0 18px 40px -24px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.card h3 { font-size: var(--t-card); font-weight: 750; font-stretch: 106%; line-height: 1.08; letter-spacing: -.01em; }
+.card p { font-size: .9rem; color: var(--ink-2); }
+.card .tag { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); }
+.card .out { font: 500 .8rem/1.4 var(--f-mono); color: var(--c-signal); }
+.art { border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--ink) 5%, var(--panel)); aspect-ratio: 2 / 1; }
+.art.wide { aspect-ratio: 16 / 10; }
+.art.portrait { aspect-ratio: 1; background: none; }
+.art svg { display: block; width: 100%; height: 100%; }
+.more { display: grid; gap: 10px; }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .88rem; }
+.facts b { font-family: var(--f-display); color: var(--c-third); margin-right: .4em; }
+.open-hint { display: none; }
+
+.quote blockquote { margin: 0; font: 500 1.08rem/1.45 var(--f-body); color: var(--ink); }
+.quote figcaption { font: 500 var(--t-label)/1.4 var(--f-mono); letter-spacing: .06em; color: var(--ink-2); text-transform: uppercase; }
+.quote figcaption em { font-style: normal; color: var(--accent-ink); }
+.facts-card dl { margin: 0; display: grid; gap: 12px; }
+.facts-card dl div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 10px; }
+.facts-card dl div:last-child { border-bottom: 0; padding-bottom: 0; }
+.facts-card dt { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.facts-card dd { margin: 0; font: 800 1.9rem/1 var(--f-display); color: var(--c-third); }
+
+.cluster { display: grid; gap: 12px; width: max-content; max-width: 86vw; }
+.cluster h3 { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+.cluster ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-width: 420px; }
+.cluster li {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px 8px 10px; border-radius: 999px;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--rule);
+  font-weight: 500; font-size: .95rem;
+  transition: transform .5s var(--e-out);
+}
+.cluster li i { width: 18px; height: 18px; display: inline-block; }
+.cluster li svg { display: block; width: 100%; height: 100%; }
+.note { max-width: 42ch; text-align: center; font: 500 .8rem/1.5 var(--f-mono); color: var(--ink-2); }
+
+.finale { display: grid; justify-items: center; gap: 16px; text-align: center; width: min(92vw, 640px); }
+.finale h3 { font-size: clamp(2rem, 5vw, 4.2rem); font-weight: 800; font-stretch: 112%; line-height: .95; letter-spacing: -.03em; }
+.mail { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+.addr { font: 500 1.15rem/1 var(--f-mono); user-select: all; padding: 12px 16px; border-radius: 999px; border: 1px solid var(--rule); }
+.copy, .again {
+  border: 0; cursor: pointer; border-radius: 999px; padding: 12px 18px; font-weight: 600;
+  background: var(--accent); color: var(--on-accent);
+}
+.again { background: transparent; color: var(--ink); border: 1px solid var(--rule); font-weight: 500; }
+.fine { font: 500 .74rem/1.5 var(--f-mono); color: var(--ink-2); max-width: 46ch; }
+
+.badge svg { display: block; width: 100%; height: auto; overflow: visible; }
+.b-pulse { animation: run 2.6s linear infinite; }
+@keyframes run { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.art[data-art="weeks"] { aspect-ratio: 320 / 58; background: none; border-radius: 0; }
+
+/* ===========================================================================
+   FLIGHT MODE (.js)
+   ========================================================================= */
+.js, .js body { height: 100%; overflow: hidden; }
+.js body { overscroll-behavior: none; }
+
+.js .viewport {
+  position: fixed; inset: 0; overflow: hidden;
+  perspective: 900px; perspective-origin: 50% 50%;
+  touch-action: none;
+  user-select: none; -webkit-user-select: none;
+}
+.js .net { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.js .world { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+.js .room { position: absolute; left: 0; top: 0; padding: 0; background: none; display: block; transform-style: preserve-3d; }
+.js .it {
+  position: absolute; left: 0; top: 0; margin: 0;
+  visibility: hidden;          /* flight.js shows what is in range */
+  perspective: 800px;          /* each item is its own small stage for hover */
+  backface-visibility: hidden;
+}
+.js .it.off { pointer-events: none; }
+.js .vignette {
+  display: block; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 95% at 50% 50%, transparent 55%, color-mix(in srgb, var(--g-bg) 70%, transparent) 100%);
+}
+
+/* In the flight, bare text belongs to the ground, so it takes the globals;
+   cards keep their own room's skin. */
+.js .title, .js .token, .js .note, .js .finale, .js .cluster h3 {
+  --ink: var(--g-ink); --ink-2: var(--g-ink-2); --accent: var(--g-acc);
+  --accent-ink: var(--g-acc-ink); --on-accent: var(--g-on-acc);
+  --c-second: var(--g-con); --c-third: var(--g-data); --c-signal: var(--g-sig);
+  --rule: var(--g-rule); --panel: var(--g-panel);
+  color: var(--g-ink);
+}
+.js .title { width: min(92vw, 1180px); }
+.js .title.hero { width: min(94vw, 1320px); }
+.js .token { width: max-content; }
+/* The world is a zero-width point at the centre of the screen, so nothing in
+   it may size against its container: max-width: 100% would resolve to 0. */
+.js .card { max-width: none; }
+.js .token.fig b { font-size: clamp(2.2rem, 4.6vw, 4.4rem); }
+.js .badge {
+  width: min(78vh, 86vw, 760px);
+  --accent: var(--g-acc); --c-second: var(--g-con); --c-third: var(--g-data);
+  --c-signal: var(--g-sig); --ink: var(--g-ink); --panel: var(--g-panel);
+}
+.js .badge.end { width: min(112vh, 124vw, 1040px); }
+.js .finale { width: min(86vw, 520px); }
+.js .note { width: min(86vw, 460px); }
+
+/* Hover: the card comes forward, tilts toward the pointer, picks up a sheen
+   and an accent ring. --rx/--ry are written by js/app.js. */
+.js .card-in {
+  transition: transform .6s var(--e-out), box-shadow .6s var(--e-out);
+  transform: translateZ(0) rotateX(0) rotateY(0);
+}
+.js .card-in::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, color-mix(in srgb, #fff 26%, transparent) 48%, transparent 64%);
+  background-size: 250% 100%; background-position: 120% 0;
+  opacity: 0; transition: opacity .4s, background-position .9s var(--e-out);
+}
+.js .card[data-open] { cursor: pointer; }
+.js .card:hover .card-in, .js .card:focus-visible .card-in {
+  transform: translateZ(60px) rotateX(var(--ry, 0deg)) rotateY(var(--rx, 0deg));
+  box-shadow: 0 0 0 2px var(--accent), 0 34px 60px -26px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+.js .card:hover .card-in::after { opacity: 1; background-position: -20% 0; }
+.js .card:focus-visible { outline: none; }
+.js .card .more { display: none; }
+.js .card .open-hint {
+  display: inline-flex; align-items: center; gap: 6px; justify-self: start;
+  font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); margin-top: 2px;
+}
+.js .card .open-hint::after { content: "↗"; color: var(--accent-ink); transition: transform .4s var(--e-out); }
+.js .card:hover .open-hint::after { transform: translate(3px, -3px); }
+.js .card.lifted { visibility: hidden !important; }
+
+/* Partner pills flip over like a split-flap when pointed at. */
+.js .cluster li:hover { transform: rotateX(360deg); }
+
+/* ---------------------------------------------------------------------------
+   Loader
+   ------------------------------------------------------------------------- */
+.js .loader {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-content: center; justify-items: center; gap: 26px;
+  padding: 24px 16px; text-align: center;
+  background: var(--g-bg); color: var(--g-ink);
+  transition: opacity .9s var(--e-out), visibility 0s linear .9s;
+}
+.js .loader.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+.ld-eyebrow { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--g-acc-ink); }
+.ld-line { font: 700 clamp(1.4rem, 3vw, 2.3rem)/1.12 var(--f-display); font-stretch: 108%; letter-spacing: -.015em; max-width: 26ch; text-wrap: balance; }
+.ld-ring { position: relative; width: min(230px, 60vw); aspect-ratio: 1; display: grid; place-items: center; }
+.ld-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ld-track { fill: none; stroke: var(--g-rule); stroke-width: 1.5; }
+.ld-bar { fill: none; stroke: var(--g-acc); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transform: rotate(-90deg); transition: stroke-dashoffset .35s var(--e-out); }
+.ld-spin { animation: spin 22s linear infinite; transform-origin: 0 0; }
+.ld-spin text { font: 500 9.2px var(--f-mono); letter-spacing: .12em; fill: var(--g-ink); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ld-pct { font: 800 2.2rem/1 var(--f-display); font-stretch: 110%; font-variant-numeric: tabular-nums; }
+.ld-enter {
+  position: absolute; inset: 22%; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--g-acc); color: var(--g-on-acc);
+  font: 700 1.1rem/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase;
+  animation: pop .7s var(--e-out) both;
+}
+.ld-enter:hover { transform: scale(1.05); transition: transform .3s var(--e-out); }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } }
+.ld-hint { font: 500 .78rem/1.5 var(--f-mono); color: var(--g-ink-2); }
+
+/* ---------------------------------------------------------------------------
+   Chrome
+   ------------------------------------------------------------------------- */
+.js .hud-top {
+  position: fixed; z-index: 20; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) clamp(16px, 3vw, 36px) 0;
+  pointer-events: none; color: var(--g-ink);
+}
+.hud-top a { pointer-events: auto; text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 1.15rem/1 var(--f-display); font-stretch: 120%; letter-spacing: .04em; }
+.brand svg { width: 30px; height: 30px; fill: var(--g-acc); stroke: var(--g-acc); stroke-width: 1.6; }
+.brand svg path { fill: none; }
+.hello { position: relative; font: 600 1rem/1 var(--f-display); font-stretch: 110%; padding: 8px 0; }
+.hello .ul { position: absolute; left: 0; right: 0; bottom: 2px; height: 2px; background: var(--g-acc); transform-origin: right; transition: transform .5s var(--e-out); }
+.hello:hover .ul { transform: scaleX(0); }
+
+.js .edge {
+  display: block; position: fixed; z-index: 5; top: 50%;
+  font: 800 clamp(26px, 5.2vh, 60px)/1 var(--f-display); font-stretch: 125%;
+  letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+  color: transparent; -webkit-text-stroke: 1px var(--g-ink); opacity: .32;
+  pointer-events: none;
+}
+.edge-l { left: clamp(10px, 1.6vw, 26px); writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); }
+.edge-r { right: clamp(10px, 1.6vw, 26px); writing-mode: vertical-rl; transform: translateY(-50%); overflow: hidden; }
+.edge-r span { display: block; transition: transform .7s var(--e-out), opacity .4s; }
+.edge-r span.swap { transform: translateX(110%); opacity: 0; transition: none; }
+
+.js .hud-bl {
+  position: fixed; z-index: 20; left: clamp(16px, 3vw, 36px); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 14px; color: var(--g-ink);
+}
+.where { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; display: flex; gap: 12px; }
+.where b { font-weight: 500; color: var(--g-acc-ink); }
+.bar { width: clamp(60px, 10vw, 140px); height: 2px; background: var(--g-rule); position: relative; overflow: hidden; }
+.bar i { position: absolute; inset: 0; background: var(--g-acc); transform-origin: left; transform: scaleX(0); }
+.theme { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--g-rule); background: transparent; display: grid; place-items: center; cursor: pointer; }
+.theme svg { width: 18px; height: 18px; fill: var(--g-ink); stroke: var(--g-ink); stroke-width: 1.4; }
+.theme svg circle { fill: none; }
+
+.js .hud-br { position: fixed; z-index: 20; right: clamp(16px, 3vw, 36px); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; justify-items: end; gap: 10px; }
+.dial { width: 66px; height: 66px; padding: 0; border: 0; background: transparent; cursor: pointer; color: var(--g-ink); border-radius: 50%; }
+.dial svg { width: 100%; height: 100%; overflow: visible; }
+.d-ring { fill: color-mix(in srgb, var(--g-bg) 55%, transparent); stroke: var(--g-ink); stroke-width: 1.4; }
+.d-tick { stroke: var(--g-ink); stroke-width: 2; stroke-linecap: round; opacity: .5; }
+.d-tick.on { stroke: var(--g-acc); opacity: 1; }
+.d-needle { fill: var(--g-acc); }
+.d-hub { fill: var(--g-ink); }
+.dial:hover .d-ring { stroke: var(--g-acc); }
+.menu { background: var(--g-panel); color: var(--g-ink); border: 1px solid var(--g-rule); border-radius: 14px; padding: 8px; box-shadow: 0 24px 50px -20px rgba(0,0,0,.45); }
+.menu ol { list-style: none; margin: 0; padding: 0; display: grid; }
+.menu button { display: flex; gap: 14px; width: 100%; text-align: left; background: transparent; border: 0; padding: 9px 12px; border-radius: 8px; cursor: pointer; font: 600 1rem/1.1 var(--f-display); font-stretch: 108%; }
+.menu button span { font: 500 var(--t-label)/1.6 var(--f-mono); color: var(--g-ink-2); }
+.menu button:hover, .menu button[aria-current="true"] { background: color-mix(in srgb, var(--g-acc) 16%, transparent); }
+
+.js .hint {
+  display: flex; position: fixed; z-index: 15; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); flex-direction: column; align-items: center; gap: 10px;
+  font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--g-ink-2); pointer-events: none; transition: opacity .6s;
+}
+.hint i { width: 1px; height: 34px; background: var(--g-ink); opacity: .5; transform-origin: top; animation: drip 1.8s var(--e-out) infinite; }
+@keyframes drip { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); transform-origin: top; } 61% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+.hint.gone { opacity: 0; }
+
+/* ---------------------------------------------------------------------------
+   Open card
+   ------------------------------------------------------------------------- */
+.js .sheet { display: block; position: fixed; inset: 0; z-index: 40; }
+.js .sheet[hidden] { display: none; }
+.sheet-back { position: absolute; inset: 0; background: color-mix(in srgb, var(--g-bg) 72%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.sheet-card {
+  position: absolute; left: 50%; top: 50%; transform-origin: 0 0;
+  width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  translate: -50% -50%;
+  display: grid; grid-template-rows: 1fr auto;
+  border-radius: 18px; overflow: hidden; color: var(--ink);
+  background:
+    radial-gradient(100% 70% at 0% 0%, color-mix(in oklab, var(--c-second) 16%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 100% 100%, color-mix(in oklab, var(--c-third) 14%, transparent), transparent 60%),
+    var(--panel);
+  box-shadow: 0 0 0 1px var(--rule), 0 50px 100px -40px rgba(0,0,0,.6);
+}
+.sheet-body { overflow: auto; padding: 18px 20px 22px; display: grid; gap: 12px; align-content: start; min-height: 0; }
+.sheet-body .art { aspect-ratio: 2 / 1; }
+.sheet-body .art.portrait { width: min(220px, 60%); }
+.sheet-body h3 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); font-weight: 800; font-stretch: 110%; line-height: 1; letter-spacing: -.02em; }
+.sheet-body p { color: var(--ink-2); max-width: 60ch; }
+.sheet-body .tag { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); }
+.sheet-body .facts { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.sheet-body .facts li { padding: 12px; border-radius: 10px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.sheet-body .facts b { display: block; font-size: 1.6rem; line-height: 1.1; }
+.sheet-body .open-hint { display: none; }
+.sheet-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--rule); }
+.sb-btn, .sb-close { border: 1px solid var(--rule); background: transparent; color: var(--ink); border-radius: 999px; height: 38px; cursor: pointer; }
+.sb-btn { width: 38px; font-size: 1rem; }
+.sb-count { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .12em; color: var(--ink-2); padding: 0 6px; font-variant-numeric: tabular-nums; }
+.sb-close { margin-left: auto; padding: 0 16px; font-weight: 600; background: var(--accent); color: var(--on-accent); border: 0; }
+
+/* ---------------------------------------------------------------------------
+   Cursor. Only for fine pointers; app.js adds .has-cursor when it runs.
+   ------------------------------------------------------------------------- */
+.has-cursor, .has-cursor * { cursor: none !important; }
+.has-cursor .cursor { display: block; }
+.cursor { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; }
+.c-ring, .c-dot, .c-label { position: absolute; left: 0; top: 0; }
+.c-ring {
+  width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%;
+  border: 1.5px solid var(--g-ink);
+  transition: width .35s var(--e-out), height .35s var(--e-out), margin .35s var(--e-out), background .3s, border-color .3s, border-radius .35s;
+}
+.c-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--g-acc); transition: transform .3s var(--e-out); }
+.c-label {
+  font: 600 .62rem/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--g-on-acc); transform: translate(-50%, -50%) scale(.6); opacity: 0;
+  transition: opacity .25s, transform .35s var(--e-out); white-space: nowrap;
+}
+.cursor[data-state="view"] .c-ring { width: 84px; height: 84px; margin: -42px 0 0 -42px; background: var(--g-acc); border-color: var(--g-acc); }
+.cursor[data-state="view"] .c-dot, .cursor[data-state="close"] .c-dot { transform: scale(0); }
+.cursor[data-state="view"] .c-label, .cursor[data-state="close"] .c-label { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.cursor[data-state="link"] .c-ring { width: 16px; height: 16px; margin: -8px 0 0 -8px; border-color: var(--g-acc); }
+.cursor[data-state="close"] .c-ring { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: var(--g-ink); border-color: var(--g-ink); }
+.cursor[data-state="close"] .c-label { color: var(--g-bg); }
+.cursor[data-state="drag"] .c-ring { width: 26px; height: 58px; margin: -29px 0 0 -13px; border-radius: 14px; border-color: var(--g-acc); }
+
+/* ---------------------------------------------------------------------------
+   Narrow screens and reduced motion
+   ------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .js .edge { display: none; }
+  .js .bar { display: none; }
+  .dial { width: 54px; height: 54px; }
+  .js .hint { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  :root { --card-w: min(80vw, 330px); }
+  .js .title, .js .title.hero { width: 84vw; }
+  .js .token b { font-size: clamp(2.4rem, 12vw, 3.6rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-spin, .hint i, .b-pulse { animation: none; }
+  .js .card-in, .cluster li { transition: none; }
+  .js .card:hover .card-in { transform: none; }
+  .js .cluster li:hover { transform: none; }
+}

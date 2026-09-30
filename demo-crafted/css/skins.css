@@ -1,0 +1,163 @@
+/* ===========================================================================
+   DEMO-CRAFTED — skins
+   ---------------------------------------------------------------------------
+   The same five skins as Demo-Totem/css/tokens.css, copied value for value so
+   the two demos cannot drift: paper, violet, lemon, cyan, ember, each with a
+   dark variant. Every pair is solved to 4.5:1 on its own ground and panel.
+
+   A room in the flight carries .sk-<name>, which is what its cards read. The
+   ground of the whole scene is not a skin: js/flight.js reads each room's
+   values once, blends them in OKLab as the camera crosses from one room into
+   the next, and writes the result to the --g-* globals below.
+   ========================================================================= */
+
+:root {
+  /* paper — near-white, faintly cool */
+  --k-paper-bg:  #F7F8FA;  --k-paper-panel: #FFFFFF;  --k-paper-ink: #0B0D14;
+  --k-paper-acc: #FF5F0C;  --k-paper-acc-ink: #CA4500; --k-paper-on-acc: #1A0A00;
+  --k-paper-con: #6600FF;  --k-paper-data: #0076C0;   --k-paper-sig: #DC0081;
+  --k-paper-canvas: ink;
+
+  /* violet — flooded, ink inverts, the model becomes light */
+  --k-violet-bg:  #3F11BC;  --k-violet-panel: #5320E0;  --k-violet-ink: #F4EEFF;
+  --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+  --k-violet-con: #FF8C50;  --k-violet-data: #3AB4FF;   --k-violet-sig: #FF7EC9;
+  --k-violet-canvas: glow;
+
+  /* lemon — electric yellow, dark ink, near-white cards on top */
+  --k-lemon-bg:  #FFD82E;  --k-lemon-panel: #FFFEF5;  --k-lemon-ink: #1A1400;
+  --k-lemon-acc: #E04400;  --k-lemon-acc-ink: #AB3B00; --k-lemon-on-acc: #1A0A00;
+  --k-lemon-con: #6600FF;  --k-lemon-data: #0064A2;   --k-lemon-sig: #BC006D;
+  --k-lemon-canvas: ink;
+
+  /* cyan — electric, dark ink */
+  --k-cyan-bg:  #3FDDF5;  --k-cyan-panel: #F2FEFF;  --k-cyan-ink: #041820;
+  --k-cyan-acc: #D63500;  --k-cyan-acc-ink: #993400; --k-cyan-on-acc: #FFFFFF;
+  --k-cyan-con: #6200F6;  --k-cyan-data: #005991;   --k-cyan-sig: #A80062;
+  --k-cyan-canvas: ink;
+
+  /* ember — the close, where the call to action sits */
+  --k-ember-bg:  #160A30;  --k-ember-panel: #251349;  --k-ember-ink: #F7F2FF;
+  --k-ember-acc: #FF5F0C;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+  --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0496;
+  --k-ember-canvas: glow;
+
+  color-scheme: light;
+}
+
+/* Dark is a second colour table, not a second stylesheet: every skin keeps its
+   identity, taken down to a ground that can carry light. The two blocks below
+   are identical on purpose — one answers the system preference, the other the
+   explicit toggle. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
+    --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
+    --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
+    --k-paper-canvas: glow;
+
+    --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
+    --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+    --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
+    --k-violet-canvas: glow;
+
+    --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
+    --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
+    --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
+    --k-lemon-canvas: glow;
+
+    --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
+    --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
+    --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
+    --k-cyan-canvas: glow;
+
+    --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
+    --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+    --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
+    --k-ember-canvas: glow;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
+  --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
+  --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
+  --k-paper-canvas: glow;
+
+  --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
+  --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
+  --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
+  --k-violet-canvas: glow;
+
+  --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
+  --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
+  --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
+  --k-lemon-canvas: glow;
+
+  --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
+  --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
+  --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
+  --k-cyan-canvas: glow;
+
+  --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
+  --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
+  --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
+  --k-ember-canvas: glow;
+
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Wearing a skin. The same declarations serve a section (.sk-*) and the
+   root (data-skin), so one table drives both the band and the model.
+
+   Role assignment is held constant on the three paper sections — orange is
+   action, violet is structure, azure is data, magenta is what is running. A
+   flooded section recasts the two roles its own ground would swallow: on
+   violet, yellow takes action and orange takes structure.
+   ------------------------------------------------------------------------- */
+:root, .sk-paper, :root[data-skin="paper"] {
+  --bg: var(--k-paper-bg); --panel: var(--k-paper-panel); --ink: var(--k-paper-ink);
+  --accent: var(--k-paper-acc); --accent-ink: var(--k-paper-acc-ink);
+  --on-accent: var(--k-paper-on-acc);
+  --c-second: var(--k-paper-con); --c-third: var(--k-paper-data);
+  --c-signal: var(--k-paper-sig); --canvas-mode: var(--k-paper-canvas);
+}
+.sk-violet, :root[data-skin="violet"] {
+  --bg: var(--k-violet-bg); --panel: var(--k-violet-panel); --ink: var(--k-violet-ink);
+  --accent: var(--k-violet-acc); --accent-ink: var(--k-violet-acc-ink);
+  --on-accent: var(--k-violet-on-acc);
+  --c-second: var(--k-violet-con); --c-third: var(--k-violet-data);
+  --c-signal: var(--k-violet-sig); --canvas-mode: var(--k-violet-canvas);
+}
+.sk-lemon, :root[data-skin="lemon"] {
+  --bg: var(--k-lemon-bg); --panel: var(--k-lemon-panel); --ink: var(--k-lemon-ink);
+  --accent: var(--k-lemon-acc); --accent-ink: var(--k-lemon-acc-ink);
+  --on-accent: var(--k-lemon-on-acc);
+  --c-second: var(--k-lemon-con); --c-third: var(--k-lemon-data);
+  --c-signal: var(--k-lemon-sig); --canvas-mode: var(--k-lemon-canvas);
+}
+.sk-cyan, :root[data-skin="cyan"] {
+  --bg: var(--k-cyan-bg); --panel: var(--k-cyan-panel); --ink: var(--k-cyan-ink);
+  --accent: var(--k-cyan-acc); --accent-ink: var(--k-cyan-acc-ink);
+  --on-accent: var(--k-cyan-on-acc);
+  --c-second: var(--k-cyan-con); --c-third: var(--k-cyan-data);
+  --c-signal: var(--k-cyan-sig); --canvas-mode: var(--k-cyan-canvas);
+}
+.sk-ember, :root[data-skin="ember"] {
+  --bg: var(--k-ember-bg); --panel: var(--k-ember-panel); --ink: var(--k-ember-ink);
+  --accent: var(--k-ember-acc); --accent-ink: var(--k-ember-acc-ink);
+  --on-accent: var(--k-ember-on-acc);
+  --c-second: var(--k-ember-con); --c-third: var(--k-ember-data);
+  --c-signal: var(--k-ember-sig); --canvas-mode: var(--k-ember-canvas);
+}
+
+/* The globals the scene paints with. Paper until js/flight.js takes over, so
+   the loader and the no-JS page are already correct. */
+:root {
+  --g-bg: var(--k-paper-bg);   --g-panel: var(--k-paper-panel); --g-ink: var(--k-paper-ink);
+  --g-acc: var(--k-paper-acc); --g-acc-ink: var(--k-paper-acc-ink); --g-on-acc: var(--k-paper-on-acc);
+  --g-con: var(--k-paper-con); --g-data: var(--k-paper-data); --g-sig: var(--k-paper-sig);
+}
