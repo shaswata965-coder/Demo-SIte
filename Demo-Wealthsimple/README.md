@@ -1,19 +1,22 @@
 # Demo-Wealthsimple
 
-A static marketing site for **Larch**, a fictional company that builds and
-runs machine-learning models for banks, lenders and asset managers: credit
-decisioning, fraud and AML, liquidity forecasting, and portfolio and market
-risk. It borrows its design language from
-[wealthsimple.com](https://www.wealthsimple.com/en-ca): muted full-bleed
-rooms, one large product picture per section, ink-pill buttons and generous
-type. None of that site's colours are reused.
+A homepage for **Larch**, a fictional company that builds and runs
+machine-learning models for banks, lenders and asset managers: credit
+decisioning, fraud and AML, liquidity forecasting, portfolio risk and the
+governance around all of them.
+
+It is built on the homepage of
+[wealthsimple.com](https://www.wealthsimple.com/en-ca): the same run of
+sections, the same type pairing (in Google Fonts), the same kind of looping
+product backgrounds and the same headline reveals. Each of the reference's
+pictures has been remade as a Larch one. None of its colours, copy or images
+are reused.
 
 *Larch is fictional. Every institution, person, quote and figure on the page is
 invented.*
 
-This replaces the first version of this folder, which was a scroll-driven
-piece built around a morphing object of coins. That version is in the git
-history.
+The two earlier versions of this folder (a scroll-driven piece built around a
+morphing object, then a static site of data panels) are in the git history.
 
 ## Run it
 
@@ -23,7 +26,7 @@ python3 -m http.server 8000 --directory Demo-Wealthsimple
 ```
 
 Opening `index.html` from disk works too. There is no build step to view it.
-The two tools below only regenerate files that are already committed.
+The tools below only regenerate files that are already committed.
 
 **The Artifact.** `artifact.html` is the single-file build of this page,
 published at
@@ -38,132 +41,130 @@ node tools/make-embed.mjs --out artifact.html --title Larch
 ## Files
 
 ```
-index.html               the page; charts are drawn into it between markers
-css/tokens.css           six rooms in light and dark (generated, do not edit)
-css/main.css             layout and components
-js/site.js               theme toggle, chart tooltips, copy button (optional)
+index.html               the page; the forecast chart is drawn into it between markers
+css/tokens.css           nine rooms, the product-screen set and the card metal (generated)
+css/main.css             type, layout, header, menu, sections, entrances
+css/assets.css           the five product pictures and their loops
+js/site.js               theme, pause, headline entrances, header, menus, form, copy
+js/scenes.js             the two canvas backgrounds: the decision tree and the loss surface
 tools/solve-palette.mjs  solves and checks every colour, writes tokens.css
-tools/draw-assets.mjs    draws every chart from its data into index.html
+tools/draw-assets.mjs    draws the forecast chart from its series into index.html
 tools/make-embed.mjs     single-file build (dist/, or artifact.html)
 artifact.html            the published Artifact (generated, do not edit)
 ```
 
-## The page
+## Section by section
 
-| Section | Room | The picture |
-|---|---|---|
-| Hero | stone | The **decision console**: four KPIs, a 30-day chart of applications and approvals, a live feed of decisions with status pills, and a phone notification for an adverse action notice |
-| Customers strip | stone | Six fictional institutions, each with its own mark and wordmark treatment |
-| Products | stone | Four cards with an icon each, linking to the rooms below |
-| Credit decisioning | sage | **One decision explained**: score, probability of default and limit, a waterfall of reason-code contributions against the 660 cutoff, and a calibration chart of predicted against observed default rates |
-| Fraud and AML | spruce | **A transaction network**: a seven-account mule ring around a shared device, with the money coming in and the new wire payee, plus the alert card with its flow of transfers |
-| Liquidity forecasting | mist | **A cash forecast**: 90 days of actuals, a 60-day P50 forecast inside its P10–P90 band, the $300M floor, two stat tiles and a chart of the drivers of the next 30 days |
-| Portfolio and market risk | slate | **A factor exposure heat map** across six books and six factors, and **stress scenarios** as diverging bars |
-| Platform | stone | A six-step **pipeline**, connect to monitor, with a note on the loop back into retraining. It is a row of six on a wide screen and a column on a phone |
-| Governance | sage | A **model card** with an approval stamp, performance table, fairness chart against the four-fifths limit and known limitations, plus the **audit trail** |
-| Customers | stone | Three case studies, each with its own chart: an approval/loss frontier, monthly false positives either side of go-live, and run time before and after |
-| Company | stone | Four **illustrated portraits** that differ in skin tone, build, hair, glasses and clothing, and four security points |
-| Contact and footer | night | The address as selectable text with a copy button, a three-step "what happens next", columns and the fictional-company notice |
+| Reference | Larch | Room | The picture, and what moves |
+|---|---|---|---|
+| Opener: campaign image, headline, email form | **The 2026 Model Review**: "Show us one model. We'll explain every decision it made." | spruce | Canvas. A decision tree laid out like a larch branch. Applications stream in along the trunk, split at each node (the first splits carry their rules, such as "debt-to-income < 0.36"), and settle on a leaf: gold where it approves, quiet where it refers or declines. The branches sway. |
+| Exploded menu: five product names in huge serif | Credit, Fraud, Forecasting, Risk, Governance | lichen | On hover or focus a row turns white, its icon slides in from the left and its description from the right (585 ms). On a phone each row shows its description and an arrow. |
+| Chequing: phone UI | **Credit** | petrol | A phone running Larch Credit. The score counts up to 712 against a cutoff of 660, four reasons arrive with their bars, the decision appears, and a note says the reasons were saved to the loan file. A 12 s loop. |
+| Credit card: a metal card | **Governance** | olive | The model card made like a metal payment card: model number where the card number goes, owner where the name goes, "Review by 09/27" where the expiry goes, a validation seal for the chip and "Tier 1" for the network mark. It turns slowly in a passing light. |
+| About: coin stack, huge serif, thesis | "Machine learning, accounted for" | lichen | A coin stack with a larch growing out of it, fading in. The thesis rises word by word. |
+| Trade: trading UI | **Fraud** | oxblood | A live payments monitor whose feed never stops, a few payments held or sent for review, and an open case: seven accounts around one device, money moving round the ring and out to a new wire payee. |
+| Summit: a floating mountaintop | **Forecasting** | dawn (gradient) | The cash forecast on a floating slab in 3D. The forecast draws itself, its range fills in, and a pin stands up off the surface at the low point. |
+| Classic: an animated pie | **Risk** | fog | A donut of one-day 99% VaR by factor that rebalances between "before hedge" and "after rates hedge", with its centre total and legend changing with it. |
+| TLDR: newsletter card with a video portrait | **The Residual** | moss card on lichen | The wordmark beside an illustrated portrait of its editor, who tilts her head. |
+| Final CTA: full-height close | "Every decision, explained to your regulator." | peat | Canvas. A dotted loss surface, breathing. A point rolls downhill with momentum to the minimum, shows "converged", and starts again elsewhere. The last word of the headline turns over like a drum: regulator, auditors, board, customers. |
 
-Every picture is the product itself, built in HTML and SVG from the page's
-own tokens. The text in it is real text, it themes with the page, and it
-simplifies at narrow widths instead of shrinking into an unreadable picture.
-That is this page's version of the reference's large, adaptive assets.
-
-## How the charts are made
-
-`tools/draw-assets.mjs` computes every chart, the fraud network and the heat
-map from data. Marks, ticks and labels share one scale, and a number in the
-copy matches the number in its picture. For example, the console's "18,402
-decisions, 64.8% approved, +6.1% on last Tuesday" are read off the last point
-of the 30-day series. The output is static SVG between
-`<!-- draw:name -->` markers, so the page needs no script to show it. Running
-the tool twice produces the same file.
-
-- **Two drawings per chart.** There is a wide drawing and a compact one with
-  fewer ticks and shorter labels. A container query on the chart's own panel
-  chooses which to show. The fraud network's compact drawing is a crop framed
-  on the ring rather than a shrink.
-- **Dataviz rules.** Bars are at most 24px thick, with a 4px rounded data end
-  and a square base. Lines are 2px, dots are 8px with a 2px ring in the panel
-  colour, and grids are solid hairlines. Text is in ink tokens only, and a
-  legend appears whenever there are two or more series. Polarity (positive or
-  negative contributions, gains or losses, long or short) uses a diverging
-  pair. Approved and declined states use the status colours, always with a
-  label.
-- **Every chart has its table.** A "Data" disclosure under each chart holds
-  its numbers, and each mark carries hover text. `js/site.js` shows it as one
-  tooltip, written with `textContent`.
-
-## Colour
-
-Six rooms, each in light and dark: **stone** (cool porcelain, the default),
-**sage**, **mist** (a fog-blue to pale-wheat gradient), **spruce**, **slate**
-and **night**. The grounds stay at OKLCH chroma 0.03 or less, so the colour on
-the page comes from the pictures. The palette is cool-neutral rather than
-cream, with brass as the brand accent and petrol blue for links.
-
-`tools/solve-palette.mjs --write` writes `css/tokens.css` and checks it:
-
-- Every text hue (brass, petrol, good, bad) is solved to clear **4.5:1** on its
-  room's band, at both ends of the mist gradient, and on its panel. So are the
-  two quieter inks and the ink pill. The worst text pair in the file is
-  4.51:1.
-- **Chart series:** petrol, brass and violet, in that fixed order. Each sits
-  inside the dataviz lightness band, at chroma 0.10 or more, at 3:1 or better
-  on every panel it is drawn on.
-- **The heat map is binned:** four steps each way from a grey zero. The steps'
-  lightness jumps the mid-tones where neither ink reads, so every cell carries
-  its number at 4.5:1 or better. The quiet steps take the room's ink and the
-  strong steps its ground.
-
-The categorical series were also run through the dataviz skill's validator
-(`validate_palette.js`) against all twelve room and theme panels. All pass:
-the worst adjacent colour-vision difference is ΔE 17.4, and the
-normal-vision floor is ΔE 21.4.
+Each picture is a product screen or object built in HTML, SVG and canvas from
+the page's tokens. Its text is real text, it follows the theme, and it is
+sized in em from its stage (container units), so it scales with the viewport
+as one piece. On a phone it is sized by width and may run off the bottom, the
+way a cropped product shot does. Each has a text description for screen
+readers.
 
 ## Type
 
-- **Urbanist** for display: geometric, in sentence case, tracked tight at
-  large sizes, close in spirit to the reference's geometric headline face.
-- **Instrument Sans** for reading.
-- **Geist Mono** only for what a system prints: application IDs, timestamps,
-  model versions.
+- **Newsreader** stands in for the reference's text-cut serif. It is used at
+  a fixed text optical size (`opsz` 20) even at 128px, so the big lines stay
+  sturdy rather than turning into a high-contrast display face. Product menu,
+  about, the close and the eyebrow.
+- **Jost** stands in for the reference's Futura-like sans: headlines at 500,
+  reading at 400, tracked +0.005em.
+- Sizes are the reference's fluid scale: 40–64px for the opener, 32–48px for
+  product headlines, 32–128px and 56–128px for the serif statements, 20–32px
+  for the thesis, body at 18px with 1.4 leading.
 
-## What carried over from the earlier demos, and what did not
+## Motion
 
-**Kept:**
-- A whole colour set per section, with every value solved rather than picked.
-- The ink-pill call to action.
-- All imagery as inline SVG themed from tokens. The Artifact CSP blocks
-  external images.
-- Light and dark themes with a toggle.
-- Varied, generated portraits that are labelled as illustrations.
-- A visible notice that the company is fictional, and fictional institutions
-  in place of real ones.
+One ease for everything, the reference's own: `cubic-bezier(0.241, 0.969,
+0.635, 0.997)`, fast out of the gate with a long settle.
 
-**Dropped**, because this is a static professional site:
-- The scroll-driven object and the `progress` number driving it.
-- Pinned sections and the custom wheel scrolling.
-- Typed titles and the line-by-line reveal.
+- **Headline entrances.** `js/site.js` splits a headline into words when it
+  first comes into view. Each word rises half an em and fades in, a few
+  hundredths of a second after the one before and a little more for each new
+  line. Screen readers get the sentence once, whole.
+- **Supporting copy** fades in over 914 ms after its headline: eyebrows first,
+  then buttons and forms.
+- **Background loops** run in CSS (the product pictures) and canvas (the
+  opener and the close). Sections off screen stop their loops.
+- **The pause button** on every moving section stops all of it at once, and
+  the choice is remembered in this browser.
+- **Reduced motion.** Nothing waits to enter and nothing loops: every picture
+  shows its finished frame and each canvas draws one still frame.
+- **Without the script** every headline is simply shown. The early inline
+  script holds headlines back only when it knows the main script can run, and
+  a CSS fallback shows them after 2.5 s if it never does.
 
-The page is complete at rest. The only motion is a hover lift on cards.
+## Colour
+
+Nine rooms, each in light and dark, in the order the reference uses its
+grounds: a near-black opener, paper, two muted mid-darks, paper, a deep dark,
+a light gradient, paper and a dark close.
+
+| Room | Light theme | Used for |
+|---|---|---|
+| spruce | deep blue-green | the opener |
+| lichen | cool green-grey paper | product menu, about, newsletter, footer |
+| petrol | muted mid-dark blue | credit |
+| olive | smoked olive | governance |
+| oxblood | deep red-brown | fraud |
+| dawn | fog blue into pale wheat | forecasting |
+| fog | cool pale grey | risk |
+| moss | pale lichen green | the newsletter card |
+| peat | warm near-black | the close |
+
+`tools/solve-palette.mjs --write` writes `css/tokens.css` and checks it:
+
+- On every room, ink clears 7:1 on the whole ground (both ends of a
+  gradient), the quieter ink and the pill label clear 4.5:1, and the pill and
+  the room's gold glow clear 3:1.
+- The product screens share one set: two inks, a brand gold, three status
+  hues (each 4.5:1 on the screen, the sunk screen and its own tinted pill) and
+  five series at 3:1 on the screen.
+- The metal card keeps one set in both themes, since it is an object; its
+  engraving clears 4.5:1 on every stop of the metal.
+- The lowest text pair in the file is 4.61:1.
+
+## The forecast chart
+
+`tools/draw-assets.mjs` computes the slab's chart from a daily cash series:
+45 days of actuals and a 60-day forecast whose range widens with the horizon,
+with payroll and tax drains smoothed over a few days. The pin's figure is read
+off the series ("$339M, Oct 30", 29 days out, above the $300M floor), and the
+script stops if the range ever crosses the floor, since the page says it does
+not. Running it twice changes nothing.
 
 ## Verified
 
-Checked with Playwright in this container:
+Checked with Playwright in this container, with the webfonts loaded:
 
-- No horizontal scroll at 320, 360, 390, 768, 1024, 1280, 1440, 1920 or 2560
-  wide, in light and dark.
+- No horizontal scroll and no text pushed off screen at 320, 360, 390, 768,
+  1024, 1280, 1440, 1920 and 2560 wide, in light and dark.
 - No page errors.
-- Generator output is idempotent.
-- Every text pair, chart mark and heat-map cell passes the checks above.
+- Menu hover reveal, the Products panel (closes after a link), the phone
+  drawer, the form's two messages, theme toggle, copy button, and pause (the
+  canvas holds still while paused and moves again after).
+- Reduced motion: every section complete at rest, nothing hidden.
 
 ## Porting
 
 | This file | Becomes |
 |---|---|
-| `index.html` | Next.js pages, one component per section; copy and case studies from the CMS |
-| `tools/draw-assets.mjs` | The same functions, run at build time or rendered by a chart component from real data |
+| `index.html` | Next.js sections, one component each; copy from the CMS |
+| `css/assets.css` | One component per picture; in production the loops could become short muted videos with these as posters |
+| `js/site.js` | An `AnimatedText` component and a motion preference provider |
+| `js/scenes.js` | Two client components drawing to canvas |
 | `css/tokens.css` | Unchanged; Tailwind v4 reads CSS custom properties directly |
-| `js/site.js` | A theme provider and a shared tooltip component |

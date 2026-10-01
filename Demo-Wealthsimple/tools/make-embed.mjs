@@ -11,14 +11,15 @@
 
    So this writes dist/index.html as ONE file: no doctype, no <html>, no <head>,
    no <body>, and every stylesheet and script inlined. Nothing left to fetch
-   except the webfont. app.js sets lang, data-chapter and data-skin on the root
-   itself, so the embed build behaves identically to the standalone one.
+   except the webfonts. The early inline script at the top of <body> (saved
+   theme, motion choice, whether headlines may wait to enter) travels with the
+   body, so the embed build behaves like the standalone one.
 
      node tools/make-embed.mjs
 
    The same build is the published Artifact. An Artifact is named by its
    <title>, and the name has to be a name — "Larch", not the site's
-   "Larch — money, grown quietly" — so the artifact build overrides it and
+   "Larch — machine learning, accounted for" — so the artifact build overrides it and
    writes to a tracked file instead of dist/:
 
      node tools/make-embed.mjs --out artifact.html --title Larch
