@@ -22,7 +22,7 @@
   --t-body: 0.97rem;
   --t-label: 0.72rem;
 
-  --card-w: clamp(250px, 25vw, 360px);
+  --card-w: clamp(220px, 19vw, 300px);
   --radius: 12px;
   --e-out: cubic-bezier(.16, 1, .3, 1);
 
@@ -301,8 +301,8 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 .js .card:hover .card-in::after { opacity: 1; background-position: -20% 0; }
 .js .card:focus-visible { outline: none; }
 .js .card .more { display: none; }
-.js .card.tech { width: clamp(270px, 26vw, 380px); }
-.js .card.figcap { width: clamp(260px, 22vw, 320px); }
+.js .card.tech { width: clamp(240px, 21vw, 320px); }
+.js .card.figcap { width: clamp(220px, 19vw, 290px); }
 .figcap h3 { font-size: 1.5rem; }
 /* Terminal lines print in each time the card comes into range. */
 .js .it:not(.off) .term li { animation: line .4s var(--e-out) both; animation-delay: calc(var(--i, 0) * 110ms + 120ms); }
@@ -484,8 +484,8 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
   .js .bar { display: none; }
   .dial { width: 54px; height: 54px; }
   .js .hint { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
-  :root { --card-w: min(80vw, 330px); }
-  .js .card.tech { width: min(84vw, 340px); }
+  :root { --card-w: min(72vw, 300px); }
+  .js .card.tech { width: min(76vw, 310px); }
   .code, .term { font-size: .68rem; }
   .js .title, .js .title.hero { width: 84vw; }
   .js .token b { font-size: clamp(2.4rem, 12vw, 3.6rem); }

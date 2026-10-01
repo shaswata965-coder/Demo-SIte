@@ -29,19 +29,19 @@
   /* data-d values are authored for a 900px focal length; k rescales them. */
   const U = 900;
   /* Packing: every authored depth and room length is multiplied by this, so
-     one number sets how dense the corridor is. 0.8 = a quarter more per
-     screen of travel than the depths were written for. */
-  const PACK = 0.8;
+     one number sets how dense the corridor is. 1.25 spreads things out a
+     quarter beyond the depths as written, so only a few are in view at once. */
+  const PACK = 1.25;
   const TAU = 0.3;            // seconds for c to cover 63% of the way to target
   const WHEEL_GAIN = 1.7;
   const DRAG_GAIN = 2.6;
 
   /* Fog, as multiples of the focal length: [nearZero, nearFull]. */
-  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.3, 0.62], itNarrow: [0.5, 0.86] };
+  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.45, 0.72], itNarrow: [0.5, 0.86] };
   /* ...and how far out things condense: [full, zero]. Items are kept close so
      the far ones never pile up on the vanishing point behind the title you
      are reading; the network is let see further, so the corridor has depth. */
-  const FAR_ITEM = [1.6, 2.25], FAR_NET = [2.6, 3.6];
+  const FAR_ITEM = [1.35, 1.9], FAR_NET = [2.6, 3.6];
   const NEAR_MODEL = [0.32, 0.72], FAR_MODEL = [2.0, 2.7];
   const NEAR_DECON = [0.36, 0.8], FAR_DECON = [1.8, 2.5];
 
@@ -738,8 +738,10 @@
       for (let j = 0; j < shown.length && target > 0.1; j++) {
         const o = shown[j];
         if (o === it || o.fogged < 0.5) continue;
-        /* Nearer things win; a chip loses to any card whatever its depth. */
-        if (!(j < i || (it.yields === 2 && o.yields === 1))) continue;
+        /* Nearer things win; a chip loses to any card whatever its depth; and
+           a card already flying past the lens gives way to one being read. */
+        const passing = it.D < it.near[1] * f;
+        if (!(j < i || passing || (it.yields === 2 && o.yields === 1))) continue;
         if (it.yields === 1 && o.yields === 2) continue;
         const B = o.box;
         const ix = Math.min(A[2], B[2]) - Math.max(A[0], B[0]), iy = Math.min(A[3], B[3]) - Math.max(A[1], B[1]);

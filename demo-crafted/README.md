@@ -83,8 +83,13 @@ order, each project out to its figures.
 - **Front item wins.** Every frame the flight measures each visible item's
   box on screen. Anything that overlaps a nearer, already legible item fades
   back to a whisper until that one has passed, so cards never read through
-  each other and each gets a clean moment. Chips always yield to cards and
-  figures. The intro badge is a faint backdrop (28%) and takes no part.
+  each other and each gets a clean moment. A card already flying past the
+  lens gives way too. Chips always yield to cards and figures. The intro
+  badge is a faint backdrop (28%) and takes no part.
+- **Density.** `PACK = 1.25` spreads the authored depths a quarter wider.
+  Cards are about 20% narrower (`--card-w: clamp(220px, 19vw, 300px)`),
+  there are two chips per room, and the item fog is short, so only a card
+  or two is in view at once.
 
 ## Content decisions
 
