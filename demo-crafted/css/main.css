@@ -179,6 +179,52 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 .fine { font: 500 .74rem/1.5 var(--f-mono); color: var(--ink-2); max-width: 46ch; }
 
 .badge svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+/* ---------------------------------------------------------------------------
+   Tech content: chips of live-looking metrics, and cards that show the work
+   as the team would see it (a trace, a config, an eval sheet, a plan).
+   ------------------------------------------------------------------------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 10px; width: max-content;
+  font: 500 .72rem/1 var(--f-mono); letter-spacing: .05em;
+  padding: 7px 11px; border-radius: 6px;
+  color: var(--ink-2); border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--panel) 50%, transparent);
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c-signal); }
+.chip b { font-weight: 500; color: var(--c-third); }
+
+.tbar { display: flex; align-items: center; gap: 5px; font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .06em; color: var(--ink-2); }
+.tbar i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.tbar i:nth-child(2) { background: var(--c-third); }
+.tbar i:nth-child(3) { background: var(--c-signal); }
+.tbar span { margin-left: 6px; text-transform: uppercase; }
+.code, .term {
+  margin: 0; padding: 10px 12px; border-radius: 8px;
+  font: 400 .75rem/1.6 var(--f-mono); color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  overflow: hidden;
+}
+.code { white-space: pre; }
+.code .k { color: var(--c-second); } .code .s { color: var(--c-third); }
+.code .n { color: var(--accent-ink); } .code .c { color: var(--ink-2); }
+.term { list-style: none; display: grid; gap: 2px; }
+.term li { display: flex; justify-content: space-between; gap: 12px; }
+.term b { font-weight: 500; color: var(--c-third); }
+.term .cmd { color: var(--accent-ink); }
+.term .ok { color: var(--c-signal); }
+.evals table { width: 100%; border-collapse: collapse; font: 400 .76rem/1.3 var(--f-mono); font-variant-numeric: tabular-nums; }
+.evals th { text-align: left; font-weight: 500; font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); padding: 6px 4px; border-bottom: 1px solid var(--rule); }
+.evals td { padding: 7px 4px; border-bottom: 1px solid var(--rule); }
+.evals .num { text-align: right; }
+.evals tr.hi td { color: var(--accent-ink); font-weight: 500; }
+.spec { margin: 0; display: grid; gap: 8px; }
+.spec div { display: grid; grid-template-columns: 7.5em 1fr; gap: 10px; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.spec div:last-child { border-bottom: 0; padding-bottom: 0; }
+.spec dt { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); }
+.spec dd { margin: 0; font-size: .88rem; color: var(--ink); }
+.art[data-art="levers"], .art[data-art="gantt"] { aspect-ratio: 320 / 150; }
 .b-pulse { animation: run 2.6s linear infinite; }
 @keyframes run { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 .art[data-art="weeks"] { aspect-ratio: 320 / 58; background: none; border-radius: 0; }
@@ -212,7 +258,7 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 
 /* In the flight, bare text belongs to the ground, so it takes the globals;
    cards keep their own room's skin. */
-.js .title, .js .token, .js .note, .js .finale, .js .cluster h3 {
+.js .title, .js .token, .js .note, .js .finale, .js .cluster h3, .js .chip {
   --ink: var(--g-ink); --ink-2: var(--g-ink-2); --accent: var(--g-acc);
   --accent-ink: var(--g-acc-ink); --on-accent: var(--g-on-acc);
   --c-second: var(--g-con); --c-third: var(--g-data); --c-signal: var(--g-sig);
@@ -255,6 +301,10 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 .js .card:hover .card-in::after { opacity: 1; background-position: -20% 0; }
 .js .card:focus-visible { outline: none; }
 .js .card .more { display: none; }
+.js .card.tech { width: clamp(270px, 26vw, 380px); }
+/* Terminal lines print in each time the card comes into range. */
+.js .it:not(.off) .term li { animation: line .4s var(--e-out) both; animation-delay: calc(var(--i, 0) * 110ms + 120ms); }
+@keyframes line { from { opacity: 0; transform: translateX(-6px); } }
 .js .card .open-hint {
   display: inline-flex; align-items: center; gap: 6px; justify-self: start;
   font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase;
@@ -433,11 +483,13 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
   .dial { width: 54px; height: 54px; }
   .js .hint { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
   :root { --card-w: min(80vw, 330px); }
+  .js .card.tech { width: min(84vw, 340px); }
+  .code, .term { font-size: .68rem; }
   .js .title, .js .title.hero { width: 84vw; }
   .js .token b { font-size: clamp(2.4rem, 12vw, 3.6rem); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ld-spin, .hint i, .b-pulse { animation: none; }
+  .ld-spin, .hint i, .b-pulse, .js .it:not(.off) .term li { animation: none; }
   .js .card-in, .cluster li { transition: none; }
   .js .card:hover .card-in { transform: none; }
   .js .cluster li:hover { transform: none; }

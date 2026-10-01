@@ -28,19 +28,24 @@
 
   /* data-d values are authored for a 900px focal length; k rescales them. */
   const U = 900;
+  /* Packing: every authored depth and room length is multiplied by this, so
+     one number sets how dense the corridor is. 0.8 = a quarter more per
+     screen of travel than the depths were written for. */
+  const PACK = 0.8;
   const TAU = 0.3;            // seconds for c to cover 63% of the way to target
   const WHEEL_GAIN = 1.7;
   const DRAG_GAIN = 2.6;
 
   /* Fog, as multiples of the focal length: [nearZero, nearFull]. */
-  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.14, 0.44], itNarrow: [0.5, 0.86] };
+  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.3, 0.62], itNarrow: [0.5, 0.86] };
   /* ...and how far out things condense: [full, zero]. Items are kept close so
      the far ones never pile up on the vanishing point behind the title you
      are reading; the network is let see further, so the corridor has depth. */
   const FAR_ITEM = [1.6, 2.25], FAR_NET = [2.6, 3.6];
+  const NEAR_MODEL = [0.32, 0.72], FAR_MODEL = [2.0, 2.7];
 
   let W = 0, H = 0, f = U, k = 1, dpr = 1, portrait = false;
-  const rooms = [], items = [], chains = new Map();
+  const rooms = [], items = [], chains = new Map(), models = [];
   let cMin = 0, cMax = 0;
 
   const cam = { c: 0, target: 0, v: 0, px: 0, py: 0, tx: 0, ty: 0 };
@@ -133,12 +138,12 @@
   /* ---------------------------------------------------------------- layout */
   function collect() {
     document.querySelectorAll('.room').forEach((el, i) => {
-      const room = { el, i, id: el.id, name: el.dataset.name, len: +el.dataset.len || 2800, start: 0, skin: null };
+      const room = { el, i, id: el.id, name: el.dataset.name, len: (+el.dataset.len || 2800) * PACK, start: 0, skin: null };
       rooms.push(room);
       el.querySelectorAll(':scope > .it').forEach((it) => {
         const centred = !+it.dataset.x;
         const kind = it.classList.contains('title') ? 'title' : it.classList.contains('badge') ? 'badge' : centred ? 'centre' : 'it';
-        const item = { el: it, room, d: +it.dataset.d || 0, x: +it.dataset.x || 0, y: +it.dataset.y || 0,
+        const item = { el: it, room, d: (+it.dataset.d || 0) * PACK, chip: it.classList.contains('chip'), x: +it.dataset.x || 0, y: +it.dataset.y || 0,
                        kind, near: NEAR[kind], X: 0, Y: 0, Z: 0, op: -1, off: null };
         items.push(item);
         it._flight = item;
@@ -147,6 +152,12 @@
       });
     });
     for (const list of chains.values()) list.sort((a, b) => a.d - b.d);
+    rooms.forEach((room) => room.el.querySelectorAll(':scope > .model').forEach((el, n) => {
+      const shape = SHAPES[el.dataset.shape] ? el.dataset.shape : 'core';
+      models.push({ room, shape, geo: SHAPES[shape](), label: el.dataset.label || shape.toUpperCase(),
+                    d: (+el.dataset.d || 0) * PACK, x: +el.dataset.x || 0, y: +el.dataset.y || 0,
+                    phase: room.i * 1.7 + n * 2.3, spin: n % 2 ? -1 : 1, X: 0, Y: 0, Z: 0, R: 0 });
+    }));
   }
 
   function layout() {
@@ -159,7 +170,11 @@
     for (const r of rooms) { r.start = s; s += r.len * k; }
     const hw = W / 2, hh = H / 2;
     for (const it of items) {
-      if (portrait) {
+      if (portrait && it.chip) {
+        /* Chips keep to the top and bottom bands on a tall screen. */
+        it.X = it.x * 0.36 * hw;
+        it.Y = (it.y >= 0 ? 0.42 : -0.42) * hh;
+      } else if (portrait) {
         const side = it.x === 0 ? 0 : it.x > 0 ? 1 : -1;
         it.X = it.x * 0.2 * hw;
         it.Y = (it.y * 0.32 + side * (it.y >= 0 ? 0.3 : -0.3)) * hh;
@@ -171,6 +186,12 @@
          out while it is still well in front of the lens. */
       it.near = portrait && it.kind === 'it' ? NEAR.itNarrow : NEAR[it.kind];
       it.el.style.transform = `translate3d(${it.X.toFixed(1)}px,${it.Y.toFixed(1)}px,${(-it.Z).toFixed(1)}px) translate(-50%,-50%)`;
+    }
+    for (const m of models) {
+      m.R = 0.17 * Math.min(W * 1.3, H);
+      m.X = portrait ? m.x * 0.25 * hw : m.x * hw;
+      m.Y = portrait ? (m.x < 0 ? -0.36 : 0.36) * hh : m.y * hh;
+      m.Z = m.room.start + m.d * k;
     }
     const lastRoom = rooms[rooms.length - 1];
     const finale = items.filter((it) => it.room === lastRoom && it.el.classList.contains('finale'))[0];
@@ -232,6 +253,168 @@
     const hw = W / 2, hh = H / 2;
     net.nodes = netSeed.nodes.map((n) => ({ ...n, X: n.fx * hw * (portrait ? 1.1 : 1), Y: n.fy * hh, Z: n.u * k }));
     net.edges = netSeed.edges;
+  }
+
+
+  /* ---------------------------------------------------------------- models
+     Wireframe models stand either side of every room's title: one shape
+     per room, in the room's hues, turning slowly with time and with travel.
+     Unit-radius geometry; projected with the same focal length as the
+     cards, so they sit in the corridor rather than on top of it. */
+  function nearestEdges(p, n, out, seen) {
+    for (let i = 0; i < p.length; i++) {
+      const d = [];
+      for (let j = 0; j < p.length; j++) if (j !== i) d.push([j, (p[i][0] - p[j][0]) ** 2 + (p[i][1] - p[j][1]) ** 2 + (p[i][2] - p[j][2]) ** 2]);
+      d.sort((a, b) => a[1] - b[1]).slice(0, n).forEach(([j]) => {
+        const key = i < j ? i + '-' + j : j + '-' + i;
+        if (!seen.has(key)) { seen.add(key); out.push([i, j]); }
+      });
+    }
+    return out;
+  }
+  const SHAPES = {
+    /* A dense core: a Fibonacci sphere wired to its neighbours. */
+    core() {
+      const p = [], n = 48;
+      for (let i = 0; i < n; i++) {
+        const y = 1 - (2 * (i + 0.5)) / n, r = Math.sqrt(1 - y * y), a = i * 2.39996;
+        p.push([Math.cos(a) * r * 0.9, y * 0.9, Math.sin(a) * r * 0.9, i % 4]);
+      }
+      return { p, e: nearestEdges(p, 3, [], new Set()) };
+    },
+    /* A transformer stack: five layer rings, each wired to the next. */
+    stack() {
+      const p = [], e = [], L = 5, n = 10;
+      for (let l = 0; l < L; l++) for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + l * 0.3;
+        p.push([Math.cos(a) * 0.72, -0.9 + (l * 1.8) / (L - 1), Math.sin(a) * 0.72, l % 4]);
+        e.push([l * n + i, l * n + ((i + 1) % n)]);
+        if (l) { e.push([l * n + i, (l - 1) * n + i]); e.push([l * n + i, (l - 1) * n + ((i + 1) % n)]); }
+      }
+      return { p, e };
+    },
+    /* A double helix with rungs: the four weeks as a strand. */
+    helix() {
+      const p = [], e = [], n = 22;
+      for (let s = 0; s < 2; s++) for (let i = 0; i < n; i++) {
+        const t = i / (n - 1), a = t * Math.PI * 4 + s * Math.PI;
+        p.push([Math.cos(a) * 0.5, -1 + 2 * t, Math.sin(a) * 0.5, s ? 2 : 1]);
+        if (i) e.push([s * n + i, s * n + i - 1]);
+        if (s && i % 2 === 0) e.push([i, n + i]);
+      }
+      return { p, e };
+    },
+    /* A 4x4x4 lattice: the fleet as a grid of units. */
+    lattice() {
+      const p = [], e = [], n = 4, at = (x, y, z) => x * n * n + y * n + z;
+      for (let x = 0; x < n; x++) for (let y = 0; y < n; y++) for (let z = 0; z < n; z++) {
+        p.push([-0.75 + x * 0.5, -0.75 + y * 0.5, -0.75 + z * 0.5, (x + y + z) % 4]);
+        if (x) e.push([at(x, y, z), at(x - 1, y, z)]);
+        if (y) e.push([at(x, y, z), at(x, y - 1, z)]);
+        if (z) e.push([at(x, y, z), at(x, y, z - 1)]);
+      }
+      return { p, e };
+    },
+    /* Orbits: four tilted rings around one hub, a node per person. */
+    orbit() {
+      const p = [[0, 0, 0, 0]], e = [], n = 9;
+      for (let r = 0; r < 4; r++) {
+        const tilt = (r / 4) * Math.PI, base = p.length;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2, x = Math.cos(a) * 0.85, z = Math.sin(a) * 0.85;
+          p.push([x, z * Math.sin(tilt) * 0.6, z * Math.cos(tilt), (r % 3) + 1]);
+          e.push([base + i, base + ((i + 1) % n)]);
+          if (i % 3 === 0) e.push([0, base + i]);
+        }
+      }
+      return { p, e };
+    },
+    /* A globe of latitude rings and meridians: who we build with. */
+    globe() {
+      const p = [], e = [], lats = [-60, -30, 0, 30, 60], n = 14;
+      lats.forEach((lat, li) => {
+        const y = Math.sin((lat * Math.PI) / 180), r = Math.cos((lat * Math.PI) / 180);
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          p.push([Math.cos(a) * r * 0.9, y * 0.9, Math.sin(a) * r * 0.9, li % 4]);
+          e.push([li * n + i, li * n + ((i + 1) % n)]);
+          if (li) e.push([li * n + i, (li - 1) * n + i]);
+        }
+      });
+      return { p, e };
+    },
+    /* A feed-forward net, 4-6-6-3, turned in space. */
+    fan() {
+      const p = [], e = [], sizes = [4, 6, 6, 3];
+      let prev = [];
+      sizes.forEach((m, l) => {
+        const cur = [];
+        for (let i = 0; i < m; i++) { cur.push(p.length); p.push([-0.9 + l * 0.6, (i - (m - 1) / 2) * 0.32, 0, l]); }
+        prev.forEach((a) => cur.forEach((b) => e.push([a, b])));
+        prev = cur;
+      });
+      return { p, e };
+    },
+    /* A torus: the loop from measured to shipped and back. */
+    torus() {
+      const p = [], e = [], U2 = 16, V = 6;
+      for (let u = 0; u < U2; u++) for (let v = 0; v < V; v++) {
+        const a = (u / U2) * Math.PI * 2, b = (v / V) * Math.PI * 2, r = 0.62 + Math.cos(b) * 0.26;
+        p.push([Math.cos(a) * r, Math.sin(b) * 0.26, Math.sin(a) * r, v % 4]);
+        e.push([u * V + v, u * V + ((v + 1) % V)]);
+        e.push([u * V + v, ((u + 1) % U2) * V + v]);
+      }
+      return { p, e };
+    },
+  };
+
+  function drawModels(time) {
+    const hues = [blended.acc, blended.con, blended.data, blended.sig], ink = blended.ink;
+    ctx.font = '500 10px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    for (const m of models) {
+      const D0 = f + m.Z - cam.c;
+      const a = fog(D0, NEAR_MODEL, FAR_MODEL);
+      if (a < 0.01) continue;
+      const yaw = (reduce.matches ? 0 : time * 0.00022 * m.spin) + cam.c * 0.0007 + m.phase;
+      const pitch = 0.42 + (reduce.matches ? 0 : 0.1 * Math.sin(time * 0.0004 + m.phase));
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const pts = m.geo.p, sc = new Array(pts.length);
+      for (let i = 0; i < pts.length; i++) {
+        const [x, y, z] = pts[i];
+        const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+        const y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+        const q = project(m.X + x1 * m.R, m.Y + y2 * m.R, m.Z + z2 * m.R);
+        sc[i] = q ? [q[0], q[1], q[2], z2] : null;
+      }
+      ctx.lineWidth = 0.9;
+      ctx.strokeStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(a * 0.34).toFixed(3)})`;
+      ctx.beginPath();
+      for (const [i, j] of m.geo.e) {
+        const p = sc[i], q = sc[j];
+        if (p && q) { ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); }
+      }
+      ctx.stroke();
+      for (let i = 0; i < pts.length; i++) {
+        const p = sc[i]; if (!p) continue;
+        const c = hues[pts[i][3]], fire = reduce.matches ? 0 : Math.max(0, Math.sin(time * 0.003 + i * 1.3 + m.phase)) ** 8;
+        const depth = 0.45 + 0.55 * (1 - p[3]) / 2;
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${(a * Math.min(1, depth + fire)).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(p[0], p[1], Math.min(9, (2.1 + fire * 2.2) * p[2]), 0, Math.PI * 2); ctx.fill();
+      }
+      /* A spec callout: corner brackets round the model and its label. */
+      const c0 = project(m.X, m.Y, m.Z);
+      if (!c0) continue;
+      const cx = c0[0], cyy = c0[1], h = m.R * c0[2] * 1.18, t = Math.min(14, h * 0.18);
+      ctx.strokeStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(a * 0.4).toFixed(3)})`;
+      ctx.beginPath();
+      for (const [sx2, sy2] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        ctx.moveTo(cx + sx2 * h, cyy + sy2 * (h - t)); ctx.lineTo(cx + sx2 * h, cyy + sy2 * h); ctx.lineTo(cx + sx2 * (h - t), cyy + sy2 * h);
+      }
+      ctx.stroke();
+      ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(a * 0.72).toFixed(3)})`;
+      ctx.fillText(m.label, cx, cyy + h + 16);
+    }
   }
 
   const P = new Float32Array(6);   // scratch for projection
@@ -364,6 +547,7 @@
     paintGround();
     stepPulses(dt);
     drawNet(now);
+    drawModels(now);
 
     let ri = 0;
     for (let j = 0; j < rooms.length; j++) if (cam.c >= rooms[j].start - 1.15 * f) ri = j;

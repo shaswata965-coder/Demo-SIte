@@ -44,6 +44,30 @@ as a **portal** at the start of each room, and dashed **chains** that wire
 related items together: the services into the ½ node, the four weeks in
 order, each project out to its figures.
 
+## Density, tech content and models
+
+- **Packing.** `PACK = 0.8` in `js/flight.js` multiplies every authored depth
+  and room length, so one number sets the density. Each room now has about
+  60% more items in about 12% less travel than the first version. Each room
+  ends with a runway of about 1,000 authored units after its last card, so
+  the card has thinned out before the next title is legible.
+- **Tech cards** (`.card.tech`) show the work the way the team sees it:
+  - a live trace whose lines print in as the card arrives
+  - `serving.yaml` after a rebuild
+  - savings by lever (illustrative, and labelled as such)
+  - the four-week plan as a Gantt chart, and the deliverables log
+  - the marketplace eval sheet, whose figures match the project card
+  - the team's spec list, the router request, and what to send us
+- **Chips** (`.chip`): four per room, small metric readouts at the edges of
+  the corridor. They keep to the top and bottom bands on a phone.
+- **Models.** Each room has `<i class="model" data-shape=…>` markers, drawn
+  on the canvas as wireframes on either side of the title, with a bracketed
+  callout and a figure label. There are eight shapes, one chosen per room:
+  core, transformer stack, feed-forward fan, helix, torus, lattice, orbits
+  and globe. They turn with time and with travel, their units fire now and
+  then, and they take the room's hues. Two more models flank the closing
+  call to action.
+
 ## Content decisions
 
 - Copy is the same as `Demo-Totem/`: hero, four levers, four weeks, three

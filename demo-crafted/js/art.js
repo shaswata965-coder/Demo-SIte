@@ -243,6 +243,38 @@
       glasses + `</g></g>`);
   }
 
+  /* Levers: the typical cut on the spend each lever touches. Illustrative,
+     and labelled as such on the card. */
+  function levers() {
+    const rows = [['QUANTISE', 38, 'fc'], ['BATCH', 27, 'fd'], ['ROUTE', 21, 'fs'], ['RIGHT-SIZE', 30, 'fa']];
+    let b = '';
+    rows.forEach(([n, v, cls], i) => {
+      const y = 14 + i * 32, w = (v / 50) * 170;
+      b += label(8, y + 13, n, 'fi', 'start', .75);
+      b += `<rect x="92" y="${y}" width="170" height="18" rx="3" class="fi" opacity=".07"/>`;
+      b += `<rect x="92" y="${y}" width="${r1(w)}" height="18" rx="3" class="${cls}"/>`;
+      b += label(r1(98 + w), y + 13, '−' + v + '%', 'fi', 'start', 1);
+    });
+    for (const t of [0, 25, 50]) b += `<path d="M${92 + (t / 50) * 170} 10V142" class="si" opacity=".18" stroke-dasharray="2 3"/>`;
+    return svg('0 0 320 150', b);
+  }
+
+  /* The four weeks as a plan: overlapping phases, a milestone at each end. */
+  function gantt() {
+    const rows = [['MEASURE', 0, 1.15, 'fa'], ['MODEL', 0.8, 2.2, 'fc'], ['REBUILD', 1.8, 3.2, 'fd'], ['PROVE', 2.6, 4, 'fs']];
+    const X = (w) => r1(76 + w * 58);
+    let b = '';
+    for (let w = 0; w <= 4; w++) b += `<path d="M${X(w)} 20V146" class="si" opacity=".15"/>`;
+    for (let w = 0; w < 4; w++) b += label(+X(w) + 29, 14, 'WK' + (w + 1), 'fi', 'middle', .6);
+    rows.forEach(([n, a, z, cls], i) => {
+      const y = 30 + i * 29;
+      b += label(8, y + 12, n, 'fi', 'start', .75);
+      b += `<rect x="${X(a)}" y="${y}" width="${r1(+X(z) - +X(a))}" height="16" rx="8" class="${cls}"/>`;
+      b += `<rect x="${+X(z) - 4}" y="${y + 4}" width="8" height="8" transform="rotate(45 ${X(z)} ${y + 8})" class="fi"/>`;
+    });
+    return svg('0 0 320 150', b);
+  }
+
   /* Partner glyphs: neutral geometry, deliberately nobody's logo. */
   const GLYPHS = [
     '<circle cx="8" cy="8" r="6.5" class="fa"/>',
@@ -260,7 +292,7 @@
   ];
   const glyph = (el) => svg('0 0 16 16', GLYPHS[+el.dataset.g % GLYPHS.length]);
 
-  const MAKERS = { badge, audit, compress, serve, capacity, weeks, distill, ttft, fleet, portrait, glyph };
+  const MAKERS = { badge, audit, compress, serve, capacity, weeks, distill, ttft, fleet, portrait, glyph, levers, gantt };
 
   window.AxonArt = {
     /* Draw every [data-art] element; returns how many were drawn. */
