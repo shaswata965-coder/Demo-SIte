@@ -44,42 +44,41 @@ as a **portal** at the start of each room, and dashed **chains** that wire
 related items together: the services into the ½ node, the four weeks in
 order, each project out to its figures.
 
-## Layout, spacing, tech content and models
+## Density, tech content and models
 
-- **Corners.** Every card has a depth slot of its own, 1,000 units apart,
-  and the slots cycle through the four corners: top left, bottom right,
-  bottom left, top right. Scrolling is a continuous flight with no stops,
-  so cards keep coming at you from every corner. The spacing is wide
-  enough that one card is in full view while the next is only starting to
-  condense out of the fog.
-- **Groups.** A project's two figures share its slot and arrive from the
-  opposite side. Titles are framed by four metric chips at the corners and
-  two wireframe models at the sides.
-- **Narrow screens.** A card is most of the width there, so its corner
-  becomes a small lean sideways and a larger one up or down.
-  `data-nd / data-nx / data-ny` move the few things that would otherwise
-  overlap (project figures, exploded-model captions) to their own depth.
-- **Keys.** ↓ / ↑ / Space / PageDown jump to the next or previous card,
-  title or model at reading distance. Scrolling itself never stops.
-- **Seams.** Each room's colour change runs across the travel between its
-  last card and the next title, so no card is read on a half-changed
-  ground.
-- **Exploded models** (`<i class="decon">`, drawn on the canvas). Four
-  rooms have a full-size deconstructed model in a slot of its own, beside a
-  caption card:
+- **Packing.** `PACK = 0.8` in `js/flight.js` multiplies every authored depth
+  and room length, so one number sets the density. Each room now has about
+  60% more items in about 12% less travel than the first version. Each room
+  ends with a runway of about 1,000 authored units after its last card, so
+  the card has thinned out before the next title is legible.
+- **Tech cards** (`.card.tech`) show the work the way the team sees it:
+  - a live trace whose lines print in as the card arrives
+  - `serving.yaml` after a rebuild
+  - savings by lever (illustrative, and labelled as such)
+  - the four-week plan as a Gantt chart, and the deliverables log
+  - the marketplace eval sheet, whose figures match the project card
+  - the team's spec list, the router request, and what to send us
+- **Chips** (`.chip`): four per room, small metric readouts at the edges of
+  the corridor. They keep to the top and bottom bands on a phone.
+- **Models.** Each room has `<i class="model" data-shape=…>` markers, drawn
+  on the canvas as wireframes on either side of the title, with a bracketed
+  callout and a figure label. There are eight shapes, one chosen per room:
+  core, transformer stack, feed-forward fan, helix, torus, lattice, orbits
+  and globe. They turn with time and with travel, their units fire now and
+  then, and they take the room's hues. Two more models flank the closing
+  call to action.
+
+- **Exploded models** (`<i class="decon">`, drawn on the canvas). At the
+  end of Services, Method, Work and Partners, a full-size deconstructed
+  model arrives beside a caption card:
   - Services: a transformer block whose layers part, each labelled with
     its lever.
   - Method: a helix cut into the four weeks.
   - Work: 42 GPUs, where 12 stay and 30 drift back to the pool.
   - Partners: a globe split into the four kinds of partner.
 
-  They arrive scattered and gather as you approach, then assemble and come
-  apart on a slow loop. Links between parts show only when the model is
-  whole, and the parts carry leader-line labels while apart.
-- **Tech cards** (`.card.tech`): a live trace that prints in, `serving.yaml`,
-  savings by lever (illustrative), the four-week Gantt chart, the
-  deliverables log, the eval sheet, the team spec, a router request, and
-  what to send us.
+  They arrive scattered, gather as you approach, then assemble and come
+  apart on a slow loop with labelled parts.
 
 ## Content decisions
 

@@ -13,12 +13,8 @@
    · the network canvas projects its nodes with the same focal length as the
      CSS perspective, so drawn nodes and DOM cards share one space.
 
-   Input never moves c directly. Wheel, drag and keys move a target; c
-   chases it with a time constant, so all input lands as one smooth glide.
-   Cards have a depth slot each, far enough apart that one card is in full
-   view while the next is only beginning to condense from its corner. The
-   STOPS (each title, card and model at reading distance) are only used by
-   the keys, which step from one to the next.
+   Input never moves c directly. Wheel, drag, keys and jumps move a target;
+   c chases it with a time constant, so all input lands as one smooth glide.
    ========================================================================= */
 (function () {
   'use strict';
@@ -32,31 +28,28 @@
 
   /* data-d values are authored for a 900px focal length; k rescales them. */
   const U = 900;
-  const TAU = 0.3;            // seconds for s to cover 63% of the way to target
-  const WHEEL_GAIN = 2.4;
-  const DRAG_GAIN = 3.2;
-  /* Where the keys bring each kind of thing to rest, as a multiple of the
-     focal length in front of the lens (1.0 = natural size). */
-  const REST = { title: 1.15, finale: 1.22, it: 0.9, itNarrow: 1.0, decon: 0.9 };
+  /* Packing: every authored depth and room length is multiplied by this, so
+     one number sets how dense the corridor is. 0.8 = a quarter more per
+     screen of travel than the depths were written for. */
+  const PACK = 0.8;
+  const TAU = 0.3;            // seconds for c to cover 63% of the way to target
+  const WHEEL_GAIN = 1.7;
+  const DRAG_GAIN = 2.6;
 
   /* Fog, as multiples of the focal length: [nearZero, nearFull]. */
-  const NEAR = { title: [0.5, 1.05], badge: [0.45, 0.9], centre: [0.42, 0.92], it: [0.3, 0.62], itNarrow: [0.5, 0.86] };
+  const NEAR = { title: [0.5, 1.05], badge: [0.3, 0.8], centre: [0.42, 0.92], it: [0.3, 0.62], itNarrow: [0.5, 0.86] };
   /* ...and how far out things condense: [full, zero]. Items are kept close so
      the far ones never pile up on the vanishing point behind the title you
      are reading; the network is let see further, so the corridor has depth. */
-  const FAR_ITEM = [1.4, 2.05], FAR_NARROW = [1.12, 1.45], FAR_TITLE = [1.35, 1.8], FAR_NET = [2.6, 3.6];
-  const NEAR_MODEL = [0.32, 0.72], FAR_MODEL = [1.5, 2.0];
+  const FAR_ITEM = [1.6, 2.25], FAR_NET = [2.6, 3.6];
+  const NEAR_MODEL = [0.32, 0.72], FAR_MODEL = [2.0, 2.7];
   const NEAR_DECON = [0.36, 0.8], FAR_DECON = [1.8, 2.5];
-  /* The intro badge is a thing to fly through, not to read: it appears only
-     on the way between stops. */
-  const FAR_BADGE = [0.9, 1.25];
 
-  let W = 0, H = 0, f = U, k = 1, dpr = 1, narrow = false;
+  let W = 0, H = 0, f = U, k = 1, dpr = 1, portrait = false;
   const rooms = [], items = [], chains = new Map(), models = [], decons = [];
-  let stops = [], sStops = [], sMin = 0, sMax = 0;
+  let cMin = 0, cMax = 0;
 
-  /* s is the scroll position, target where input has sent it; c = warp(s). */
-  const cam = { s: 0, target: 0, c: 0, v: 0, px: 0, py: 0, tx: 0, ty: 0 };
+  const cam = { c: 0, target: 0, v: 0, px: 0, py: 0, tx: 0, ty: 0 };
   let tween = null, locked = false, started = false, last = 0;
   const listeners = { frame: [], room: [] };
   let roomIndex = -1;
@@ -116,14 +109,13 @@
     return out;
   }
 
-  /* The seam into room i: the ground and every --g-* colour move from the
-     previous room's skin to this one's across seamA..seamB, set in layout()
-     from the stops either side, so the change happens while travelling. */
+  /* The seam into room i runs from 1.6f to 0.7f before its title, so the
+     ground has changed by the time the title is legible. */
   function paintGround() {
     let i = 0;
-    for (let j = 1; j < rooms.length; j++) if (cam.c > rooms[j].seamA) i = j;
+    for (let j = 1; j < rooms.length; j++) if (cam.c > rooms[j].start - 1.6 * f) i = j;
     let t = 0;
-    if (i > 0) t = smooth((cam.c - rooms[i].seamA) / (rooms[i].seamB - rooms[i].seamA));
+    if (i > 0) t = smooth((cam.c - (rooms[i].start - 1.6 * f)) / (0.9 * f));
     blended = i > 0 && t < 1 ? mixSkins(rooms[i - 1], rooms[i], t) : mixSkins(rooms[i], rooms[i], 0);
     const css = Object.keys(GLOBAL).map((key) => `${GLOBAL[key]}:rgb(${blended[key].join(' ')})`).join(';');
     if (css !== written) {
@@ -147,17 +139,13 @@
   /* ---------------------------------------------------------------- layout */
   function collect() {
     document.querySelectorAll('.room').forEach((el, i) => {
-      const room = { el, i, id: el.id, name: el.dataset.name, len: +el.dataset.len || 2800, start: 0, skin: null };
+      const room = { el, i, id: el.id, name: el.dataset.name, len: (+el.dataset.len || 2800) * PACK, start: 0, skin: null };
       rooms.push(room);
       el.querySelectorAll(':scope > .it').forEach((it) => {
         const centred = !+it.dataset.x;
         const kind = it.classList.contains('title') ? 'title' : it.classList.contains('badge') ? 'badge' : centred ? 'centre' : 'it';
-        const ds = it.dataset;
-        const item = { el: it, room, d: +ds.d || 0, x: +ds.x || 0, y: +ds.y || 0, ds,
-                       kind, near: NEAR[kind], far: kind === 'badge' && !it.classList.contains('end') ? FAR_BADGE : kind === 'title' ? FAR_TITLE : FAR_ITEM,
-                       finale: it.classList.contains('finale'), rest: 1,
-                       stopWide: 'stop' in ds, stopNarrow: 'stop' in ds || 'nstop' in ds,
-                       X: 0, Y: 0, Z: 0, Dz: 0, stop: false, op: -1, off: null };
+        const item = { el: it, room, d: (+it.dataset.d || 0) * PACK, chip: it.classList.contains('chip'), x: +it.dataset.x || 0, y: +it.dataset.y || 0,
+                       kind, near: NEAR[kind], X: 0, Y: 0, Z: 0, op: -1, off: null };
         items.push(item);
         it._flight = item;
         const ch = it.dataset.chain;
@@ -168,98 +156,63 @@
     rooms.forEach((room) => room.el.querySelectorAll(':scope > .model').forEach((el, n) => {
       const shape = SHAPES[el.dataset.shape] ? el.dataset.shape : 'core';
       models.push({ room, shape, geo: SHAPES[shape](), label: el.dataset.label || shape.toUpperCase(),
-                    d: +el.dataset.d || 0, x: +el.dataset.x || 0, y: +el.dataset.y || 0,
+                    d: (+el.dataset.d || 0) * PACK, x: +el.dataset.x || 0, y: +el.dataset.y || 0,
                     phase: room.i * 1.7 + n * 2.3, spin: n % 2 ? -1 : 1, X: 0, Y: 0, Z: 0, R: 0 });
     }));
     rooms.forEach((room) => room.el.querySelectorAll(':scope > .decon').forEach((el) => {
       const shape = DECON[el.dataset.shape] ? el.dataset.shape : 'transformer';
-      decons.push({ room, shape, parts: DECON[shape](), ds: el.dataset, d: +el.dataset.d || 0,
+      decons.push({ room, shape, parts: DECON[shape](), d: (+el.dataset.d || 0) * PACK,
                     x: +el.dataset.x || 0, y: +el.dataset.y || 0, phase: room.i * 0.9, X: 0, Y: 0, Z: 0, R: 0 });
     }));
   }
 
   function layout() {
     W = innerWidth; H = innerHeight;
-    /* Narrow: a phone, or anything too slim for two cards side by side.
-       Items then fall back to one column using their data-n* overrides. */
-    narrow = W < 900 || W / H < 0.8;
-    root.classList.toggle('narrow', narrow);
+    portrait = W / H < 0.8;
     f = Math.round(clamp(Math.max(H, W * 0.62), 640, 1300));
     k = f / U;
     vp.style.perspective = f + 'px';
     let s = 0;
     for (const r of rooms) { r.start = s; s += r.len * k; }
     const hw = W / 2, hh = H / 2;
-    const pick = (ds, key, wide) => (narrow && ds['n' + key] !== undefined ? +ds['n' + key] : wide);
     for (const it of items) {
-      const ds = it.ds;
-      /* Narrow: a card is most of the width, so its corner survives as a
-         small lean sideways and a larger one up or down. */
-      it.X = pick(ds, 'x', narrow ? it.x * 0.2 : it.x) * hw;
-      it.Y = pick(ds, 'y', narrow ? it.y * 0.7 : it.y) * hh;
-      it.Z = it.room.start + pick(ds, 'd', it.d) * k;
-      it.stop = narrow ? it.stopNarrow : it.stopWide;
-      /* Cards rest a little inside natural size on a wide screen, so they
-         read large; on a narrow one natural size is already the full width. */
-      it.rest = it.kind === 'title' ? REST.title : it.finale ? REST.finale : narrow ? REST.itNarrow : REST.it;
-      /* On a narrow screen a card is most of the width, so it has to thin
+      if (portrait && it.chip) {
+        /* Chips keep to the top and bottom bands on a tall screen. */
+        it.X = it.x * 0.36 * hw;
+        it.Y = (it.y >= 0 ? 0.42 : -0.42) * hh;
+      } else if (portrait) {
+        const side = it.x === 0 ? 0 : it.x > 0 ? 1 : -1;
+        it.X = it.x * 0.2 * hw;
+        it.Y = (it.y * 0.32 + side * (it.y >= 0 ? 0.3 : -0.3)) * hh;
+      } else {
+        it.X = it.x * hw; it.Y = it.y * hh;
+      }
+      it.Z = it.room.start + it.d * k;
+      /* On a portrait screen a card is most of the width, so it has to thin
          out while it is still well in front of the lens. */
-      it.near = narrow && it.kind === 'it' ? NEAR.itNarrow : NEAR[it.kind];
-      /* Stops are closer together on a narrow screen and every card sits in
-         the middle, so the next one must not show through the current one. */
-      if (it.kind !== 'title' && it.kind !== 'badge') it.far = narrow ? FAR_NARROW : FAR_ITEM;
+      it.near = portrait && it.kind === 'it' ? NEAR.itNarrow : NEAR[it.kind];
       it.el.style.transform = `translate3d(${it.X.toFixed(1)}px,${it.Y.toFixed(1)}px,${(-it.Z).toFixed(1)}px) translate(-50%,-50%)`;
     }
     for (const m of models) {
       m.R = 0.17 * Math.min(W * 1.3, H);
-      m.X = narrow ? m.x * 0.25 * hw : m.x * hw;
-      m.Y = narrow ? (m.x < 0 ? -0.62 : 0.62) * hh : m.y * hh;
+      m.X = portrait ? m.x * 0.25 * hw : m.x * hw;
+      m.Y = portrait ? (m.x < 0 ? -0.36 : 0.36) * hh : m.y * hh;
       m.Z = m.room.start + m.d * k;
     }
     for (const m of decons) {
-      m.R = narrow ? 0.3 * Math.min(W, H * 0.55) : 0.24 * Math.min(W * 1.2, H);
-      m.X = pick(m.ds, 'x', narrow ? 0 : m.x) * hw;
-      m.Y = pick(m.ds, 'y', m.y) * hh;
+      m.R = portrait ? 0.3 * Math.min(W, H * 0.55) : 0.24 * Math.min(W * 1.2, H);
+      m.X = portrait ? 0 : m.x * hw;
+      m.Y = portrait ? -0.12 * hh : m.y * hh;
       m.Z = m.room.start + m.d * k;
     }
-    buildStops();
-    /* Each room's seam runs across the middle of the travel from the last
-       stop before its title to the title itself, so a card is never read
-       on a half-changed ground. */
-    for (const r of rooms) {
-      const title = items.find((it) => it.room === r && it.kind === 'title');
-      const tc = title.Z - (title.rest - 1) * f;
-      const prev = stops.filter((c) => c < tc - 1).pop();
-      const span = prev === undefined ? f : tc - prev;
-      r.seamA = tc - span * 0.72; r.seamB = tc - span * 0.22;
-    }
+    const lastRoom = rooms[rooms.length - 1];
+    const finale = items.filter((it) => it.room === lastRoom && it.el.classList.contains('finale'))[0];
+    cMin = -0.45 * f;
+    cMax = finale ? finale.Z - 0.22 * f : s;
+    cam.target = clamp(cam.target, cMin, cMax);
     dpr = Math.min(2, devicePixelRatio || 1);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     buildNet();
-  }
-
-  /* ---------------------------------------------------------------- stops
-     Camera positions where each title, card and model rests at reading
-     distance. The flight itself ignores them; the keys step between them. */
-  function buildStops() {
-    const at = [];
-    for (const it of items) if (it.stop) at.push(it.Z - (it.rest - 1) * f);
-    for (const m of decons) at.push(m.Z - (REST.decon - 1) * f);
-    at.sort((a, b) => a - b);
-    stops = [];
-    for (const c of at) if (!stops.length || c - stops[stops.length - 1] > 0.25 * f) stops.push(c);
-    sStops = stops;
-    const keep = stopIndex(cam.s);
-    sMin = stops[0]; sMax = stops[stops.length - 1];
-    if (started) cam.s = cam.target = stops[keep];
-  }
-  const warp = (s2) => s2, unwarp = (c) => c;
-  /* The stop nearest a scroll position. */
-  function stopIndex(s) {
-    if (!sStops.length) return 0;
-    let best = 0;
-    for (let i = 1; i < sStops.length; i++) if (Math.abs(sStops[i] - s) < Math.abs(sStops[best] - s)) best = i;
-    return best;
   }
 
   /* ---------------------------------------------------------------- network
@@ -310,7 +263,7 @@
   function buildNet() {
     if (!netSeed) seedNet();
     const hw = W / 2, hh = H / 2;
-    net.nodes = netSeed.nodes.map((n) => ({ ...n, X: n.fx * hw * (narrow ? 1.1 : 1), Y: n.fy * hh, Z: n.u * k }));
+    net.nodes = netSeed.nodes.map((n) => ({ ...n, X: n.fx * hw * (portrait ? 1.1 : 1), Y: n.fy * hh, Z: n.u * k }));
     net.edges = netSeed.edges;
   }
 
@@ -628,7 +581,7 @@
         });
         /* Part labels with leader lines, out to the left, while apart. */
         const la = a * near * clamp((e - 0.3) / 0.35, 0, 1);
-        if (narrow || !n || la < 0.02) return;
+        if (portrait || !n || la < 0.02) return;
         const ly = syy / n, lx = mcx - m.R * s0 * 1.55;
         ctx.strokeStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(la * 0.5).toFixed(3)})`;
         ctx.beginPath(); ctx.moveTo(lx + 8, ly); ctx.lineTo(minX - 8, ly); ctx.stroke();
@@ -743,11 +696,10 @@
       cam.target += cam.v;
       cam.v *= Math.pow(0.9, dt * 60);
     }
-    if (started) cam.target = clamp(cam.target, sMin, sMax);
+    cam.target = clamp(cam.target, cMin, cMax);
     const tau = reduce.matches ? 0.08 : tween ? 0.12 : TAU;
-    cam.s += (cam.target - cam.s) * (1 - Math.exp(-dt / tau));
-    if (Math.abs(cam.target - cam.s) < 0.05) cam.s = cam.target;
-    cam.c = warp(cam.s);
+    cam.c += (cam.target - cam.c) * (1 - Math.exp(-dt / tau));
+    if (Math.abs(cam.target - cam.c) < 0.05) cam.c = cam.target;
 
     /* Parallax: the world shifts against the pointer, so nearer things
        move further than distant ones. */
@@ -759,7 +711,7 @@
 
     for (const it of items) {
       const D = f + it.Z - cam.c;
-      const o = fog(D, it.near, it.far);
+      const o = fog(D, it.near);
       if (Math.abs(o - it.op) > 0.004 || (o === 0) !== (it.op === 0)) {
         it.op = o;
         it.el.style.opacity = o.toFixed(3);
@@ -776,10 +728,9 @@
     drawDecons(now);
 
     let ri = 0;
-    for (let j = 1; j < rooms.length; j++) if (cam.c >= (rooms[j].seamA + rooms[j].seamB) / 2) ri = j;
+    for (let j = 0; j < rooms.length; j++) if (cam.c >= rooms[j].start - 1.15 * f) ri = j;
     if (ri !== roomIndex) { roomIndex = ri; listeners.room.forEach((fn) => fn(ri, rooms[ri])); }
-    const state = { c: cam.c, f, progress: clamp((cam.s - sMin) / (sMax - sMin), 0, 1), room: ri,
-                    stop: stopIndex(cam.s), stops: stops.length };
+    const state = { c: cam.c, f, progress: clamp((cam.c - cMin) / (cMax - cMin), 0, 1), room: ri };
     listeners.frame.forEach((fn) => fn(state));
 
     requestAnimationFrame(frame);
@@ -789,7 +740,7 @@
   function nudge(dist) {
     if (locked || !started) return;
     tween = null;
-    cam.target = clamp(cam.target + dist, sMin, sMax);
+    cam.target = clamp(cam.target + dist, cMin, cMax);
   }
 
   addEventListener('wheel', (e) => {
@@ -821,7 +772,7 @@
     if (!moved) return;
     const now = performance.now();
     const step = -dy * DRAG_GAIN * k;
-    cam.target = clamp(cam.target + step, sMin, sMax);
+    cam.target = clamp(cam.target + step, cMin, cMax);
     vel = 0.7 * vel + 0.3 * (step / Math.max(1, now - lastT)) * 16;
     lastY = e.clientY; lastT = now;
   });
@@ -841,11 +792,11 @@
     if (locked || !started || e.defaultPrevented) return;
     const tag = (e.target.tagName || '').toLowerCase();
     const onControl = tag === 'button' || tag === 'a' || tag === 'input' || e.target.getAttribute('role') === 'button' || e.target.hasAttribute('data-open');
-    /* Keys step from stop to stop: one press, one card. */
-    if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !onControl && !e.shiftKey)) { e.preventDefault(); API.step(1); }
-    else if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && !onControl && e.shiftKey)) { e.preventDefault(); API.step(-1); }
+    const step = 0.85 * f;
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !onControl && !e.shiftKey)) { e.preventDefault(); API.glide(cam.target + step, 420); }
+    else if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && !onControl && e.shiftKey)) { e.preventDefault(); API.glide(cam.target - step, 420); }
     else if (e.key === 'Home') { e.preventDefault(); API.goTo(0); }
-    else if (e.key === 'End') { e.preventDefault(); API.glideS(sMax); }
+    else if (e.key === 'End') { e.preventDefault(); API.glide(cMax); }
   });
 
   /* Tabbing to something in the corridor flies the camera to it. */
@@ -853,7 +804,9 @@
     if (!started || locked) return;
     const el = e.target.closest && e.target.closest('.it');
     if (!el || !el._flight) return;
-    API.bring(el);
+    const it = el._flight;
+    const D = f + it.Z - cam.target;
+    if (D < 0.9 * f || D > 1.9 * f) API.glide(it.Z - (it.kind === 'title' ? 0.3 : 0.28) * f, 700);
   });
 
   addEventListener('resize', () => { layout(); });
@@ -864,8 +817,7 @@
       collect();
       readSkins();
       layout();
-      cam.s = cam.target = sMin - 1.4 * f;
-      cam.c = warp(cam.s);
+      cam.c = cam.target = cMin - 1.4 * f;
       paintGround();
       requestAnimationFrame(frame);
     },
@@ -873,44 +825,24 @@
     start(roomId) {
       started = true;
       const idx = Math.max(0, rooms.findIndex((r) => r.id === roomId));
-      if (idx > 0) API.goTo(idx); else API.glideS(sMin, 1500);
+      API.glide(idx > 0 ? rooms[idx].start - 0.3 * f : cMin + 0.1 * f, idx > 0 ? undefined : 1500);
     },
-    glideS(to, dur) {
-      to = clamp(to, sMin, sMax);
-      const dist = Math.abs(to - cam.s);
-      tween = { from: cam.s, to, t0: performance.now(), dur: dur || clamp(700 + dist / (8 * k), 700, 2600) };
+    glide(to, dur) {
+      to = clamp(to, cMin, cMax);
+      const dist = Math.abs(to - cam.c);
+      tween = { from: cam.c, to, t0: performance.now(), dur: dur || clamp(700 + dist / (6 * k), 700, 2600) };
       cam.v = 0;
-    },
-    /* A camera position, carried back into scroll space. */
-    glide(c, dur) { API.glideS(unwarp(c), dur); },
-    step(dir) {
-      const i = stopIndex(cam.target);
-      const here = sStops[i];
-      /* If we are short of a stop in the direction of travel, that stop is next. */
-      const next = (dir > 0 && cam.target < here - 1) || (dir < 0 && cam.target > here + 1) ? i : i + dir;
-      API.glideS(sStops[clamp(next, 0, sStops.length - 1)], 650);
     },
     goTo(ref) {
       const r = typeof ref === 'number' ? rooms[ref] : rooms.find((x) => x.id === ref);
-      if (!r) return;
-      const title = items.find((it) => it.room === r && it.kind === 'title');
-      API.glide(title ? title.Z - (title.rest - 1) * f : r.start);
+      if (r) API.glide(r.i === 0 ? cMin + 0.1 * f : r.start - 0.3 * f);
     },
-    /* Bring an item to its own resting distance (paging cards, tabbing). */
-    bring(el) {
-      const it = el && el._flight;
-      if (!it) return;
-      const at = it.Z - (it.rest - 1) * f;
-      const D = f + it.Z - cam.c;
-      if (Math.abs(D - it.rest * f) > 0.06 * f) API.glide(at, 650);
-    },
+    /* Bring one item to a comfortable distance (used when paging open cards). */
+    bring(el) { const it = el && el._flight; if (it) API.glide(it.Z - 0.28 * f, 600); },
     lock(v) { locked = v; if (v) { cam.v = 0; dragging = false; } },
     refreshSkins() { readSkins(); },
     /* Where a room's arrival point sits along the whole flight, 0..1. */
-    arrival(i) {
-      const title = items.find((it) => it.room === rooms[i] && it.kind === 'title');
-      return clamp((unwarp(title.Z - (title.rest - 1) * f) - sMin) / (sMax - sMin), 0, 1);
-    },
+    arrival(i) { const r = rooms[i]; const at = i === 0 ? cMin + 0.1 * f : r.start - 0.3 * f; return clamp((at - cMin) / (cMax - cMin), 0, 1); },
     on(type, fn) { listeners[type].push(fn); },
     get rooms() { return rooms; },
     get moved() { return moved; },
