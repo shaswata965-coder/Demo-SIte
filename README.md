@@ -4,7 +4,7 @@ Demo pages for a **fintech** brand, built from one set of design decisions.
 AXON, in the spirit of [totem.itsoffbrand.com](https://totem.itsoffbrand.com/),
 is built around a **neural model** that transforms as you scroll; demo-crafted
 re-stages AXON as a flight through depth. Larch carries the same decisions
-into the muted, large-asset language of
+into a static professional site in the muted, large-asset language of
 [wealthsimple.com](https://www.wealthsimple.com/en-ca).
 
 *AXON and Larch are fictional. Every figure on every page is invented.*
@@ -15,7 +15,7 @@ into the muted, large-asset language of
 |---|---|---|
 | **[`Demo-Totem/`](Demo-Totem/)** | [totem.itsoffbrand.com](https://totem.itsoffbrand.com/) | AXON, a neural fintech consultancy. The original, and where the design decisions were made |
 | **[`demo-crafted/`](demo-crafted/)** | [2018.craftedbygc.com](https://2018.craftedbygc.com/) | AXON again: the same content, skins and generated assets, re-staged as a flight through depth |
-| **[`Demo-Wealthsimple/`](Demo-Wealthsimple/)** | [wealthsimple.com](https://www.wealthsimple.com/en-ca) | Larch, a fictional money app. The same decisions in a muted dialect, with one large object made of coins |
+| **[`Demo-Wealthsimple/`](Demo-Wealthsimple/)** | [wealthsimple.com](https://www.wealthsimple.com/en-ca) | Larch, a fictional machine-learning company for finance. A static professional site with a detailed product picture in every section |
 
 All three are plain HTML, CSS and JS, with no build step and no dependencies.
 Each README explains how its demo works.
@@ -61,22 +61,25 @@ built here.
 
 ### Demo-Wealthsimple
 
-- The structure is AXON's, unchanged: one `progress` number, side sections
-  alternating with taken-apart networks, skins with OKLab seams, the island
-  nav, typed titles with a line-at-a-time reveal, tinted cards that lift, and
-  a fluid scroll with no snapping.
-- The dialect is Wealthsimple's. The rooms are muted and earthy (oat, sage, a
-  fog-to-apricot sky, terracotta, spruce), with chroma capped and every value
-  solved to 4.5:1 by `tools/solve-palette.mjs`. None of the reference's own
-  colours are reused. The type is a soft serif in sentence case, the call to
-  action is an ink pill, and the radii are large.
-- The protagonist is one large object of a few hundred coins. It restacks
-  into a larch cone, four coin stacks, a pie, a mountain, an hourglass, a
-  card and a single coin, standing on a soft shadow like a product shot. In
-  the networks the coins bead the wiring.
-- The rig becomes a quiet frame: rounded corners, a soft wash for the
-  reveal, a ledger rule down one margin, and a growth curve wiring the copy
-  to the object.
+- A static, professional marketing site for Larch, a fictional company that
+  builds machine-learning models for banks, lenders and asset managers:
+  credit, fraud and AML, liquidity forecasting, and market risk.
+- The design language is Wealthsimple's: muted full-bleed rooms, one large
+  product picture per section, ink-pill buttons, big geometric type. None of
+  the reference's colours are reused; every value is solved to 4.5:1 by
+  `tools/solve-palette.mjs`.
+- Every section has its own detailed asset:
+  - a decision console
+  - a credit decision waterfall with calibration
+  - a fraud network around a mule ring
+  - a cash forecast with its range
+  - a factor heat map and stress tests
+  - a pipeline
+  - a model card with audit trail
+  - case-study charts
+  - illustrated portraits
+- The charts are drawn from data by `tools/draw-assets.mjs`, with a compact
+  version for phones and a data table behind each.
 
 ## Planning
 
