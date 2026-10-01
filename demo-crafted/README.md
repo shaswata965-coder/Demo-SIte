@@ -44,28 +44,28 @@ as a **portal** at the start of each room, and dashed **chains** that wire
 related items together: the services into the ½ node, the four weeks in
 order, each project out to its figures.
 
-## Reading stops, layout, tech content and models
+## Layout, spacing, tech content and models
 
-- **Stops.** Every title, every card or pair of cards, and every exploded
-  model is a *stop*: a camera position where it rests whole on screen, at
-  0.82× focal distance on wide screens (so cards read large) and 1.0× on
-  narrow ones. Scroll position `s` maps to the camera through a warp that
-  eases into each stop, *creeps* (never fully stops, so input never feels
-  ignored) for `HOLD = 0.62f` of scrolling, then eases out to the next.
-  ↓ / ↑ / Space / PageDown step one stop at a time.
-- **Layout.** Related cards sit side by side as pairs at ±0.31 of the
-  half-width (audit + compression, week 1 + week 2, two people). Each
-  project's figures sit beside it at the same depth. Titles are framed by
-  four metric chips at the corners and two wireframe models at the sides.
-  On a narrow screen (`W < 900` or portrait) everything falls back to one
-  centred column; `data-nd / data-nx / data-ny` override depth and position
-  there, and `data-nstop` adds the stops a single column needs.
-- **Fog.** The next stop stays hidden until you start to move, so nothing
-  shows through the card being read. Each room's colour seam runs across
-  the travel between its last stop and the next title, so no card is read
-  on a half-changed ground.
+- **Corners.** Every card has a depth slot of its own, 1,000 units apart,
+  and the slots cycle through the four corners: top left, bottom right,
+  bottom left, top right. Scrolling is a continuous flight with no stops,
+  so cards keep coming at you from every corner. The spacing is wide
+  enough that one card is in full view while the next is only starting to
+  condense out of the fog.
+- **Groups.** A project's two figures share its slot and arrive from the
+  opposite side. Titles are framed by four metric chips at the corners and
+  two wireframe models at the sides.
+- **Narrow screens.** A card is most of the width there, so its corner
+  becomes a small lean sideways and a larger one up or down.
+  `data-nd / data-nx / data-ny` move the few things that would otherwise
+  overlap (project figures, exploded-model captions) to their own depth.
+- **Keys.** ↓ / ↑ / Space / PageDown jump to the next or previous card,
+  title or model at reading distance. Scrolling itself never stops.
+- **Seams.** Each room's colour change runs across the travel between its
+  last card and the next title, so no card is read on a half-changed
+  ground.
 - **Exploded models** (`<i class="decon">`, drawn on the canvas). Four
-  rooms have a full-size deconstructed model as their own stop, beside a
+  rooms have a full-size deconstructed model in a slot of its own, beside a
   caption card:
   - Services: a transformer block whose layers part, each labelled with
     its lever.
@@ -73,9 +73,9 @@ order, each project out to its figures.
   - Work: 42 GPUs, where 12 stay and 30 drift back to the pool.
   - Partners: a globe split into the four kinds of partner.
 
-  They arrive scattered and gather as you approach. While you rest they
-  assemble, with links between parts appearing only when whole, then come
-  apart again on a slow loop, with leader-line labels.
+  They arrive scattered and gather as you approach, then assemble and come
+  apart on a slow loop. Links between parts show only when the model is
+  whole, and the parts carry leader-line labels while apart.
 - **Tech cards** (`.card.tech`): a live trace that prints in, `serving.yaml`,
   savings by lever (illustrative), the four-week Gantt chart, the
   deliverables log, the eval sheet, the team spec, a router request, and

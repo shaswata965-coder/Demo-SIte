@@ -13,11 +13,12 @@
    · the network canvas projects its nodes with the same focal length as the
      CSS perspective, so drawn nodes and DOM cards share one space.
 
-   Input never moves c directly. Wheel, drag and keys move a scroll
-   position s; s chases its target with a time constant, and c is s passed
-   through a warp that slows almost to a stop at every reading STOP (a
-   title, a card or pair of cards, a model). So each card rests whole on
-   screen for a stretch of scrolling, then the camera travels to the next.
+   Input never moves c directly. Wheel, drag and keys move a target; c
+   chases it with a time constant, so all input lands as one smooth glide.
+   Cards have a depth slot each, far enough apart that one card is in full
+   view while the next is only beginning to condense from its corner. The
+   STOPS (each title, card and model at reading distance) are only used by
+   the keys, which step from one to the next.
    ========================================================================= */
 (function () {
   'use strict';
@@ -34,19 +35,16 @@
   const TAU = 0.3;            // seconds for s to cover 63% of the way to target
   const WHEEL_GAIN = 2.4;
   const DRAG_GAIN = 3.2;
-  /* Scroll spent resting at each stop, as a multiple of the focal length:
-     the camera creeps rather than stops, so input never feels ignored. */
-  const HOLD = 0.62, CREEP = 0.1;
-  /* How far in front of the lens each kind of stop rests: 1.0 = natural
-     size, so a card is read at exactly the size it was designed. */
-  const REST = { title: 1.15, finale: 1.22, it: 0.82, itNarrow: 1.0, decon: 0.9 };
+  /* Where the keys bring each kind of thing to rest, as a multiple of the
+     focal length in front of the lens (1.0 = natural size). */
+  const REST = { title: 1.15, finale: 1.22, it: 0.9, itNarrow: 1.0, decon: 0.9 };
 
   /* Fog, as multiples of the focal length: [nearZero, nearFull]. */
   const NEAR = { title: [0.5, 1.05], badge: [0.45, 0.9], centre: [0.42, 0.92], it: [0.3, 0.62], itNarrow: [0.5, 0.86] };
   /* ...and how far out things condense: [full, zero]. Items are kept close so
      the far ones never pile up on the vanishing point behind the title you
      are reading; the network is let see further, so the corridor has depth. */
-  const FAR_ITEM = [1.3, 1.85], FAR_NARROW = [1.12, 1.45], FAR_TITLE = [1.35, 1.8], FAR_NET = [2.6, 3.6];
+  const FAR_ITEM = [1.4, 2.05], FAR_NARROW = [1.12, 1.45], FAR_TITLE = [1.35, 1.8], FAR_NET = [2.6, 3.6];
   const NEAR_MODEL = [0.32, 0.72], FAR_MODEL = [1.5, 2.0];
   const NEAR_DECON = [0.36, 0.8], FAR_DECON = [1.8, 2.5];
   /* The intro badge is a thing to fly through, not to read: it appears only
@@ -195,8 +193,10 @@
     const pick = (ds, key, wide) => (narrow && ds['n' + key] !== undefined ? +ds['n' + key] : wide);
     for (const it of items) {
       const ds = it.ds;
-      it.X = pick(ds, 'x', narrow ? 0 : it.x) * hw;
-      it.Y = pick(ds, 'y', it.y) * hh;
+      /* Narrow: a card is most of the width, so its corner survives as a
+         small lean sideways and a larger one up or down. */
+      it.X = pick(ds, 'x', narrow ? it.x * 0.2 : it.x) * hw;
+      it.Y = pick(ds, 'y', narrow ? it.y * 0.7 : it.y) * hh;
       it.Z = it.room.start + pick(ds, 'd', it.d) * k;
       it.stop = narrow ? it.stopNarrow : it.stopWide;
       /* Cards rest a little inside natural size on a wide screen, so they
@@ -239,10 +239,8 @@
   }
 
   /* ---------------------------------------------------------------- stops
-     Every stop is a camera position where something rests whole on screen.
-     Between stop k and k+1 the scroll covers the distance plus HOLD, and
-     the warp spends that HOLD half at each end, so the camera eases in,
-     barely creeps while you read, and eases out again. */
+     Camera positions where each title, card and model rests at reading
+     distance. The flight itself ignores them; the keys step between them. */
   function buildStops() {
     const at = [];
     for (const it of items) if (it.stop) at.push(it.Z - (it.rest - 1) * f);
@@ -250,35 +248,12 @@
     at.sort((a, b) => a - b);
     stops = [];
     for (const c of at) if (!stops.length || c - stops[stops.length - 1] > 0.25 * f) stops.push(c);
-    sStops = [stops[0]];
-    for (let i = 1; i < stops.length; i++) sStops.push(sStops[i - 1] + (stops[i] - stops[i - 1]) + HOLD * f);
+    sStops = stops;
     const keep = stopIndex(cam.s);
-    sMin = sStops[0]; sMax = sStops[sStops.length - 1];
-    if (started) cam.s = cam.target = sStops[keep];
+    sMin = stops[0]; sMax = stops[stops.length - 1];
+    if (started) cam.s = cam.target = stops[keep];
   }
-  const smoother = (x) => x * x * x * (x * (x * 6 - 15) + 10);
-  function segOf(s) {
-    let lo = 0, hi = sStops.length - 1;
-    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (sStops[mid] <= s) lo = mid; else hi = mid; }
-    return lo;
-  }
-  function warp(s) {
-    if (!stops.length) return s;
-    if (s <= sStops[0]) return stops[0] - (sStops[0] - s);
-    if (s >= sMax) return stops[stops.length - 1] + (s - sMax);
-    const i = segOf(s), L = sStops[i + 1] - sStops[i];
-    const u = (s - sStops[i]) / L, h = (HOLD * f) / 2 / L;
-    const v = clamp((u - h) / (1 - 2 * h), 0, 1);
-    return stops[i] + (stops[i + 1] - stops[i]) * (CREEP * u + (1 - CREEP) * smoother(v));
-  }
-  function unwarp(c) {
-    if (!stops.length) return c;
-    if (c <= stops[0]) return sStops[0] - (stops[0] - c);
-    if (c >= stops[stops.length - 1]) return sMax + (c - stops[stops.length - 1]);
-    let lo = sStops[0], hi = sMax;
-    for (let n = 0; n < 40; n++) { const mid = (lo + hi) / 2; if (warp(mid) < c) lo = mid; else hi = mid; }
-    return (lo + hi) / 2;
-  }
+  const warp = (s2) => s2, unwarp = (c) => c;
   /* The stop nearest a scroll position. */
   function stopIndex(s) {
     if (!sStops.length) return 0;
