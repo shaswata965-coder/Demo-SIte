@@ -80,6 +80,12 @@ order, each project out to its figures.
   They arrive scattered, gather as you approach, then assemble and come
   apart on a slow loop with labelled parts.
 
+- **Front item wins.** Every frame the flight measures each visible item's
+  box on screen. Anything that overlaps a nearer, already legible item fades
+  back to a whisper until that one has passed, so cards never read through
+  each other and each gets a clean moment. Chips always yield to cards and
+  figures. The intro badge is a faint backdrop (28%) and takes no part.
+
 ## Content decisions
 
 - Copy is the same as `Demo-Totem/`: hero, four levers, four weeks, three

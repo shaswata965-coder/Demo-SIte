@@ -145,7 +145,12 @@
         const centred = !+it.dataset.x;
         const kind = it.classList.contains('title') ? 'title' : it.classList.contains('badge') ? 'badge' : centred ? 'centre' : 'it';
         const item = { el: it, room, d: (+it.dataset.d || 0) * PACK, chip: it.classList.contains('chip'), x: +it.dataset.x || 0, y: +it.dataset.y || 0,
-                       kind, near: NEAR[kind], X: 0, Y: 0, Z: 0, op: -1, off: null };
+                       kind, near: NEAR[kind], X: 0, Y: 0, Z: 0, op: -1, off: null,
+                       /* Who yields: chips to everything, the intro badge is a
+                          backdrop that never takes part. */
+                       yields: it.classList.contains('chip') ? 2 : kind === 'badge' ? 0 : 1,
+                       cap: kind === 'badge' && !it.classList.contains('end') ? 0.28 : 1,
+                       w: 0, h: 0, dim: 1 };
         items.push(item);
         it._flight = item;
         const ch = it.dataset.chain;
@@ -191,6 +196,7 @@
       /* On a portrait screen a card is most of the width, so it has to thin
          out while it is still well in front of the lens. */
       it.near = portrait && it.kind === 'it' ? NEAR.itNarrow : NEAR[it.kind];
+      it.w = it.el.offsetWidth; it.h = it.el.offsetHeight;
       it.el.style.transform = `translate3d(${it.X.toFixed(1)}px,${it.Y.toFixed(1)}px,${(-it.Z).toFixed(1)}px) translate(-50%,-50%)`;
     }
     for (const m of models) {
@@ -709,9 +715,43 @@
     cam.ty += (-cam.py * 30 * pk - cam.ty) * lx;
     world.style.transform = `translate3d(${cam.tx.toFixed(2)}px,${cam.ty.toFixed(2)}px,${cam.c.toFixed(2)}px)`;
 
+    /* Fog first, then the front item wins: anything that overlaps a nearer,
+       already legible item on screen fades back until that one has passed,
+       so every card gets a clean moment instead of reading through another. */
+    const shown = [];
     for (const it of items) {
       const D = f + it.Z - cam.c;
-      const o = fog(D, it.near);
+      it.fogged = fog(D, it.near) * it.cap;
+      if (it.fogged > 0.01 && it.yields) {
+        const sc = f / D;
+        const cx = W / 2 + (it.X + cam.tx) * sc, cy = H / 2 + (it.Y + cam.ty) * sc;
+        it.box = [cx - (it.w * sc) / 2, cy - (it.h * sc) / 2, cx + (it.w * sc) / 2, cy + (it.h * sc) / 2];
+        it.D = D;
+        shown.push(it);
+      }
+    }
+    shown.sort((a, b) => a.D - b.D);
+    const kd = 1 - Math.exp(-dt / 0.12);
+    for (let i = 0; i < shown.length; i++) {
+      const it = shown[i], A = it.box;
+      let target = 1;
+      for (let j = 0; j < shown.length && target > 0.1; j++) {
+        const o = shown[j];
+        if (o === it || o.fogged < 0.5) continue;
+        /* Nearer things win; a chip loses to any card whatever its depth. */
+        if (!(j < i || (it.yields === 2 && o.yields === 1))) continue;
+        if (it.yields === 1 && o.yields === 2) continue;
+        const B = o.box;
+        const ix = Math.min(A[2], B[2]) - Math.max(A[0], B[0]), iy = Math.min(A[3], B[3]) - Math.max(A[1], B[1]);
+        if (ix <= 0 || iy <= 0) continue;
+        const small = Math.min((A[2] - A[0]) * (A[3] - A[1]), (B[2] - B[0]) * (B[3] - B[1]));
+        if ((ix * iy) / small > 0.05) target = 0.08;
+      }
+      it.dim += (target - it.dim) * kd;
+    }
+    for (const it of items) {
+      if (!it.yields || it.fogged <= 0.01) it.dim = 1;
+      const o = it.fogged * it.dim;
       if (Math.abs(o - it.op) > 0.004 || (o === 0) !== (it.op === 0)) {
         it.op = o;
         it.el.style.opacity = o.toFixed(3);
