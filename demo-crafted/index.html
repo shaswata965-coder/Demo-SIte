@@ -37,7 +37,7 @@
     <span class="ld-pct" id="ldPct" aria-live="polite">0%</span>
     <button class="ld-enter" id="enter" type="button" hidden>Enter</button>
   </div>
-  <p class="ld-hint">Scroll, drag or use the arrow keys to fly. Open any card.</p>
+  <p class="ld-hint">Scroll or drag to fly; each card holds still while you read it. ↓ steps to the next one.</p>
 </div>
 
 <!-- ======================================================================
@@ -85,7 +85,7 @@
   </button>
 </div>
 
-<p class="hint" id="hint" aria-hidden="true"><span>Scroll or drag to fly</span><i></i></p>
+<p class="hint" id="hint" aria-hidden="true"><span>Scroll, drag or press ↓</span><i></i></p>
 
 <!-- ======================================================================
      The flight. Each room is a band of depth. Every .it inside it carries
@@ -98,18 +98,24 @@
   <div class="world" id="world">
 
     <!-- 01 · INTRO ···································· paper -->
-    <section class="room sk-paper" id="intro" data-name="Intro" data-len="2950" aria-labelledby="t-intro">
-      <div class="it badge" data-d="700" data-x="0" data-y="0" data-art="badge" aria-hidden="true"></div>
-      <header class="it title hero" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-paper" id="intro" data-name="Intro" data-len="3150" aria-labelledby="t-intro">
+      <header class="it title hero" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>01</span> AXON · inference engineering</p>
         <h1 id="t-intro">Same model.<br>Half the bill.</h1>
         <p class="stand">A four-person consultancy that makes large language models cheaper to serve, measured against your p99 and your evals.</p>
         <a class="cta" href="#contact" data-go="contact">Book an inference teardown <span aria-hidden="true">→</span></a>
       </header>
-      <i class="model" data-shape="core" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.01 · CORE · 48 UNITS" hidden></i>
-      <i class="model" data-shape="stack" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.02 · 5-LAYER STACK" hidden></i>
-      <p class="it token" data-d="1150" data-x="-0.56" data-y="-0.34"><b>42</b><span>engagements</span></p>
-      <div class="it card tech" data-d="1360" data-x="0.5" data-y="-0.26">
+      <i class="model" data-shape="core" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.01 · CORE · 48 UNITS" hidden></i>
+      <i class="model" data-shape="stack" data-d="60" data-x="0.8" data-y="0" data-label="FIG.02 · 5-LAYER STACK" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>tok/s</span><b>18.4k</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>p99</span><b>2.4 s → 1.1 s</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>$ / 1k tok</span><b>−52%</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>eval drift</span><b>±0.4 pt</b></p>
+      <div class="it badge" data-d="1500" data-x="0" data-y="0" data-art="badge" aria-hidden="true"></div>
+      <p class="it token" data-d="1000" data-x="-0.4" data-y="0" data-nx="0" data-ny="-0.3"><b>42</b><span>engagements</span></p>
+      <p class="it token" data-d="1000" data-x="0" data-y="0" data-stop data-nx="0" data-ny="0"><b>3.1×</b><span>median throughput gain</span></p>
+      <p class="it token" data-d="1000" data-x="0.4" data-y="0" data-nx="0" data-ny="0.3"><b>4 wk</b><span>typical build</span></p>
+      <div class="it card tech" data-d="2000" data-x="0" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>trace · chat-prod</span></p>
           <ol class="term">
@@ -122,23 +128,22 @@
           </ol>
         </div>
       </div>
-      <p class="it chip" data-d="420" data-x="-0.74" data-y="-0.42"><span>tok/s</span><b>18.4k</b></p>
-      <p class="it chip" data-d="900" data-x="0.74" data-y="0.42"><span>p99</span><b>2.4 s → 1.1 s</b></p>
-      <p class="it chip" data-d="1750" data-x="0.72" data-y="-0.06"><span>$ / 1k tok</span><b>−52%</b></p>
-      <p class="it chip" data-d="2250" data-x="-0.72" data-y="0.1"><span>eval drift</span><b>±0.4 pt</b></p>
-
-      <p class="it token" data-d="1550" data-x="0.56" data-y="0.3"><b>3.1×</b><span>median throughput gain</span></p>
-      <p class="it token" data-d="1950" data-x="-0.5" data-y="0.34"><b>4 wk</b><span>typical build</span></p>
     </section>
 
     <!-- 02 · SERVICES ································· violet -->
-    <section class="room sk-violet" id="services" data-name="Services" data-len="3700" aria-labelledby="t-services">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-violet" id="services" data-name="Services" data-len="6100" aria-labelledby="t-services">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>02</span> Services</p>
         <h2 id="t-services">Four levers on the bill</h2>
         <p class="stand">We find the ones with headroom and leave the rest alone.</p>
       </header>
-      <article class="it card" data-d="700" data-x="-0.5" data-y="-0.12" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+      <i class="model" data-shape="stack" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.03 · TRANSFORMER BLOCK ×5" hidden></i>
+      <i class="model" data-shape="fan" data-d="60" data-x="0.8" data-y="0" data-label="FIG.04 · FEED-FORWARD 4-6-6-3" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>weights</span><b>FP8 · INT4</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>kv cache</span><b>paged · block 16</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>spec decode</span><b>k = 4</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>fleet mix</span><b>spot 62%</b></p>
+      <article class="it card" data-d="1000" data-x="-0.31" data-y="0" data-chain="svc" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art" data-art="audit" aria-hidden="true"></div>
           <p class="tag">Measure · two weeks</p>
@@ -151,7 +156,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card" data-d="1100" data-x="0.5" data-y="0.14" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card" data-d="1000" data-x="0.31" data-y="0" data-chain="svc" data-nd="1500" data-nstop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art" data-art="compress" aria-hidden="true"></div>
           <p class="tag">Model · held to your evals</p>
@@ -164,7 +169,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card" data-d="1500" data-x="-0.48" data-y="0.18" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card" data-d="2000" data-x="-0.31" data-y="0" data-chain="svc" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art" data-art="serve" aria-hidden="true"></div>
           <p class="tag">Serving · batching and routing</p>
@@ -177,7 +182,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card" data-d="1900" data-x="0.5" data-y="-0.16" data-chain="svc" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card" data-d="2000" data-x="0.31" data-y="0" data-chain="svc" data-nd="2500" data-nstop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art" data-art="capacity" aria-hidden="true"></div>
           <p class="tag">Fleet · right-sizing</p>
@@ -190,7 +195,16 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <div class="it card tech" data-d="2260" data-x="-0.5" data-y="-0.04">
+      <i class="decon" data-shape="transformer" data-d="3000" data-x="-0.24" data-y="0" data-nx="0" data-ny="-0.1" hidden></i>
+      <div class="it card tech figcap" data-d="3000" data-x="0.38" data-y="0" data-stop data-nd="3500" data-nx="0" data-ny="0">
+        <div class="card-in">
+          <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>fig.03 · exploded view</span></p>
+          <h3>Where the bill goes, layer by layer</h3>
+          <p>Each layer of the block takes a different lever: prefix caching at the embeddings, FP8 in the norms, paged KV in attention, INT4 in the MLP, and a router that decides whether the big model runs at all.</p>
+          <p class="out">Watch it come apart and go back together.</p>
+        </div>
+      </div>
+      <div class="it card tech" data-d="4000" data-x="-0.31" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>serving.yaml</span></p>
 <pre class="code"><span class="c"># after the rebuild</span>
@@ -204,31 +218,30 @@
   <span class="k">when:</span> <span class="s">confidence &lt; 0.62</span></pre>
         </div>
       </div>
-      <div class="it card tech" data-d="2620" data-x="0.5" data-y="0.04">
+      <div class="it card tech" data-d="4000" data-x="0.31" data-y="0" data-nd="4500" data-nstop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>savings by lever</span></p>
           <div class="art" data-art="levers" aria-hidden="true"></div>
           <p>Typical cut on the spend each lever touches. Illustrative; your audit gives your own.</p>
         </div>
       </div>
-      <p class="it token node" data-d="3020" data-x="0" data-y="0" data-chain="svc"><b>½</b><span>Same model, half the bill</span></p>
-      <i class="model" data-shape="stack" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.03 · TRANSFORMER BLOCK ×5" hidden></i>
-      <i class="model" data-shape="fan" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.04 · FEED-FORWARD 4-6-6-3" hidden></i>
-      <p class="it chip" data-d="500" data-x="0.74" data-y="-0.42"><span>weights</span><b>FP8 · INT4</b></p>
-      <p class="it chip" data-d="1300" data-x="-0.74" data-y="0.42"><span>kv cache</span><b>paged · block 16</b></p>
-      <p class="it chip" data-d="2080" data-x="0.74" data-y="0.42"><span>spec decode</span><b>k = 4</b></p>
-      <p class="it chip" data-d="2800" data-x="-0.74" data-y="-0.4"><span>fleet mix</span><b>spot 62%</b></p>
-
+      <p class="it token node" data-d="5000" data-x="0" data-y="0" data-chain="svc" data-stop><b>½</b><span>Same model, half the bill</span></p>
     </section>
 
     <!-- 03 · METHOD ··································· paper -->
-    <section class="room sk-paper" id="method" data-name="Method" data-len="3750" aria-labelledby="t-method">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-paper" id="method" data-name="Method" data-len="5100" aria-labelledby="t-method">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>03</span> Method</p>
         <h2 id="t-method">Four weeks, measure to shipped</h2>
         <p class="stand">One engagement, one fixed shape. The numbers land in week one, so you can stop after it if they are boring.</p>
       </header>
-      <article class="it card week" data-d="760" data-x="0.5" data-y="-0.2" data-chain="wk">
+      <i class="model" data-shape="helix" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.05 · HELIX · 4 PHASES" hidden></i>
+      <i class="model" data-shape="torus" data-d="60" data-x="0.8" data-y="0" data-label="FIG.06 · MEASURE→SHIP LOOP" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>trace sample</span><b>1 : 100</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>eval suite</span><b>2,400 cases</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>shadow</span><b>7 days</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>rollback</span><b>< 60 s</b></p>
+      <article class="it card week" data-d="1000" data-x="-0.31" data-y="0" data-chain="wk" data-stop>
         <div class="card-in">
           <div class="art" data-art="weeks" data-week="1" aria-hidden="true"></div>
           <p class="tag">Week 1</p>
@@ -237,7 +250,7 @@
           <p class="out">→ a baseline you can argue with</p>
         </div>
       </article>
-      <article class="it card week" data-d="1170" data-x="-0.5" data-y="-0.14" data-chain="wk">
+      <article class="it card week" data-d="1000" data-x="0.31" data-y="0" data-chain="wk" data-nd="1500" data-nstop>
         <div class="card-in">
           <div class="art" data-art="weeks" data-week="2" aria-hidden="true"></div>
           <p class="tag">Week 2</p>
@@ -246,7 +259,7 @@
           <p class="out">→ two or three live candidates</p>
         </div>
       </article>
-      <article class="it card week" data-d="1580" data-x="0.48" data-y="0.2" data-chain="wk">
+      <article class="it card week" data-d="2000" data-x="-0.31" data-y="0" data-chain="wk" data-stop>
         <div class="card-in">
           <div class="art" data-art="weeks" data-week="3" aria-hidden="true"></div>
           <p class="tag">Week 3</p>
@@ -255,7 +268,7 @@
           <p class="out">→ a shadow deployment</p>
         </div>
       </article>
-      <article class="it card week" data-d="1990" data-x="-0.48" data-y="0.2" data-chain="wk">
+      <article class="it card week" data-d="2000" data-x="0.31" data-y="0" data-chain="wk" data-nd="2500" data-nstop>
         <div class="card-in">
           <div class="art" data-art="weeks" data-week="4" aria-hidden="true"></div>
           <p class="tag">Week 4</p>
@@ -264,14 +277,23 @@
           <p class="out">→ a signed-off cost delta</p>
         </div>
       </article>
-      <div class="it card tech" data-d="2380" data-x="0.5" data-y="-0.04">
+      <i class="decon" data-shape="helix" data-d="3000" data-x="-0.24" data-y="0" data-nx="0" data-ny="-0.1" hidden></i>
+      <div class="it card tech figcap" data-d="3000" data-x="0.38" data-y="0" data-stop data-nd="3500" data-nx="0" data-ny="0">
+        <div class="card-in">
+          <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>fig.05 · exploded view</span></p>
+          <h3>Four weeks, one strand</h3>
+          <p>The work is one strand cut into four phases. Each phase hands the next a file, not a meeting: a baseline, the candidates, a shadow deploy, a signed cost delta.</p>
+          <p class="out">Watch it come apart and go back together.</p>
+        </div>
+      </div>
+      <div class="it card tech" data-d="4000" data-x="-0.31" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>plan · 4 weeks</span></p>
           <div class="art" data-art="gantt" aria-hidden="true"></div>
           <p>Phases overlap so nobody waits: modelling starts while the last traces land.</p>
         </div>
       </div>
-      <div class="it card tech" data-d="2740" data-x="-0.5" data-y="0.04">
+      <div class="it card tech" data-d="4000" data-x="0.31" data-y="0" data-nd="4500" data-nstop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>deliverables</span></p>
           <ol class="term">
@@ -283,23 +305,22 @@
           </ol>
         </div>
       </div>
-      <i class="model" data-shape="helix" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.05 · HELIX · 4 PHASES" hidden></i>
-      <i class="model" data-shape="torus" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.06 · MEASURE→SHIP LOOP" hidden></i>
-      <p class="it chip" data-d="460" data-x="-0.74" data-y="-0.42"><span>trace sample</span><b>1 : 100</b></p>
-      <p class="it chip" data-d="1380" data-x="0.74" data-y="0.42"><span>eval suite</span><b>2,400 cases</b></p>
-      <p class="it chip" data-d="2180" data-x="-0.74" data-y="0.42"><span>shadow</span><b>7 days</b></p>
-      <p class="it chip" data-d="2950" data-x="0.74" data-y="-0.42"><span>rollback</span><b>< 60 s</b></p>
     </section>
 
     <!-- 04 · WORK ····································· lemon -->
-    <section class="room sk-lemon" id="work" data-name="Work" data-len="3960" aria-labelledby="t-work">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-lemon" id="work" data-name="Work" data-len="6100" aria-labelledby="t-work">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>04</span> Work</p>
         <h2 id="t-work">Three of the last twelve</h2>
         <p class="stand">Every figure is the client's own measurement. Thumbnails are generated.</p>
       </header>
-
-      <article class="it card project" data-d="820" data-x="-0.44" data-y="-0.02" data-chain="p1" data-open tabindex="0" aria-haspopup="dialog">
+      <i class="model" data-shape="lattice" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.07 · FLEET LATTICE 4³" hidden></i>
+      <i class="model" data-shape="core" data-d="60" data-x="0.8" data-y="0" data-label="FIG.08 · DISTILLED CORE" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>sessions</span><b>40M / mo</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>documents</span><b>9M / night</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>ttft p95</span><b>640 ms</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>gpus</span><b>42 → 12</b></p>
+      <article class="it card project" data-d="1000" data-x="-0.28" data-y="0" data-chain="p1" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art wide" data-art="distill" aria-hidden="true"></div>
           <p class="tag">Marketplace · EU · 2025</p>
@@ -312,10 +333,9 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <p class="it token fig" data-d="1060" data-x="0.52" data-y="-0.3" data-chain="p1"><b>−71%</b><span>cost per 1k tokens</span></p>
-      <p class="it token fig" data-d="1180" data-x="0.44" data-y="0.34" data-chain="p1"><b>−1.2 pt</b><span>eval delta</span></p>
-
-      <article class="it card project" data-d="1520" data-x="0.46" data-y="0.02" data-chain="p2" data-open tabindex="0" aria-haspopup="dialog">
+      <p class="it token fig" data-d="1000" data-x="0.30" data-y="-0.17" data-chain="p1" data-nd="1500" data-nx="0" data-ny="-0.13" data-nstop><b>−71%</b><span>cost per 1k tokens</span></p>
+      <p class="it token fig" data-d="1000" data-x="0.30" data-y="0.17" data-chain="p1" data-nd="1500" data-nx="0" data-ny="0.13"><b>−1.2 pt</b><span>eval delta</span></p>
+      <article class="it card project" data-d="2000" data-x="0.28" data-y="0" data-chain="p2" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art wide" data-art="ttft" aria-hidden="true"></div>
           <p class="tag">Voice agent · US · 2025</p>
@@ -328,10 +348,9 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <p class="it token fig" data-d="1760" data-x="-0.52" data-y="-0.3" data-chain="p2"><b>640 ms</b><span>TTFT p95</span></p>
-      <p class="it token fig" data-d="1880" data-x="-0.44" data-y="0.34" data-chain="p2"><b>2.4 s</b><span>before</span></p>
-
-      <article class="it card project" data-d="2220" data-x="-0.44" data-y="0.04" data-chain="p3" data-open tabindex="0" aria-haspopup="dialog">
+      <p class="it token fig" data-d="2000" data-x="-0.30" data-y="-0.17" data-chain="p2" data-nd="2500" data-nx="0" data-ny="-0.13" data-nstop><b>640 ms</b><span>TTFT p95</span></p>
+      <p class="it token fig" data-d="2000" data-x="-0.30" data-y="0.17" data-chain="p2" data-nd="2500" data-nx="0" data-ny="0.13"><b>2.4 s</b><span>before</span></p>
+      <article class="it card project" data-d="3000" data-x="-0.28" data-y="0" data-chain="p3" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art wide" data-art="fleet" aria-hidden="true"></div>
           <p class="tag">Document platform · UK · 2024</p>
@@ -344,9 +363,18 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <p class="it token fig" data-d="2460" data-x="0.52" data-y="-0.3" data-chain="p3"><b>42 → 12</b><span>GPUs</span></p>
-      <p class="it token fig" data-d="2580" data-x="0.44" data-y="0.34" data-chain="p3"><b>−38%</b><span>batch window</span></p>
-      <div class="it card tech evals" data-d="2960" data-x="-0.48" data-y="0">
+      <p class="it token fig" data-d="3000" data-x="0.30" data-y="-0.17" data-chain="p3" data-nd="3500" data-nx="0" data-ny="-0.13" data-nstop><b>42 → 12</b><span>GPUs</span></p>
+      <p class="it token fig" data-d="3000" data-x="0.30" data-y="0.17" data-chain="p3" data-nd="3500" data-nx="0" data-ny="0.13"><b>−38%</b><span>batch window</span></p>
+      <i class="decon" data-shape="fleet" data-d="4000" data-x="-0.24" data-y="0" data-nx="0" data-ny="-0.1" hidden></i>
+      <div class="it card tech figcap" data-d="4000" data-x="0.38" data-y="0" data-stop data-nd="4500" data-nx="0" data-ny="0">
+        <div class="card-in">
+          <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>fig.07 · exploded view</span></p>
+          <h3>42 GPUs in, 12 out</h3>
+          <p>The overnight job was rewritten to fill a small preemptible fleet. Twelve units run every night; thirty go back to the pool.</p>
+          <p class="out">Watch it come apart and go back together.</p>
+        </div>
+      </div>
+      <div class="it card tech evals" data-d="5000" data-x="0" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>eval sheet · marketplace assistant</span></p>
           <table>
@@ -360,23 +388,22 @@
           <p>Blended cost falls 71% for a 1.2-point eval delta the client signed off.</p>
         </div>
       </div>
-      <i class="model" data-shape="lattice" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.07 · FLEET LATTICE 4³" hidden></i>
-      <i class="model" data-shape="core" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.08 · DISTILLED CORE" hidden></i>
-      <p class="it chip" data-d="480" data-x="0.74" data-y="-0.42"><span>sessions</span><b>40M / mo</b></p>
-      <p class="it chip" data-d="1300" data-x="-0.74" data-y="0.42"><span>documents</span><b>9M / night</b></p>
-      <p class="it chip" data-d="2000" data-x="0.74" data-y="0.42"><span>ttft p95</span><b>640 ms</b></p>
-      <p class="it chip" data-d="3250" data-x="0.74" data-y="-0.42"><span>gpus</span><b>42 → 12</b></p>
-
     </section>
 
     <!-- 05 · TEAM ····································· paper -->
-    <section class="room sk-paper" id="team" data-name="Team" data-len="3400" aria-labelledby="t-team">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-paper" id="team" data-name="Team" data-len="4100" aria-labelledby="t-team">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>05</span> Team</p>
         <h2 id="t-team">Four people, no bench</h2>
         <p class="stand">Everyone you meet in the first call is on the work. We run two engagements at a time and say no to the third.</p>
       </header>
-      <article class="it card person" data-d="760" data-x="-0.5" data-y="-0.16" data-open tabindex="0" aria-haspopup="dialog">
+      <i class="model" data-shape="orbit" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.09 · FOUR ORBITS, ONE HUB" hidden></i>
+      <i class="model" data-shape="fan" data-d="60" data-x="0.8" data-y="0" data-label="FIG.10 · STUDENT NET" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>engagements</span><b>2 at a time</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>per year</span><b>12</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>based in</span><b>Berlin · remote</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>handover</span><b>wk 4</b></p>
+      <article class="it card person" data-d="1000" data-x="-0.31" data-y="0" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art portrait" data-art="portrait" data-who="0" aria-hidden="true"></div>
           <p class="tag">Principal · serving systems</p>
@@ -385,7 +412,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card person" data-d="1160" data-x="0.5" data-y="-0.1" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card person" data-d="1000" data-x="0.31" data-y="0" data-nd="1500" data-nstop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art portrait" data-art="portrait" data-who="1" aria-hidden="true"></div>
           <p class="tag">Quantisation lead</p>
@@ -394,7 +421,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card person" data-d="1560" data-x="-0.48" data-y="0.2" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card person" data-d="2000" data-x="-0.31" data-y="0" data-stop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art portrait" data-art="portrait" data-who="2" aria-hidden="true"></div>
           <p class="tag">Applied research</p>
@@ -403,7 +430,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <article class="it card person" data-d="1960" data-x="0.5" data-y="0.18" data-open tabindex="0" aria-haspopup="dialog">
+      <article class="it card person" data-d="2000" data-x="0.31" data-y="0" data-nd="2500" data-nstop data-open tabindex="0" aria-haspopup="dialog">
         <div class="card-in">
           <div class="art portrait" data-art="portrait" data-who="3" aria-hidden="true"></div>
           <p class="tag">Infrastructure &amp; cost</p>
@@ -412,7 +439,7 @@
           <span class="open-hint">Open</span>
         </div>
       </article>
-      <div class="it card tech" data-d="2380" data-x="-0.5" data-y="0">
+      <div class="it card tech" data-d="3000" data-x="0" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>what the four of us bring</span></p>
           <dl class="spec">
@@ -423,39 +450,47 @@
           </dl>
         </div>
       </div>
-      <i class="model" data-shape="orbit" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.09 · FOUR ORBITS, ONE HUB" hidden></i>
-      <i class="model" data-shape="fan" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.10 · STUDENT NET" hidden></i>
-      <p class="it chip" data-d="460" data-x="0.74" data-y="-0.42"><span>engagements</span><b>2 at a time</b></p>
-      <p class="it chip" data-d="1360" data-x="-0.74" data-y="0.42"><span>per year</span><b>12</b></p>
-      <p class="it chip" data-d="2160" data-x="0.74" data-y="0.42"><span>based in</span><b>Berlin · remote</b></p>
-      <p class="it chip" data-d="2850" data-x="0.74" data-y="-0.42"><span>handover</span><b>wk 4</b></p>
-
     </section>
 
     <!-- 06 · PARTNERS ································· cyan -->
-    <section class="room sk-cyan" id="partners" data-name="Partners" data-len="3520" aria-labelledby="t-partners">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-cyan" id="partners" data-name="Partners" data-len="5100" aria-labelledby="t-partners">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>06</span> Partners</p>
         <h2 id="t-partners">Who we build with</h2>
         <p class="stand">A small team stays small by borrowing: model labs, runtimes, accelerators, and the platforms our clients already run on.</p>
       </header>
-      <div class="it cluster" data-d="760" data-x="-0.48" data-y="-0.2">
+      <i class="model" data-shape="globe" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.11 · GLOBE · 70 NODES" hidden></i>
+      <i class="model" data-shape="lattice" data-d="60" data-x="0.8" data-y="0" data-label="FIG.12 · RUNTIME MESH" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>traces</span><b>OpenTelemetry</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>transport</span><b>gRPC · HTTP</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>deploy</span><b>k8s operator</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>capacity</span><b>spot + reserved</b></p>
+      <div class="it cluster" data-d="1000" data-x="-0.31" data-y="0" data-stop>
         <h3>Model labs</h3>
         <ul><li><i data-art="glyph" data-g="0"></i>Halden Labs</li><li><i data-art="glyph" data-g="1"></i>Meridian AI</li><li><i data-art="glyph" data-g="2"></i>Oriel Research</li><li><i data-art="glyph" data-g="3"></i>Kestrel Models</li></ul>
       </div>
-      <div class="it cluster" data-d="1210" data-x="0.5" data-y="0.16">
+      <div class="it cluster" data-d="1000" data-x="0.31" data-y="0" data-nd="1500" data-nstop>
         <h3>Runtimes</h3>
         <ul><li><i data-art="glyph" data-g="4"></i>Tessel Runtime</li><li><i data-art="glyph" data-g="5"></i>Lattice Serve</li><li><i data-art="glyph" data-g="6"></i>Quill Orchestrator</li></ul>
       </div>
-      <div class="it cluster" data-d="1660" data-x="-0.46" data-y="0.22">
+      <div class="it cluster" data-d="2000" data-x="-0.31" data-y="0" data-stop>
         <h3>Accelerators</h3>
         <ul><li><i data-art="glyph" data-g="7"></i>Arclight Silicon</li><li><i data-art="glyph" data-g="8"></i>Northgate Compute</li></ul>
       </div>
-      <div class="it cluster" data-d="2110" data-x="0.48" data-y="-0.22">
+      <div class="it cluster" data-d="2000" data-x="0.31" data-y="0" data-nd="2500" data-nstop>
         <h3>Platforms</h3>
         <ul><li><i data-art="glyph" data-g="9"></i>Harbor Cloud</li><li><i data-art="glyph" data-g="10"></i>Fathom GPU</li><li><i data-art="glyph" data-g="11"></i>Keel Deploy</li></ul>
       </div>
-      <div class="it card tech" data-d="2480" data-x="-0.5" data-y="-0.02">
+      <i class="decon" data-shape="globe" data-d="3000" data-x="-0.24" data-y="0" data-nx="0" data-ny="-0.1" hidden></i>
+      <div class="it card tech figcap" data-d="3000" data-x="0.38" data-y="0" data-stop data-nd="3500" data-nx="0" data-ny="0">
+        <div class="card-in">
+          <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>fig.11 · exploded view</span></p>
+          <h3>Four kinds of partner, one globe</h3>
+          <p>Labs, runtimes, accelerators and platforms, pulled apart so you can see which layer each one plugs into.</p>
+          <p class="out">Watch it come apart and go back together.</p>
+        </div>
+      </div>
+      <div class="it card tech" data-d="4000" data-x="0" data-y="-0.1" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>how we plug in · router</span></p>
 <pre class="code"><span class="c"># one request through the router</span>
@@ -467,30 +502,29 @@
           <p>Drops in front of whatever already serves your traffic. No client changes.</p>
         </div>
       </div>
-      <i class="model" data-shape="globe" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.11 · GLOBE · 70 NODES" hidden></i>
-      <i class="model" data-shape="lattice" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.12 · RUNTIME MESH" hidden></i>
-      <p class="it chip" data-d="460" data-x="-0.74" data-y="-0.42"><span>traces</span><b>OpenTelemetry</b></p>
-      <p class="it chip" data-d="1420" data-x="0.74" data-y="0.42"><span>transport</span><b>gRPC · HTTP</b></p>
-      <p class="it chip" data-d="2260" data-x="0.74" data-y="-0.42"><span>deploy</span><b>k8s operator</b></p>
-      <p class="it chip" data-d="3100" data-x="-0.74" data-y="0.42"><span>capacity</span><b>spot + reserved</b></p>
-
-      <p class="it note" data-d="2860" data-x="0" data-y="0.3">Every partner here is a fictional placeholder, like AXON itself. The marks are generated, not anyone's logo.</p>
+      <p class="it note" data-d="4000" data-x="0" data-y="0.4" data-nd="4500" data-ny="0" data-nstop>Every partner here is a fictional placeholder, like AXON itself. The marks are generated, not anyone's logo.</p>
     </section>
 
     <!-- 07 · CONTACT ·································· ember -->
-    <section class="room sk-ember" id="contact" data-name="Contact" data-len="3200" aria-labelledby="t-contact">
-      <header class="it title" data-d="0" data-x="0" data-y="0">
+    <section class="room sk-ember" id="contact" data-name="Contact" data-len="3400" aria-labelledby="t-contact">
+      <header class="it title" data-d="0" data-x="0" data-y="0" data-stop>
         <p class="eyebrow"><span>07</span> Contact</p>
         <h2 id="t-contact">Send us your p99</h2>
         <p class="stand">One page on what you serve and where it hurts. We answer inside two working days with whether we can help, and if we can't, who can.</p>
       </header>
-      <figure class="it card quote" data-d="650" data-x="-0.48" data-y="-0.1">
+      <i class="model" data-shape="core" data-d="60" data-x="-0.8" data-y="0" data-label="FIG.13 · CORE, ASSEMBLED" hidden></i>
+      <i class="model" data-shape="torus" data-d="60" data-x="0.8" data-y="0" data-label="FIG.14 · LOOP" hidden></i>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="-0.8"><span>reply</span><b>< 2 working days</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="-0.8"><span>nda</span><b>on request</b></p>
+      <p class="it chip" data-d="0" data-x="-0.5" data-y="0.8"><span>time zone</span><b>CET</b></p>
+      <p class="it chip" data-d="0" data-x="0.5" data-y="0.8"><span>next slot</span><b>Nov</b></p>
+      <figure class="it card quote" data-d="1000" data-x="-0.31" data-y="0" data-stop>
         <div class="card-in">
           <blockquote>They spent the first week telling us which of our assumptions were wrong, and the last week proving it in production. We kept the model. We stopped paying for it twice.</blockquote>
           <figcaption>Dana Whitlock, VP Engineering, Northwind Cloud <em>(fictional)</em></figcaption>
         </div>
       </figure>
-      <div class="it card facts-card" data-d="1000" data-x="0.5" data-y="0.12">
+      <div class="it card facts-card" data-d="1000" data-x="0.31" data-y="0" data-nd="1500" data-nstop>
         <div class="card-in">
           <dl>
             <div><dt>Typical engagement</dt><dd>4 wk</dd></div>
@@ -499,7 +533,7 @@
           </dl>
         </div>
       </div>
-      <div class="it card tech" data-d="1350" data-x="-0.5" data-y="0.04">
+      <div class="it card tech" data-d="2000" data-x="0" data-y="0" data-stop>
         <div class="card-in">
           <p class="tbar" aria-hidden="true"><i></i><i></i><i></i><span>what to send · one page</span></p>
 <pre class="code">{
@@ -511,16 +545,10 @@
 }</pre>
         </div>
       </div>
-      <i class="model" data-shape="core" data-d="260" data-x="-0.82" data-y="-0.26" data-label="FIG.13 · CORE, ASSEMBLED" hidden></i>
-      <i class="model" data-shape="torus" data-d="420" data-x="0.82" data-y="0.26" data-label="FIG.14 · LOOP" hidden></i>
-      <i class="model" data-shape="stack" data-d="2140" data-x="-0.58" data-y="0.02" data-label="FIG.15 · YOUR STACK" hidden></i>
-      <i class="model" data-shape="fan" data-d="2140" data-x="0.58" data-y="-0.02" data-label="FIG.16 · YOUR MODEL" hidden></i>
-      <p class="it chip" data-d="460" data-x="0.74" data-y="-0.42"><span>reply</span><b>< 2 working days</b></p>
-      <p class="it chip" data-d="1700" data-x="0.74" data-y="0.42"><span>nda</span><b>on request</b></p>
-      <p class="it chip" data-d="1900" data-x="-0.74" data-y="-0.42"><span>time zone</span><b>CET</b></p>
-      <p class="it chip" data-d="2050" data-x="0.74" data-y="-0.3"><span>next slot</span><b>Nov</b></p>
-      <div class="it badge end" data-d="2600" data-x="0" data-y="0" data-art="badge" data-variant="ring" aria-hidden="true"></div>
-      <div class="it finale" data-d="2500" data-x="0" data-y="0">
+      <i class="model" data-shape="stack" data-d="3000" data-x="-0.62" data-y="0" data-label="FIG.15 · YOUR STACK" hidden></i>
+      <i class="model" data-shape="fan" data-d="3000" data-x="0.62" data-y="0" data-label="FIG.16 · YOUR MODEL" hidden></i>
+      <div class="it badge end" data-d="3100" data-x="0" data-y="0" data-art="badge" data-variant="ring" aria-hidden="true"></div>
+      <div class="it finale" data-d="3000" data-x="0" data-y="0" data-stop>
         <h3>Book an inference teardown</h3>
         <p class="mail"><span class="addr" id="addr">hello@axon.example</span> <button type="button" class="copy" id="copy">Copy address</button></p>
         <p class="fine">AXON is fictional. Every name and figure is invented, and all imagery is generated.</p>

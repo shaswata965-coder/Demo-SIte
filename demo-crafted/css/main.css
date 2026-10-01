@@ -22,7 +22,7 @@
   --t-body: 0.97rem;
   --t-label: 0.72rem;
 
-  --card-w: clamp(250px, 25vw, 360px);
+  --card-w: clamp(250px, 23vw, 340px);
   --radius: 12px;
   --e-out: cubic-bezier(.16, 1, .3, 1);
 
@@ -132,7 +132,7 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
   box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent), 0 18px 40px -24px color-mix(in srgb, var(--ink) 40%, transparent);
 }
 .card h3 { font-size: var(--t-card); font-weight: 750; font-stretch: 106%; line-height: 1.08; letter-spacing: -.01em; }
-.card p { font-size: .9rem; color: var(--ink-2); }
+.card p { font-size: .95rem; line-height: 1.5; color: var(--ink-2); }
 .card .tag { font: 500 var(--t-label)/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); }
 .card .out { font: 500 .8rem/1.4 var(--f-mono); color: var(--c-signal); }
 .art { border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--ink) 5%, var(--panel)); aspect-ratio: 2 / 1; }
@@ -155,7 +155,7 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 
 .cluster { display: grid; gap: 12px; width: max-content; max-width: 86vw; }
 .cluster h3 { font: 500 var(--t-label)/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
-.cluster ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-width: 420px; }
+.cluster ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-width: 330px; }
 .cluster li {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 14px 8px 10px; border-radius: 999px;
@@ -265,8 +265,8 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
   --rule: var(--g-rule); --panel: var(--g-panel);
   color: var(--g-ink);
 }
-.js .title { width: min(92vw, 1180px); }
-.js .title.hero { width: min(94vw, 1320px); }
+.js .title { width: min(58vw, 820px); }
+.js .title.hero { width: min(64vw, 960px); }
 .js .token { width: max-content; }
 /* The world is a zero-width point at the centre of the screen, so nothing in
    it may size against its container: max-width: 100% would resolve to 0. */
@@ -301,7 +301,12 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
 .js .card:hover .card-in::after { opacity: 1; background-position: -20% 0; }
 .js .card:focus-visible { outline: none; }
 .js .card .more { display: none; }
-.js .card.tech { width: clamp(270px, 26vw, 380px); }
+.js .card.tech { width: clamp(270px, 25vw, 360px); }
+.js .card.figcap { width: clamp(260px, 22vw, 320px); }
+.figcap h3 { font-size: 1.5rem; }
+/* Chips frame the title on a wide screen; on a narrow one they would sit
+   on the copy, so they go. */
+.narrow .chip { display: none; }
 /* Terminal lines print in each time the card comes into range. */
 .js .it:not(.off) .term li { animation: line .4s var(--e-out) both; animation-delay: calc(var(--i, 0) * 110ms + 120ms); }
 @keyframes line { from { opacity: 0; transform: translateX(-6px); } }
@@ -478,6 +483,7 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
    Narrow screens and reduced motion
    ------------------------------------------------------------------------- */
 @media (max-width: 760px) {
+  .js .title, .js .title.hero { width: 86vw; }
   .js .edge { display: none; }
   .js .bar { display: none; }
   .dial { width: 54px; height: 54px; }
@@ -485,7 +491,7 @@ html:not(.js) .room > .badge { width: min(60vw, 280px); }
   :root { --card-w: min(80vw, 330px); }
   .js .card.tech { width: min(84vw, 340px); }
   .code, .term { font-size: .68rem; }
-  .js .title, .js .title.hero { width: 84vw; }
+
   .js .token b { font-size: clamp(2.4rem, 12vw, 3.6rem); }
 }
 @media (prefers-reduced-motion: reduce) {
