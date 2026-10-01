@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en" data-chapter="0" data-skin="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Larch — money, grown quietly</title>
+<meta name="description" content="Larch is a fictional money app: chequing, investing and tax in one place. Scroll-driven demo — one object made of coins restacks into each product while the page changes room around it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230E221E'/%3E%3Cpath d='M16 6 23.5 21h-15z' fill='%23D6A960'/%3E%3Cpath d='M16 21v5' stroke='%23D6A960' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15120F" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- The object. One fixed, viewport-sized canvas for the whole page: it never
+     moves and never resizes. Where the object sits inside it, how big it is
+     drawn and how far forward it comes are three numbers js/app.js writes
+     every frame — which is what lets it stand beside the copy in one chapter
+     and come apart into the page in the next. -->
+<div class="stage" id="stage">
+  <canvas id="field" aria-label="An object made of coins. Scroll to restack it into each product; drag to turn it."></canvas>
+</div>
+
+<!-- The navigation. At the top of the page it is a plain header sitting on
+     the intro; once you scroll it condenses into an island — a compact
+     spruce-glass capsule, centred, the same over every room. The pill behind
+     the current link and the progress line along its bottom edge are written
+     by js/app.js. Below 1024px the links fold into a menu. -->
+<header class="nav" id="nav">
+  <div class="nav-bar">
+    <a class="nav-brand" href="#c0" data-goto="0" aria-label="Larch — back to the top">
+      <svg class="nav-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="10"/>
+        <path class="m-tree" d="M16 7.5 23 21H9z"/>
+        <path class="m-trunk" d="M16 21v4" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-word">larch</span>
+    </a>
+
+    <nav class="nav-links" id="navLinks" aria-label="Sections">
+      <span class="nav-ind" aria-hidden="true"></span>
+      <a href="#c1" data-goto="1">Accounts</a>
+      <a href="#c2" data-goto="2">Portfolios</a>
+      <a href="#c3" data-goto="3">Goals</a>
+      <a href="#c4" data-goto="4">Advice</a>
+      <a href="#c5" data-goto="5">Payments</a>
+      <a href="#c6" data-goto="6">Join</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="nav-icon" id="themeBtn" type="button" aria-pressed="false" aria-label="Dark theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.2M12 20.3v2.2M4.6 4.6l1.5 1.5M17.9 17.9l1.5 1.5M1.5 12h2.2M20.3 12h2.2M4.6 19.4l1.5-1.5M17.9 6.1l1.5-1.5"/></svg>
+      </button>
+      <button class="nav-cta" type="button" data-goto="6">
+        <span class="cta-long">Open an account</span><span class="cta-short">Open</span>
+        <span class="nav-cta-i" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg></span>
+      </button>
+      <button class="nav-icon nav-menu" id="navMenu" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Sections menu">
+        <span></span><span></span>
+      </button>
+    </div>
+
+    <span class="nav-progress" aria-hidden="true"><i id="navProgress"></i></span>
+  </div>
+</header>
+
+<main class="doc">
+
+  <!-- ====================================================== 00 — intro -->
+  <section class="chapter skin sk-paper is-side side-right" id="c0">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <!-- The frame: a quiet statement round the copy. Its first wash reveals
+           the copy a line at a time; the thread layer inside it is drawn by
+           js/thread.js. Everything that moves runs only on the live screen. -->
+      <div class="frame" aria-hidden="true">
+        <i class="frame-wash"></i>
+        <i class="frame-corner tl"></i><i class="frame-corner tr"></i><i class="frame-corner bl"></i><i class="frame-corner br"></i>
+        <div class="frame-strip">
+          <svg class="frame-spark" viewBox="0 0 132 20" preserveAspectRatio="none">
+            <path d="M0 17 C14 16.5 22 15 32 15.5 S46 13 56 13.6 S72 10 82 10.8 S100 7 110 6.4 S124 3 132 2.4"/>
+          </svg>
+          <i class="frame-meter"></i>
+        </div>
+      </div>
+
+      <h1>Money,<br>grown quietly.</h1>
+      <p class="lede rv">Larch is <em>one calm app</em> for spending, saving and
+      investing &mdash; low fees, no minimums, and <strong>nothing you have to
+      babysit.</strong></p>
+
+      <div class="cta-row rv">
+        <button class="cta" type="button" data-goto="6">Open an account <i aria-hidden="true">&rarr;</i></button>
+        <button class="link-btn" type="button" data-goto="2">See the portfolios</button>
+      </div>
+
+      <p class="trust rv">
+        <span><b>1.2M</b> members</span>
+        <span><b>0.4%</b> all-in portfolio fee</span>
+        <span><b>3.6%</b> on every dollar of cash</span>
+      </p>
+
+    </div></div></div>
+  </section>
+
+  <!-- =================================================== 01 — accounts -->
+  <section class="chapter skin sk-sage is-graph" id="c1" data-from="paper">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner">
+      <!-- Taken apart: a feed-forward network. The claim is the input, the
+           four accounts are the hidden layer, the result is the output; the
+           object's own coins bead the links and ring the cards. Wired by
+           js/graph.js from data-links; laid out by CSS grid. -->
+      <div class="graph g-feed" data-links="title:b>claim:t claim:r>l1:l claim:r>l2:l claim:r>l3:l claim:r>l4:l l1:r>out:l l2:r>out:l l3:r>out:l l4:r>out:l">
+        <div class="g-node g-title" data-node="title" data-area="title">
+          <h2>Four kinds of money, one login</h2>
+        </div>
+        <div class="g-node g-card g-claim rv" data-node="claim" data-area="claim" data-order="1">
+          <p>Most people keep money in <em>five places</em> and check none of them.
+          Larch keeps it in one, and <strong>moves it to where it earns more.</strong></p>
+        </div>
+        <article class="g-node g-card g-lever rv" data-node="l1" data-area="l1" data-order="2">
+          <span class="g-num">01</span>
+          <h3>Chequing</h3>
+          <p>Paid up to two days early, 3.6% on every dollar, and no monthly fee
+          to earn it back.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l2" data-area="l2" data-order="2.6">
+          <span class="g-num">02</span>
+          <h3>Card</h3>
+          <p>1.5% back on everything, dropped straight into a portfolio if you
+          would rather it grew.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l3" data-area="l3" data-order="3.2">
+          <span class="g-num">03</span>
+          <h3>Invest</h3>
+          <p>Portfolios that rebalance themselves. You choose the temperament,
+          not the funds.</p>
+        </article>
+        <article class="g-node g-card g-lever rv" data-node="l4" data-area="l4" data-order="3.8">
+          <span class="g-num">04</span>
+          <h3>Tax</h3>
+          <p>File in about twenty minutes. Your slips are already in the app when
+          you open it.</p>
+        </article>
+        <div class="g-node g-round g-out rv" data-node="out" data-area="out" data-order="5">
+          <b class="g-out-v">1</b>
+          <span class="g-out-l">Place to look,<br>once a month</span>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ================================================= 02 — portfolios -->
+  <section class="chapter skin sk-paper is-side side-right" id="c2" data-from="sage">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <div class="frame" aria-hidden="true">
+        <i class="frame-wash"></i>
+        <i class="frame-corner tl"></i><i class="frame-corner tr"></i><i class="frame-corner bl"></i><i class="frame-corner br"></i>
+        <div class="frame-strip">
+          <svg class="frame-spark" viewBox="0 0 132 20" preserveAspectRatio="none">
+            <path d="M0 17 C14 16.5 22 15 32 15.5 S46 13 56 13.6 S72 10 82 10.8 S100 7 110 6.4 S124 3 132 2.4"/>
+          </svg>
+          <i class="frame-meter"></i>
+        </div>
+      </div>
+
+      <div class="head">
+        <h2>Pick a mix, then leave it alone</h2>
+        <p class="head-p rv">Four portfolios, each a different blend. We rebalance
+        when markets drift, so <strong>you never have to log in to stay on
+        course.</strong></p>
+      </div>
+
+      <ol class="mixes rv">
+        <li class="card">
+          <span class="mix-n">30% stocks</span>
+          <h3>Steady</h3>
+          <p>Mostly bonds. For money you will need inside three years.</p>
+          <span class="alloc" aria-hidden="true"><i class="a-s" style="flex:30"></i><i class="a-b" style="flex:70"></i></span>
+          <span class="mix-out">&rarr; smaller swings, smaller gains</span>
+        </li>
+        <li class="card">
+          <span class="mix-n">60% stocks</span>
+          <h3>Balanced</h3>
+          <p>The middle path. Rises with markets, falls a little less.</p>
+          <span class="alloc" aria-hidden="true"><i class="a-s" style="flex:60"></i><i class="a-b" style="flex:40"></i></span>
+          <span class="mix-out">&rarr; where most members start</span>
+        </li>
+        <li class="card">
+          <span class="mix-n">90% stocks</span>
+          <h3>Growth</h3>
+          <p>Built to be left for a decade. Expect a few bumpy years.</p>
+          <span class="alloc" aria-hidden="true"><i class="a-s" style="flex:90"></i><i class="a-b" style="flex:10"></i></span>
+          <span class="mix-out">&rarr; the most over the long run</span>
+        </li>
+        <li class="card">
+          <span class="mix-n">25% private</span>
+          <h3>Summit</h3>
+          <p>Adds private credit and real estate for a steadier long climb.</p>
+          <span class="alloc" aria-hidden="true"><i class="a-s" style="flex:50"></i><i class="a-b" style="flex:25"></i><i class="a-p" style="flex:25"></i></span>
+          <span class="mix-out">&rarr; from $10k, a seven-year view</span>
+        </li>
+      </ol>
+
+    </div></div></div>
+  </section>
+
+  <!-- ====================================================== 03 — goals -->
+  <section class="chapter skin sk-dusk is-graph" id="c3" data-from="paper">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner">
+      <!-- Taken apart: a hub with three spokes. Each goal is a node on a
+           spoke, and each of its figures is pulled out of the card into a
+           round node of its own. -->
+      <div class="graph g-radial" data-links="hub:t>w1:r hub:t>w2:l hub:b>w3:t w1:b>m1a:t w1:b>m1b:t w2:b>m2a:t w2:b>m2b:t w3:l>m3a:r w3:r>m3b:l">
+        <div class="g-node g-title g-card g-hub" data-node="hub" data-area="hub">
+          <h2>What leaving it alone looks like</h2>
+          <p class="g-sub rv" data-order="1">Three goals, priced at today&rsquo;s rates.
+          <em>Illustrations,</em> not promises &mdash; markets move. The pictures
+          are generated placeholder art.</p>
+        </div>
+        <article class="g-node g-card g-proj rv" data-node="w1" data-area="w1" data-order="2">
+          <span class="thumb" aria-hidden="true">
+            <svg viewBox="0 0 320 160" role="presentation" preserveAspectRatio="xMidYMid slice">
+              <circle class="g-1" cx="252" cy="44" r="17"/>
+              <circle class="k-1" cx="252" cy="44" r="27" fill="none" stroke-width="1.2" opacity=".4"/>
+              <path class="g-2" opacity=".32" d="M0 126 C80 108 190 120 320 104 V160 H0Z"/>
+              <path class="g-2" d="M58 130 L74 78 L90 130Z"/>
+              <path class="k-2" d="M74 130 v10" stroke-width="3" stroke-linecap="round"/>
+              <rect class="g-3" x="112" y="80" width="78" height="54" rx="3"/>
+              <path class="g-s" d="M102 86 L151 46 L200 86Z"/>
+              <rect class="g-p" x="122" y="94" width="15" height="13" rx="2"/>
+              <rect class="g-p" x="166" y="94" width="15" height="13" rx="2"/>
+              <rect class="g-1" x="144" y="106" width="15" height="28" rx="2"/>
+              <g class="g-1 k-ink" stroke-width="1">
+                <ellipse cx="236" cy="132" rx="15" ry="4.5"/><ellipse cx="236" cy="126" rx="15" ry="4.5"/>
+                <ellipse cx="236" cy="120" rx="15" ry="4.5"/><ellipse cx="236" cy="114" rx="15" ry="4.5"/>
+                <ellipse cx="270" cy="132" rx="15" ry="4.5"/><ellipse cx="270" cy="126" rx="15" ry="4.5"/>
+              </g>
+            </svg>
+          </span>
+          <p class="card-tag">First home &middot; Toronto &middot; six years</p>
+          <h3>A down payment, one paycheque at a time</h3>
+          <p class="card-p">$650 every two weeks into Balanced, with the first-home
+          account&rsquo;s tax refund paid straight back in.</p>
+        </article>
+        <div class="g-group" data-area="m1">
+          <div class="g-node g-round g-metric rv" data-node="m1a" data-order="3">
+            <b>$118<span class="u">k</span></b><span class="g-ml">At year six</span>
+          </div>
+          <div class="g-node g-round g-metric rv" data-node="m1b" data-order="3.4">
+            <b>$21<span class="u">k</span></b><span class="g-ml">Refunds kept</span>
+          </div>
+        </div>
+        <article class="g-node g-card g-proj rv" data-node="w2" data-area="w2" data-order="4">
+          <span class="thumb" aria-hidden="true">
+            <svg viewBox="0 0 320 160" role="presentation" preserveAspectRatio="xMidYMid slice">
+              <circle class="g-1" cx="82" cy="104" r="24"/>
+              <path class="g-2" opacity=".42" d="M236 108 q26 -24 64 0z"/>
+              <rect class="g-3" opacity=".3" x="0" y="106" width="320" height="54"/>
+              <path class="k-3" fill="none" stroke-width="1.4" stroke-linecap="round" opacity=".7"
+                    d="M24 124 q10 -5 20 0 t20 0 M120 136 q10 -5 20 0 t20 0 M236 128 q10 -5 20 0 t20 0 M60 148 q10 -5 20 0 t20 0"/>
+              <path class="g-s" d="M164 110 h62 l-10 13 h-42z"/>
+              <path class="k-ink" d="M196 56 v54" stroke-width="2" stroke-linecap="round"/>
+              <path class="g-2" d="M199 58 V106 H236Z"/>
+              <path class="g-1" opacity=".9" d="M193 66 V106 H168Z"/>
+              <path class="k-f" fill="none" stroke-width="1.4" stroke-linecap="round"
+                    d="M246 46 q5 -5 10 0 q5 -5 10 0 M272 60 q4 -4 8 0 q4 -4 8 0"/>
+            </svg>
+          </span>
+          <p class="card-tag">Sabbatical &middot; Halifax &middot; three years</p>
+          <h3>Six months off, paid for in advance</h3>
+          <p class="card-p">Round-ups from the card and $300 a month into Steady, so
+          the money is there whatever markets do in year three.</p>
+        </article>
+        <div class="g-group" data-area="m2">
+          <div class="g-node g-round g-metric rv" data-node="m2a" data-order="5">
+            <b>$14.2<span class="u">k</span></b><span class="g-ml">Set aside</span>
+          </div>
+          <div class="g-node g-round g-metric rv" data-node="m2b" data-order="5.4">
+            <b>$0</b><span class="g-ml">Owed on return</span>
+          </div>
+        </div>
+        <article class="g-node g-card g-proj rv" data-node="w3" data-area="w3" data-order="6">
+          <span class="thumb" aria-hidden="true">
+            <svg viewBox="0 0 320 160" role="presentation" preserveAspectRatio="xMidYMid slice">
+              <g class="k-1" stroke-width="1.4" stroke-linecap="round" opacity=".45">
+                <path d="M160 64 v-22 M124 74 l-14 -16 M196 74 l14 -16 M100 98 l-20 -6 M220 98 l20 -6"/>
+              </g>
+              <circle class="g-1" cx="160" cy="116" r="36"/>
+              <path class="g-3" opacity=".6" d="M0 112 C70 84 128 96 188 110 S282 88 320 98 V160 H0Z"/>
+              <path class="g-2" d="M0 132 C92 110 172 140 320 118 V160 H0Z"/>
+              <path class="k-s" fill="none" stroke-width="2" stroke-dasharray="1 6" stroke-linecap="round"
+                    d="M36 160 C70 142 118 150 150 134 S206 122 236 126"/>
+              <rect class="g-s" x="226" y="118" width="26" height="4" rx="1.5"/>
+              <path class="k-s" d="M229 122 v8 M249 122 v8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <p class="card-tag">Retirement &middot; Calgary &middot; twenty-two years</p>
+          <h3>Stopping at fifty-eight, not sixty-five</h3>
+          <p class="card-p">Growth until fifty, then a slow glide into Balanced,
+          checked every January with an advisor.</p>
+        </article>
+        <div class="g-group" data-area="m3a">
+          <div class="g-node g-round g-metric rv" data-node="m3a" data-order="7">
+            <b>58</b><span class="g-ml">Retire at</span>
+          </div>
+        </div>
+        <div class="g-group" data-area="m3b">
+          <div class="g-node g-round g-metric rv" data-node="m3b" data-order="7.4">
+            <b>$1.4<span class="u">M</span></b><span class="g-ml">Projected</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ===================================================== 04 — advice -->
+  <section class="chapter skin sk-paper is-side side-left" id="c4" data-from="dusk">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <div class="frame" aria-hidden="true">
+        <i class="frame-wash"></i>
+        <i class="frame-corner tl"></i><i class="frame-corner tr"></i><i class="frame-corner bl"></i><i class="frame-corner br"></i>
+        <div class="frame-strip">
+          <svg class="frame-spark" viewBox="0 0 132 20" preserveAspectRatio="none">
+            <path d="M0 17 C14 16.5 22 15 32 15.5 S46 13 56 13.6 S72 10 82 10.8 S100 7 110 6.4 S124 3 132 2.4"/>
+          </svg>
+          <i class="frame-meter"></i>
+        </div>
+      </div>
+
+      <div class="head">
+        <h2>A person, paid by nobody&rsquo;s commission</h2>
+        <p class="head-p rv">Every member gets an advisor. They are salaried, so
+        <em>the advice is the product</em> &mdash; and <strong>nobody earns more if
+        you buy more.</strong> Portraits are generated stand-ins.</p>
+      </div>
+
+      <ul class="roster rv">
+        <li>
+          <span class="portrait sm" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="presentation">
+              <g transform="rotate(-8 60 60)">
+                <g><circle class="k-1" cx="60" cy="50" r="26" fill="none" stroke-width="1.2" opacity="0.42"/><circle class="k-1" cx="60" cy="50" r="35" fill="none" stroke-width="1.2" opacity="0.32"/></g>
+                <path class="g-1" d="M14 120 c5 -28 24 -38 46 -38 s41 10 46 38z"/>
+                <rect class="g-1t" x="53" y="64" width="14" height="20" rx="5"/>
+                <g class="g-1"><circle cx="43" cy="44" r="13"/><circle cx="60" cy="32" r="15"/><circle cx="77" cy="44" r="13"/><circle cx="49" cy="30" r="10"/><circle cx="71" cy="30" r="10"/></g>
+                <circle class="g-1t" cx="60" cy="50" r="19"/>
+              </g>
+            </svg>
+          </span>
+          <div>
+            <h3>Amara Okafor</h3>
+            <p class="role">Retirement &amp; pensions</p>
+            <p class="bio">Twelve years planning drawdowns. Turns a pension statement into plain English in one sitting.</p>
+          </div>
+        </li>
+        <li>
+          <span class="portrait sm" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="presentation">
+              <g transform="rotate(6 60 60)">
+                <g><circle class="k-2" cx="60" cy="52" r="26" fill="none" stroke-width="1.2" opacity="0.42"/></g>
+                <path class="g-2" d="M22 120 c4 -26 21 -36 38 -36 s34 10 38 36z"/>
+                <rect class="g-2t" x="53" y="66" width="14" height="20" rx="5"/>
+                <circle class="g-2t" cx="60" cy="52" r="19"/>
+                <path class="g-2" d="M41 49 a19 19 0 0 1 38 -2 c-8 -7 -28 -9 -38 2z"/>
+                <g class="k-ink" fill="none" stroke-width="1.6" opacity=".55"><circle cx="52" cy="54" r="5"/><circle cx="68" cy="54" r="5"/><path d="M57 54 h6"/></g>
+              </g>
+            </svg>
+          </span>
+          <div>
+            <h3>Luc Tremblay</h3>
+            <p class="role">Tax &amp; small business</p>
+            <p class="bio">A former accountant. Will ask about the shoebox of receipts, gently, and then sort it.</p>
+          </div>
+        </li>
+        <li>
+          <span class="portrait sm" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="presentation">
+              <g transform="rotate(-3 60 60)">
+                <g><circle class="k-3" cx="60" cy="53" r="26" fill="none" stroke-width="1.2" opacity="0.42"/><circle class="k-3" cx="60" cy="53" r="35" fill="none" stroke-width="1.2" opacity="0.32"/><circle class="k-3" cx="60" cy="53" r="44" fill="none" stroke-width="1.2" opacity="0.22"/></g>
+                <path class="g-3" d="M41 50 c-4 16 -6 28 -10 38 h14 c2 -10 2 -22 1 -34z M79 50 c4 16 6 28 10 38 h-14 c-2 -10 -2 -22 -1 -34z"/>
+                <path class="g-3" opacity=".85" d="M28 120 c3 -25 17 -34 32 -34 s29 9 32 34z"/>
+                <rect class="g-3t" x="54" y="66" width="12" height="21" rx="5"/>
+                <circle class="g-3t" cx="60" cy="53" r="18"/>
+                <path class="g-3" d="M41 53 c-2 -24 36 -28 39 -4 c-12 -10 -24 -8 -39 4z"/>
+              </g>
+            </svg>
+          </span>
+          <div>
+            <h3>Priya Raman</h3>
+            <p class="role">First-time investors</p>
+            <p class="bio">Makes the first thousand dollars feel as considered as the first million.</p>
+          </div>
+        </li>
+        <li>
+          <span class="portrait sm" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="presentation">
+              <g transform="rotate(10 60 60)">
+                <g><circle class="k-s" cx="60" cy="51" r="26" fill="none" stroke-width="1.2" opacity="0.42"/></g>
+                <path class="g-s" d="M17 120 c5 -28 24 -38 43 -38 s38 10 43 38z"/>
+                <rect class="g-st" x="52" y="64" width="16" height="21" rx="5"/>
+                <circle class="g-st" cx="60" cy="51" r="20"/>
+                <path class="g-s" d="M43 57 c3 15 31 15 34 0 c-4 7 -30 7 -34 0z"/>
+                <path class="g-s" d="M40 46 c2 -19 38 -21 40 -2 c-7 -4 -13 -7 -20 -3 c-6 -4 -13 -2 -20 5z"/>
+              </g>
+            </svg>
+          </span>
+          <div>
+            <h3>Noah Feld</h3>
+            <p class="role">Couples &amp; family money</p>
+            <p class="bio">Joint accounts, education savings, and the conversation nobody wants to start first.</p>
+          </div>
+        </li>
+      </ul>
+
+    </div></div></div>
+  </section>
+
+  <!-- =================================================== 05 — payments -->
+  <section class="chapter skin sk-clay is-graph" id="c5" data-from="paper">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner">
+      <svg class="sprite" aria-hidden="true" focusable="false">
+        <symbol id="gl0" viewBox="0 0 32 32"><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5M6 21v5h20v-5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="gl1" viewBox="0 0 32 32"><path d="M6 11h19l-4.5-4.5M26 21H7l4.5 4.5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="gl2" viewBox="0 0 32 32"><rect x="5" y="10" width="22" height="15" rx="3" fill="none" stroke-width="2"/><circle cx="16" cy="17.5" r="4" fill="none" stroke-width="2"/><path d="M12 10l2-3h4l2 3" fill="none" stroke-width="2" stroke-linejoin="round"/></symbol>
+        <symbol id="gl3" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="none" stroke-width="2"/><ellipse cx="16" cy="16" rx="4.2" ry="10" fill="none" stroke-width="2"/><path d="M6 16h20" fill="none" stroke-width="2"/></symbol>
+        <symbol id="gl4" viewBox="0 0 32 32"><rect x="5" y="9" width="22" height="15" rx="3" fill="none" stroke-width="2"/><rect x="8.5" y="13" width="5" height="4" rx="1"/></symbol>
+        <symbol id="gl5" viewBox="0 0 32 32"><rect x="10" y="4" width="12" height="24" rx="3.5" fill="none" stroke-width="2"/><circle cx="16" cy="23.5" r="1.6"/></symbol>
+        <symbol id="gl6" viewBox="0 0 32 32"><path d="M9 5h10l5 5v17H9z" fill="none" stroke-width="2" stroke-linejoin="round"/><path d="M12.5 15h8M12.5 19.5h8M12.5 24h5" fill="none" stroke-width="2" stroke-linecap="round"/></symbol>
+        <symbol id="gl7" viewBox="0 0 32 32"><path d="M24 16a8 8 0 1 1-3-6.2" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M21.5 5v5h-5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.4"/></symbol>
+        <symbol id="gl8" viewBox="0 0 32 32"><path d="M6 23l6.5-6.5 5 4 8.5-10" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10.5h5v5" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+        <symbol id="gl9" viewBox="0 0 32 32"><rect x="6" y="17" width="4.5" height="9" rx="1.2"/><rect x="13.75" y="11" width="4.5" height="15" rx="1.2"/><rect x="21.5" y="6" width="4.5" height="20" rx="1.2"/></symbol>
+        <symbol id="gl10" viewBox="0 0 32 32"><rect x="6" y="7" width="20" height="5" rx="2" fill="none" stroke-width="2"/><rect x="6" y="13.5" width="20" height="5" rx="2" fill="none" stroke-width="2"/><rect x="6" y="20" width="20" height="5" rx="2" fill="none" stroke-width="2"/></symbol>
+        <symbol id="gl11" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10.5" fill="none" stroke-width="2"/><path d="M16 9.5 21 19H11z"/><path d="M16 19v3.5" fill="none" stroke-width="2" stroke-linecap="round"/></symbol>
+      </svg>
+
+      <!-- Taken apart: clusters. Four ways money moves, each a hub with its
+           channels round it, all wired to the core. -->
+      <div class="graph g-cluster" data-links="core:l>in:r core:r>spend:l core:l>move:r core:r>hold:l in:l>dd:r in:l>et:r in:l>chq:r in:l>wire:r spend:r>cardp:l spend:r>wallet:l spend:r>bills:l move:l>round:r move:l>auto:r hold:r>etf:l hold:r>bond:l hold:r>cash:l">
+        <div class="g-node g-title g-card g-core" data-node="core" data-area="core">
+          <h2>Money in, money out</h2>
+          <p class="g-sub rv" data-order="1">Larch plugs into the ways money already
+          moves &mdash; <strong>get paid, pay, and put it to work, without a
+          branch.</strong></p>
+        </div>
+        <div class="g-node g-round g-cat rv" data-node="in" data-area="in" data-order="2"><span>Paid in</span></div>
+        <div class="g-group g-leaves g-leaves-l" data-area="inL">
+          <div class="g-node g-leaf rv" data-node="dd" data-order="3"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gl0"/></svg><span class="wm">Direct deposit</span></div>
+          <div class="g-node g-leaf rv" data-node="et" data-order="3.25"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gl1"/></svg><span class="wm">e-Transfer</span></div>
+          <div class="g-node g-leaf rv" data-node="chq" data-order="3.5"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gl2"/></svg><span class="wm">Cheque photo</span></div>
+          <div class="g-node g-leaf rv" data-node="wire" data-order="3.75"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gl3"/></svg><span class="wm">Wire</span></div>
+        </div>
+        <div class="g-node g-round g-cat rv" data-node="spend" data-area="spend" data-order="2.3"><span>Spent</span></div>
+        <div class="g-group g-leaves g-leaves-r" data-area="spendL">
+          <div class="g-node g-leaf rv" data-node="cardp" data-order="3.3"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gl4"/></svg><span class="wm">Card</span></div>
+          <div class="g-node g-leaf rv" data-node="wallet" data-order="3.55"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gl5"/></svg><span class="wm">Phone wallets</span></div>
+          <div class="g-node g-leaf rv" data-node="bills" data-order="3.8"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gl6"/></svg><span class="wm">Bill pay</span></div>
+        </div>
+        <div class="g-node g-round g-cat rv" data-node="move" data-area="move" data-order="2.6"><span>Moved</span></div>
+        <div class="g-group g-leaves g-leaves-l" data-area="moveL">
+          <div class="g-node g-leaf rv" data-node="round" data-order="3.6"><svg class="mark g-3 k-3" aria-hidden="true" focusable="false"><use href="#gl7"/></svg><span class="wm">Round-ups</span></div>
+          <div class="g-node g-leaf rv" data-node="auto" data-order="3.85"><svg class="mark g-s k-s" aria-hidden="true" focusable="false"><use href="#gl8"/></svg><span class="wm">Auto-invest</span></div>
+        </div>
+        <div class="g-node g-round g-cat rv" data-node="hold" data-area="hold" data-order="2.9"><span>Held</span></div>
+        <div class="g-group g-leaves g-leaves-r" data-area="holdL">
+          <div class="g-node g-leaf rv" data-node="etf" data-order="3.9"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gl9"/></svg><span class="wm">Stocks &amp; ETFs</span></div>
+          <div class="g-node g-leaf rv" data-node="bond" data-order="4.15"><svg class="mark g-1 k-1" aria-hidden="true" focusable="false"><use href="#gl10"/></svg><span class="wm">Bonds</span></div>
+          <div class="g-node g-leaf rv" data-node="cash" data-order="4.4"><svg class="mark g-2 k-2" aria-hidden="true" focusable="false"><use href="#gl11"/></svg><span class="wm">Cash</span></div>
+        </div>
+        <p class="note rv" data-area="note" data-order="5"><b>Larch is fictional.</b> Rates, figures,
+      people and plans on this page are invented for the demo; nothing here is an
+      offer, a product or financial advice. The glyphs are generated, not anyone&rsquo;s
+      logo.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ======================================================= 06 — join -->
+  <section class="chapter skin sk-night is-side side-right" id="c6" data-from="clay">
+    <span class="band" aria-hidden="true"></span>
+    <div class="ch-body"><div class="ch-inner"><div class="ch-col">
+      <div class="frame" aria-hidden="true">
+        <i class="frame-wash"></i>
+        <i class="frame-corner tl"></i><i class="frame-corner tr"></i><i class="frame-corner bl"></i><i class="frame-corner br"></i>
+        <div class="frame-strip">
+          <svg class="frame-spark" viewBox="0 0 132 20" preserveAspectRatio="none">
+            <path d="M0 17 C14 16.5 22 15 32 15.5 S46 13 56 13.6 S72 10 82 10.8 S100 7 110 6.4 S124 3 132 2.4"/>
+          </svg>
+          <i class="frame-meter"></i>
+        </div>
+      </div>
+
+      <h2>Start with one dollar</h2>
+      <p class="rv">No minimums and no account fees. Opening takes about five
+      minutes, <em>your first deposit can be a dollar</em> &mdash;
+      <strong>and you can leave whenever you like.</strong></p>
+
+      <figure class="quote rv">
+        <blockquote>&ldquo;I used to check four apps on a Sunday night. Now I check
+        one, once a month, and it is usually good news.&rdquo;</blockquote>
+        <figcaption><b>Maya Chen</b> &mdash; member since 2023
+        <em>(fictional)</em></figcaption>
+      </figure>
+
+      <div class="cta-row rv">
+        <a class="cta cta-lg" href="mailto:hello@larch.example?subject=Open%20an%20account">
+          Open an account <i aria-hidden="true">&rarr;</i>
+        </a>
+        <a class="link-btn" href="mailto:hello@larch.example">hello@larch.example</a>
+      </div>
+
+      <dl class="figures rv">
+        <div><dt>To start</dt><dd><b>$</b>1</dd></div>
+        <div><dt>Account fees</dt><dd><b>$</b>0</dd></div>
+        <div><dt>To open</dt><dd>5<b>min</b></dd></div>
+      </dl>
+
+    </div></div></div>
+  </section>
+
+</main>
+
+<script src="js/asset.js"></script>
+<script src="js/thread.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,33 +1,32 @@
-# AXON — neural fintech demo
+# Scroll-driven fintech demos
 
-A scroll-driven demo page in the spirit of
-[totem.itsoffbrand.com](https://totem.itsoffbrand.com/) — one object that
-transforms as you scroll — rebuilt around a **neural model** for a **fintech**
-brand.
+Demo pages for a **fintech** brand, built from one set of design decisions.
+AXON, in the spirit of [totem.itsoffbrand.com](https://totem.itsoffbrand.com/),
+is built around a **neural model** that transforms as you scroll; demo-crafted
+re-stages AXON as a flight through depth. Larch carries the same decisions
+into the muted, large-asset language of
+[wealthsimple.com](https://www.wealthsimple.com/en-ca).
 
-*AXON is fictional. Every figure on the page is invented.*
+*AXON and Larch are fictional. Every figure on every page is invented.*
 
-## The demo
+## The demos
 
-**[`Demo-Totem/`](Demo-Totem/)** — plain HTML, CSS and JS. No build step, no
-dependencies. Start there; its [README](Demo-Totem/README.md) explains how it
-works and how it ports to React.
+| | Reference | Brand |
+|---|---|---|
+| **[`Demo-Totem/`](Demo-Totem/)** | [totem.itsoffbrand.com](https://totem.itsoffbrand.com/) | AXON, a neural fintech consultancy. The original, and where the design decisions were made |
+| **[`demo-crafted/`](demo-crafted/)** | [2018.craftedbygc.com](https://2018.craftedbygc.com/) | AXON again: the same content, skins and generated assets, re-staged as a flight through depth |
+| **[`Demo-Wealthsimple/`](Demo-Wealthsimple/)** | [wealthsimple.com](https://www.wealthsimple.com/en-ca) | Larch, a fictional money app. The same decisions in a muted dialect, with one large object made of coins |
+
+All three are plain HTML, CSS and JS, with no build step and no dependencies.
+Each README explains how its demo works.
 
 ```sh
 python3 -m http.server 8000 --directory Demo-Totem
+python3 -m http.server 8001 --directory demo-crafted
+python3 -m http.server 8002 --directory Demo-Wealthsimple
 ```
 
-**[`demo-crafted/`](demo-crafted/)**: the same AXON content, skins and
-generated assets, re-staged as a flight through depth in the pattern of
-[2018.craftedbygc.com](https://2018.craftedbygc.com/). Enter, then scroll or
-drag forward through seven rooms that each flood the screen in their own skin.
-Cards open in place, and a dial jumps between rooms. Its
-[README](demo-crafted/README.md) maps each part of the pattern to how it is
-built here.
-
-```sh
-python3 -m http.server 8000 --directory demo-crafted
-```
+### Demo-Totem
 
 - Seven sections wearing five **skins** — a skin is the whole colour set at
   once, so an alternate section floods the screen with violet, electric yellow
@@ -49,6 +48,35 @@ python3 -m http.server 8000 --directory demo-crafted
   networks the wiring and the model's beads follow the cards as they move.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
+
+### demo-crafted
+
+The same AXON content, skins and generated assets, re-staged as a flight
+through depth in the pattern of
+[2018.craftedbygc.com](https://2018.craftedbygc.com/). Enter, then scroll or
+drag forward through seven rooms that each flood the screen in their own skin.
+Cards open in place, and a dial jumps between rooms. Its
+[README](demo-crafted/README.md) maps each part of the pattern to how it is
+built here.
+
+### Demo-Wealthsimple
+
+- The structure is AXON's, unchanged: one `progress` number, side sections
+  alternating with taken-apart networks, skins with OKLab seams, the island
+  nav, typed titles with a line-at-a-time reveal, tinted cards that lift, and
+  a fluid scroll with no snapping.
+- The dialect is Wealthsimple's. The rooms are muted and earthy (oat, sage, a
+  fog-to-apricot sky, terracotta, spruce), with chroma capped and every value
+  solved to 4.5:1 by `tools/solve-palette.mjs`. None of the reference's own
+  colours are reused. The type is a soft serif in sentence case, the call to
+  action is an ink pill, and the radii are large.
+- The protagonist is one large object of a few hundred coins. It restacks
+  into a larch cone, four coin stacks, a pie, a mountain, an hourglass, a
+  card and a single coin, standing on a soft shadow like a product shot. In
+  the networks the coins bead the wiring.
+- The rig becomes a quiet frame: rounded corners, a soft wash for the
+  reveal, a ledger rule down one margin, and a growth curve wiring the copy
+  to the object.
 
 ## Planning
 
