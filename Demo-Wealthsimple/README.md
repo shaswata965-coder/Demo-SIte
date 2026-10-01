@@ -27,6 +27,16 @@ Opening `index.html` from disk works too. `node tools/make-embed.mjs` writes a
 self-contained `dist/index.html` for pasting into someone else's document. It
 works the same way as AXON's; see [Embedding](../Demo-Totem/README.md#embedding).
 
+**The Artifact.** `artifact.html` is that same single-file build, published as
+a claude.ai Artifact: [claude.ai/artifact/7YaYTpwwFGiXCjvo2mmhCi](https://claude.ai/artifact/7YaYTpwwFGiXCjvo2mmhCi)
+(private until its owner shares it). An Artifact is named by its `<title>`,
+so the build renames it to plain "Larch". The file is generated, so edit the
+sources and rebuild it rather than editing it by hand:
+
+```sh
+node tools/make-embed.mjs --out artifact.html --title Larch
+```
+
 ## Files
 
 ```
@@ -38,7 +48,8 @@ js/thread.js             the thread layer drawn in each frame's margins
 js/graph.js              wiring for the taken-apart sections (unchanged from AXON)
 js/app.js                scroll → everything else
 tools/solve-palette.mjs  solves and checks every colour in tokens.css
-tools/make-embed.mjs     single-file embed build
+tools/make-embed.mjs     single-file embed build (dist/, or artifact.html)
+artifact.html            the published Artifact — generated, do not edit
 ```
 
 ## What was borrowed from the reference

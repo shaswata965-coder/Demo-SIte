@@ -78,8 +78,11 @@ img, canvas { max-width: 100%; }
    ------------------------------------------------------------------------ */
 :root { --nav-h: 3.375rem; --nav-top: clamp(.6rem, 1.2vw, 1rem); }
 
+/* A fixed bar clears a phone's safe-area inset itself: the Artifact viewer
+   pads the page for it, and a fixed element does not inherit that padding. */
 .nav {
-  position: fixed; z-index: 6; left: 0; right: 0; top: var(--nav-top);
+  position: fixed; z-index: 6; left: 0; right: 0;
+  top: calc(var(--nav-top) + env(safe-area-inset-top, 0px));
   padding-inline: var(--gutter);
   pointer-events: none;
 }

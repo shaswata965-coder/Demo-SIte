@@ -15,6 +15,15 @@
    itself, so the embed build behaves identically to the standalone one.
 
      node tools/make-embed.mjs
+
+   The same build is the published Artifact. An Artifact is named by its
+   <title>, and the name has to be a name — "Larch", not the site's
+   "Larch — money, grown quietly" — so the artifact build overrides it and
+   writes to a tracked file instead of dist/:
+
+     node tools/make-embed.mjs --out artifact.html --title Larch
+
+   artifact.html is generated: edit the sources and rebuild, never the file.
 */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -24,6 +33,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
 const read = (rel) => readFileSync(resolve(root, rel), 'utf8');
 
+const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null; };
+const outPath = arg('--out') ?? 'dist/index.html';
+const title = arg('--title');
+
 const src = read('index.html');
 const head = /<head>([\s\S]*?)<\/head>/.exec(src)[1];
 let body = /<body>([\s\S]*?)<\/body>/.exec(src)[1];
@@ -31,7 +44,7 @@ let body = /<body>([\s\S]*?)<\/body>/.exec(src)[1];
 const out = [];
 
 // Title names the artifact; keep it first.
-out.push(/<title>[\s\S]*?<\/title>/.exec(head)[0]);
+out.push(title ? `<title>${title}</title>` : /<title>[\s\S]*?<\/title>/.exec(head)[0]);
 
 // The webfont is the one thing that stays a network request.
 for (const link of head.match(/<link rel="(?:preconnect|stylesheet)"[^>]*>/g) ?? []) {
@@ -62,6 +75,6 @@ if (/<(script|link)[^>]+(src|href)="(?!https:\/\/fonts\.)/.test(result)) {
   throw new Error('embed build still references a local file');
 }
 
-mkdirSync(resolve(root, 'dist'), { recursive: true });
-writeFileSync(resolve(root, 'dist/index.html'), result);
-console.log(`dist/index.html — ${(result.length / 1024).toFixed(1)} KB, self-contained`);
+mkdirSync(dirname(resolve(root, outPath)), { recursive: true });
+writeFileSync(resolve(root, outPath), result);
+console.log(`${outPath} — ${(result.length / 1024).toFixed(1)} KB, self-contained`);
