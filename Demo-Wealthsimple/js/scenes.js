@@ -71,7 +71,14 @@
     if ('ResizeObserver' in window) new ResizeObserver(function () { refresh(); }).observe(canvas);
     else window.addEventListener('resize', refresh);
     if ('IntersectionObserver' in window) {
-      new IntersectionObserver(function (e) { visible = e[0].isIntersecting; if (visible) schedule(); else stop(); }).observe(canvas);
+      /* Coming back on screen starts the scene's story over: the tree fills
+         again, the point starts a fresh descent. */
+      new IntersectionObserver(function (e) {
+        var was = visible;
+        visible = e[0].isIntersecting;
+        if (visible && !was && impl.enter && w && !still.matches) impl.enter();
+        if (visible) schedule(); else stop();
+      }).observe(canvas);
     } else visible = true;
     new MutationObserver(function () { readColors(); if (!raf) { ctx.clearRect(0, 0, w, h); impl.draw(ctx, w, h, t, colors); } })
       .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
@@ -136,6 +143,11 @@
 
     return {
       warm: 300,
+      enter: function () {
+        movers.length = 0; settled.length = 0;
+        leaves.forEach(function (n) { n.heat = 0; });
+        for (var i = 0; i < 45; i++) this.step(1 / 30, 0);
+      },
       layout: function (w, h) { W = w; H = h; wide = w / h > 0.9; },
       step: function (dt, t) {
         /* About six applications a second, a few more on a big screen. */
@@ -261,6 +273,7 @@
     }
     return {
       warm: 240,
+      enter: function () { start(); ring = 0; },
       layout: function (w, h) { W = w; H = h; NX = w < 700 ? 34 : 60; NZ = w < 700 ? 20 : 26; },
       step: function (dt, t) {
         if (rest > 0) {

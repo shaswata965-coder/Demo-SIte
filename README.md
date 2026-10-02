@@ -78,8 +78,12 @@ built here.
   hedge, and a dotted loss surface with a point rolling to its minimum.
 - Headlines rise word by word as they arrive, copy fades in after them, the
   menu rows slide their picture and description in on hover, and the closing
-  line turns over like a drum. A pause button stops everything; reduced
-  motion shows finished frames.
+  line turns over like a drum. Every entrance replays each time its section
+  comes back into view, and each picture's loop restarts from its first
+  frame. Micro-interactions throughout: pills that lift and catch the light,
+  a reading-progress line, the thesis lighting up as you read, depth under
+  the pointer. A pause button stops everything; reduced motion shows
+  finished frames.
 - Colours are its own, solved by `tools/solve-palette.mjs` (text 4.5:1 or
   better on every ground, in light and dark).
 

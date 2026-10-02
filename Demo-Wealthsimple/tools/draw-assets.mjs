@@ -89,6 +89,7 @@ const p50 = pathOf([[x(0), y(hist[hist.length - 1].act)]].concat(fc.map((p) => [
 g += `<g class="f-fc"><path class="f-band" d="${band}"/><path class="f-p50" pathLength="100" d="${p50}"/></g>`;
 g += `<path class="f-act" d="${pathOf(hist.map((p) => [x(p.i), y(p.act)]))}"/>`;
 g += `<circle class="f-now" cx="${r1(x(0))}" cy="${r1(y(hist[hist.length - 1].act))}" r="5"/>`;
+g += `<circle class="f-ring" cx="${r1(x(low.i))}" cy="${r1(y(low.p50))}" r="6"/>`;
 g += `<circle class="f-low" cx="${r1(x(low.i))}" cy="${r1(y(low.p50))}" r="6"/>`;
 
 const pinLeft = r1(x(low.i) / W * 100), pinTop = r1(y(low.p50) / H * 100);

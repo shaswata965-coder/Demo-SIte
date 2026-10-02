@@ -311,11 +311,51 @@
 .bub-head { transform-box: view-box; transform-origin: 80px 104px; }
 
 /* ===========================================================================
+   Depth under the pointer
+   js/site.js sets --px and --py (-1 to 1) on a product hero while a mouse
+   moves over it. Floating parts shift against it by a few pixels, through
+   the translate property so they keep their own loops; the model card
+   tilts toward it.
+   ========================================================================= */
+.card-tilt { position: absolute; inset: 0; transform-style: preserve-3d; }
+.a-credit .phone, .a-credit .chip, .win, .case, .donut-wrap, .legend, .slab-bob, .mist {
+  transition: translate 1s var(--e1);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .a-credit .phone { translate: calc(var(--px, 0) * -6px) calc(var(--py, 0) * -5px); }
+  .a-credit .chip-a { translate: calc(var(--px, 0) * 18px) calc(var(--py, 0) * 14px); }
+  .a-credit .chip-b { translate: calc(var(--px, 0) * 24px) calc(var(--py, 0) * 16px); }
+  .card-tilt { transform: rotateY(calc(var(--px, 0) * 10deg)) rotateX(calc(var(--py, 0) * -8deg)); transition: transform 1.1s var(--e1); }
+  .win { translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -6px); }
+  .case { translate: calc(var(--px, 0) * 20px) calc(var(--py, 0) * 14px); }
+  .slab-bob { translate: calc(var(--px, 0) * 14px) calc(var(--py, 0) * 10px); }
+  .m1, .m3 { translate: calc(var(--px, 0) * -26px) 0; }
+  .m2 { translate: calc(var(--px, 0) * 30px) 0; }
+  .donut-wrap { translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -6px); }
+  .legend { translate: calc(var(--px, 0) * 18px) calc(var(--py, 0) * 12px); }
+}
+
+/* The risk legend points at its slice: hover a row, the others step back. */
+.d-seg, .legend li { transition: opacity .35s var(--e1), scale .35s var(--e1); }
+.a-risk[data-focus] .d-seg { opacity: .22; }
+.a-risk[data-focus="1"] .ds1, .a-risk[data-focus="2"] .ds2, .a-risk[data-focus="3"] .ds3,
+.a-risk[data-focus="4"] .ds4, .a-risk[data-focus="5"] .ds5 { opacity: 1; }
+.legend li:hover { scale: 1.04; }
+
+/* The forecast's low point keeps a slow ring going out. */
+.f-ring { fill: none; stroke: var(--s1); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+
+/* ===========================================================================
    The loops
+   Each one is short, with its holds kept brief so the picture is always on
+   its way somewhere, and each restarts from its first frame whenever its
+   section comes back on screen (js/site.js).
    ========================================================================= */
 @media (prefers-reduced-motion: no-preference) {
-  /* credit: a 12s cycle. Count, reasons, decision, the saved note, hold. */
-  .a-credit { --loop: 12s; }
+  /* credit: a 9s cycle. Count, reasons, decision, the saved note, a short
+     hold; the phone floats the whole time. */
+  .a-credit { --loop: 9s; }
+  .phone { animation: float-y 6s ease-in-out infinite alternate; }
   .dial-num { animation: cr-score var(--loop) infinite, cr-fade var(--loop) linear infinite; }
   .dial-fill { animation: cr-dial var(--loop) infinite; }
   .ps-reasons li { animation: var(--loop) var(--e1) infinite both; }
@@ -328,89 +368,125 @@
   .ps-reasons li:nth-child(3) i { animation: cr-b2 var(--loop) var(--e1) infinite both; }
   .ps-reasons li:nth-child(4) i { animation: cr-b3 var(--loop) var(--e1) infinite both; }
   .ps-decision { animation: cr-dec var(--loop) var(--e1) infinite both; }
+  .ps-decision .tag { animation: cr-glow var(--loop) ease-out infinite both; }
+  .ps-actions span:last-child { animation: cr-press var(--loop) var(--e1) infinite both; }
   .a-credit .chip-a { animation: cr-chip var(--loop) var(--e1) infinite both; }
-  .a-credit .chip-b { animation: drift-y 7s ease-in-out infinite alternate; }
+  .a-credit .chip-b { animation: drift-y 5s ease-in-out infinite alternate; }
 
-  /* governance: the card turns slowly in the light. */
-  .card-float { animation: card-turn 10s ease-in-out infinite alternate; }
-  .mc-sheen { animation: sheen 10s ease-in-out infinite alternate; }
-  .card-shadow { animation: card-shadow 10s ease-in-out infinite alternate; }
+  /* governance: the card turns through the light and back. */
+  .card-float { animation: card-turn 7s ease-in-out infinite alternate; }
+  .mc-sheen { animation: sheen 7s ease-in-out infinite alternate; }
+  .card-shadow { animation: card-shadow 7s ease-in-out infinite alternate; }
+  .mc-seal svg { animation: seal 7s ease-in-out infinite; }
 
-  /* fraud: the feed never stops; the ring's money keeps moving. */
-  .feed-track { animation: feed 36s linear infinite; }
-  .net-ring { animation: dash-flow 1.6s linear infinite; }
-  .net-in, .net-out { animation: dash-flow 1.2s linear infinite; }
-  .net-pulse { animation: pulse 2.4s var(--e1) infinite; }
-  .case { animation: drift-y 8s ease-in-out infinite alternate; }
+  /* fraud: the feed never stops; held payments glow; the live light
+     blinks; money keeps moving round the ring and each account pulses. */
+  .feed-track { animation: feed 26s linear infinite; }
+  .row.hot { animation: hot 2.2s ease-in-out infinite alternate; }
+  .win-live::before { animation: live 1.4s ease-in-out infinite; }
+  .net-ring { animation: dash-flow 1.4s linear infinite; }
+  .net-in, .net-out { animation: dash-flow 1s linear infinite; }
+  .net-pulse { animation: pulse 2s var(--e1) infinite; }
+  .net-acc circle { transform-box: fill-box; transform-origin: center; animation: acc 2.8s ease-in-out infinite; }
+  .net-acc circle:nth-child(2) { animation-delay: -.4s; } .net-acc circle:nth-child(3) { animation-delay: -.8s; }
+  .net-acc circle:nth-child(4) { animation-delay: -1.2s; } .net-acc circle:nth-child(5) { animation-delay: -1.6s; }
+  .net-acc circle:nth-child(6) { animation-delay: -2s; } .net-acc circle:nth-child(7) { animation-delay: -2.4s; }
+  .case { animation: drift-y 6s ease-in-out infinite alternate; }
 
-  /* forecasting: the slab floats; the forecast draws itself, the pin rises. */
-  .a-fc { --loop: 11s; }
-  .slab-bob { animation: bob 8s ease-in-out infinite alternate; }
-  .slab-shadow { animation: bob-shadow 8s ease-in-out infinite alternate; }
+  /* forecasting: the slab floats; the forecast draws itself, its range
+     fills, the pin drops onto the low point and rings. */
+  .a-fc { --loop: 9s; }
+  .slab-bob { animation: bob 6s ease-in-out infinite alternate; }
+  .slab-shadow { animation: bob-shadow 6s ease-in-out infinite alternate; }
   .f-p50 { animation: fc-draw var(--loop) var(--e1) infinite both; }
   .f-band { animation: fc-band var(--loop) var(--e1) infinite both; }
   .f-low, .pin-in { animation: fc-pin var(--loop) var(--e1) infinite both; }
-  .mist { animation: mist 16s ease-in-out infinite alternate; }
-  .m2 { animation-duration: 21s; animation-direction: alternate-reverse; }
-  .m3 { animation-duration: 19s; }
+  .pin-card { animation: pin-drop var(--loop) infinite both; }
+  .f-ring { animation: fc-ring var(--loop) ease-out infinite both; }
+  .mist { animation: mist 12s ease-in-out infinite alternate; }
+  .m2 { animation-duration: 15s; animation-direction: alternate-reverse; }
+  .m3 { animation-duration: 14s; }
 
-  /* risk: before the hedge, then after; the legend floats. */
-  .a-risk { --loop: 12s; }
+  /* risk: before the hedge, then after, then back; the legend floats. */
+  .a-risk { --loop: 9s; }
   .d-seg { animation: var(--loop) cubic-bezier(.65, 0, .35, 1) infinite both; }
   .ds1 { animation-name: dn1; } .ds2 { animation-name: dn2; } .ds3 { animation-name: dn3; } .ds4 { animation-name: dn4; } .ds5 { animation-name: dn5; }
   .a-risk .swap .v-a { animation: swap-a var(--loop) infinite both; }
   .a-risk .swap .v-b { animation: swap-b var(--loop) infinite both; }
-  .legend li { animation: drift-y 6s ease-in-out infinite alternate; }
-  .legend li:nth-child(2n) { animation-delay: -2s; }
-  .legend li:nth-child(3n) { animation-delay: -4s; }
+  .dm-val { animation: val-pop var(--loop) var(--e1) infinite both; }
+  .legend li { animation: drift-y 5s ease-in-out infinite alternate; }
+  .legend li:nth-child(2n) { animation-delay: -1.6s; }
+  .legend li:nth-child(3n) { animation-delay: -3.2s; }
 
   /* newsletter: the editor tilts her head. */
-  .bub-head { animation: tilt 6s ease-in-out infinite alternate; }
+  .bub-head { animation: tilt 5s ease-in-out infinite alternate; }
 }
 
-@keyframes cr-score { 0%, 4% { --score: 300; animation-timing-function: cubic-bezier(.2, .7, .3, 1); } 26%, 100% { --score: 712; } }
-@keyframes cr-fade { 0% { opacity: 0; } 3%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
-@keyframes cr-dial { 0%, 4% { stroke-dashoffset: 100; animation-timing-function: cubic-bezier(.2, .7, .3, 1); } 26%, 90% { stroke-dashoffset: 25.1; } 96%, 100% { stroke-dashoffset: 100; } }
-@keyframes cr-r0 { 0%, 28% { opacity: 0; transform: translateY(.8em); } 32%, 90% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; transform: none; } }
-@keyframes cr-r1 { 0%, 33% { opacity: 0; transform: translateY(.8em); } 37%, 90% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; transform: none; } }
-@keyframes cr-r2 { 0%, 38% { opacity: 0; transform: translateY(.8em); } 42%, 90% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; transform: none; } }
-@keyframes cr-r3 { 0%, 43% { opacity: 0; transform: translateY(.8em); } 47%, 90% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; transform: none; } }
-@keyframes cr-b0 { 0%, 29% { transform: scaleX(0); } 36%, 100% { transform: none; } }
-@keyframes cr-b1 { 0%, 34% { transform: scaleX(0); } 41%, 100% { transform: none; } }
-@keyframes cr-b2 { 0%, 39% { transform: scaleX(0); } 46%, 100% { transform: none; } }
-@keyframes cr-b3 { 0%, 44% { transform: scaleX(0); } 51%, 100% { transform: none; } }
-@keyframes cr-dec { 0%, 53% { opacity: 0; transform: scale(.94); } 57%, 90% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; transform: none; } }
-@keyframes cr-chip { 0%, 61% { opacity: 0; transform: translateX(-1.5em); } 66%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
-@keyframes drift-y { from { transform: translateY(-.45em); } to { transform: translateY(.45em); } }
+/* Each picture drifts a little against the scroll as its section passes,
+   where the browser can tie an animation to scrolling. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ph .asset { animation: scroll-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  }
+}
+@keyframes scroll-drift { from { translate: 0 5vh; } to { translate: 0 -5vh; } }
+
+@keyframes float-y { from { transform: translateY(-.5em); } to { transform: translateY(.5em); } }
+@keyframes cr-score { 0%, 4% { --score: 300; animation-timing-function: cubic-bezier(.2, .7, .3, 1); } 24%, 100% { --score: 712; } }
+@keyframes cr-fade { 0% { opacity: 0; } 3%, 88% { opacity: 1; } 93%, 100% { opacity: 0; } }
+@keyframes cr-dial { 0%, 4% { stroke-dashoffset: 100; animation-timing-function: cubic-bezier(.2, .7, .3, 1); } 24%, 88% { stroke-dashoffset: 25.1; } 95%, 100% { stroke-dashoffset: 100; } }
+@keyframes cr-r0 { 0%, 26% { opacity: 0; transform: translateY(.8em); } 31%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes cr-r1 { 0%, 30% { opacity: 0; transform: translateY(.8em); } 35%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes cr-r2 { 0%, 34% { opacity: 0; transform: translateY(.8em); } 39%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes cr-r3 { 0%, 38% { opacity: 0; transform: translateY(.8em); } 43%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes cr-b0 { 0%, 27% { transform: scaleX(0); } 35%, 100% { transform: none; } }
+@keyframes cr-b1 { 0%, 31% { transform: scaleX(0); } 39%, 100% { transform: none; } }
+@keyframes cr-b2 { 0%, 35% { transform: scaleX(0); } 43%, 100% { transform: none; } }
+@keyframes cr-b3 { 0%, 39% { transform: scaleX(0); } 47%, 100% { transform: none; } }
+@keyframes cr-dec { 0%, 46% { opacity: 0; transform: scale(.9); } 51% { opacity: 1; transform: scale(1.04); } 54%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes cr-glow {
+  0%, 51% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 45%, transparent); }
+  64%, 100% { box-shadow: 0 0 0 .7em color-mix(in srgb, var(--good) 0%, transparent); }
+}
+@keyframes cr-press { 0%, 62% { transform: none; } 65% { transform: scale(.94); } 69%, 100% { transform: none; } }
+@keyframes cr-chip { 0%, 66% { opacity: 0; transform: translateX(-1.5em); } 71%, 88% { opacity: 1; transform: none; } 93%, 100% { opacity: 0; transform: none; } }
+@keyframes drift-y { from { transform: translateY(-.5em); } to { transform: translateY(.5em); } }
 
 @keyframes card-turn {
-  from { transform: rotateX(20deg) rotateY(-27deg) rotateZ(6deg) translateY(-.6em); }
-  to   { transform: rotateX(11deg) rotateY(-12deg) rotateZ(3deg) translateY(.6em); }
+  from { transform: rotateX(21deg) rotateY(-32deg) rotateZ(7deg) translateY(-.8em); }
+  to   { transform: rotateX(9deg) rotateY(-6deg) rotateZ(2deg) translateY(.8em); }
 }
-@keyframes sheen { from { background-position: 110% 0; } to { background-position: -10% 0; } }
-@keyframes card-shadow { from { transform: scale(.92); opacity: .75; } to { transform: scale(1.04); opacity: 1; } }
+@keyframes sheen { from { background-position: 115% 0; } to { background-position: -15% 0; } }
+@keyframes card-shadow { from { transform: scale(.9); opacity: .7; } to { transform: scale(1.05); opacity: 1; } }
+@keyframes seal { 0%, 70% { transform: rotate(0); } 85%, 100% { transform: rotate(360deg); } }
 
 @keyframes feed { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+@keyframes hot { from { background-color: color-mix(in srgb, var(--bad) 5%, var(--ui)); } to { background-color: color-mix(in srgb, var(--bad) 13%, var(--ui)); } }
+@keyframes live { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
 @keyframes dash-flow { to { stroke-dashoffset: -22; } }
-@keyframes pulse { 0% { opacity: .9; transform: scale(.6); } 70%, 100% { opacity: 0; transform: scale(2.2); } }
+@keyframes pulse { 0% { opacity: .9; transform: scale(.6); } 70%, 100% { opacity: 0; transform: scale(2.3); } }
+@keyframes acc { 0%, 70%, 100% { transform: none; } 80% { transform: scale(1.35); } }
 
-@keyframes bob { from { transform: translateY(-1em); } to { transform: translateY(.7em); } }
-@keyframes bob-shadow { from { transform: scale(.86); opacity: .7; } to { transform: scale(1.04); opacity: 1; } }
-@keyframes fc-draw { 0%, 6% { stroke-dashoffset: 100; } 30%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes fc-band { 0%, 10% { opacity: 0; } 32%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
-@keyframes fc-pin { 0%, 32% { opacity: 0; } 38%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
-@keyframes mist { from { transform: translateX(-1.5em); opacity: .7; } to { transform: translateX(1.5em); opacity: 1; } }
+@keyframes bob { from { transform: translateY(-1.4em); } to { transform: translateY(.9em); } }
+@keyframes bob-shadow { from { transform: scale(.82); opacity: .6; } to { transform: scale(1.05); opacity: 1; } }
+@keyframes fc-draw { 0%, 5% { stroke-dashoffset: 100; } 28%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes fc-band { 0%, 8% { opacity: 0; } 30%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
+@keyframes fc-pin { 0%, 30% { opacity: 0; } 34%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
+@keyframes pin-drop { 0%, 30% { transform: translateY(-1.6em); animation-timing-function: cubic-bezier(.3, 0, .6, 1); } 36% { transform: translateY(.25em); animation-timing-function: var(--e1); } 40%, 100% { transform: none; } }
+@keyframes fc-ring { 0%, 38% { opacity: 0; transform: scale(1); } 40% { opacity: .9; transform: scale(1); } 56%, 100% { opacity: 0; transform: scale(3.2); } }
+@keyframes mist { from { transform: translateX(-2em); opacity: .65; } to { transform: translateX(2em); opacity: 1; } }
 
 /* Before: 34 22 18 14 12. After: 21 26 22 17 14. */
-@keyframes dn1 { 0%, 36% { --len: 34; --off: 0; } 50%, 86% { --len: 21; --off: 0; } 100% { --len: 34; --off: 0; } }
-@keyframes dn2 { 0%, 36% { --len: 22; --off: 34; } 50%, 86% { --len: 26; --off: 21; } 100% { --len: 22; --off: 34; } }
-@keyframes dn3 { 0%, 36% { --len: 18; --off: 56; } 50%, 86% { --len: 22; --off: 47; } 100% { --len: 18; --off: 56; } }
-@keyframes dn4 { 0%, 36% { --len: 14; --off: 74; } 50%, 86% { --len: 17; --off: 69; } 100% { --len: 14; --off: 74; } }
-@keyframes dn5 { 0%, 36% { --len: 12; --off: 88; } 50%, 86% { --len: 14; --off: 86; } 100% { --len: 12; --off: 88; } }
-@keyframes swap-a { 0%, 38% { opacity: 1; } 46%, 88% { opacity: 0; } 97%, 100% { opacity: 1; } }
-@keyframes swap-b { 0%, 38% { opacity: 0; } 46%, 88% { opacity: 1; } 97%, 100% { opacity: 0; } }
+@keyframes dn1 { 0%, 30% { --len: 34; --off: 0; } 42%, 80% { --len: 21; --off: 0; } 92%, 100% { --len: 34; --off: 0; } }
+@keyframes dn2 { 0%, 30% { --len: 22; --off: 34; } 42%, 80% { --len: 26; --off: 21; } 92%, 100% { --len: 22; --off: 34; } }
+@keyframes dn3 { 0%, 30% { --len: 18; --off: 56; } 42%, 80% { --len: 22; --off: 47; } 92%, 100% { --len: 18; --off: 56; } }
+@keyframes dn4 { 0%, 30% { --len: 14; --off: 74; } 42%, 80% { --len: 17; --off: 69; } 92%, 100% { --len: 14; --off: 74; } }
+@keyframes dn5 { 0%, 30% { --len: 12; --off: 88; } 42%, 80% { --len: 14; --off: 86; } 92%, 100% { --len: 12; --off: 88; } }
+@keyframes swap-a { 0%, 32% { opacity: 1; } 40%, 82% { opacity: 0; } 90%, 100% { opacity: 1; } }
+@keyframes swap-b { 0%, 32% { opacity: 0; } 40%, 82% { opacity: 1; } 90%, 100% { opacity: 0; } }
+@keyframes val-pop { 0%, 34%, 84%, 100% { transform: none; } 38%, 88% { transform: scale(1.08); } }
 
-@keyframes tilt { from { transform: rotate(-4deg); } to { transform: rotate(3deg) translateY(1px); } }
+@keyframes tilt { from { transform: rotate(-5deg); } to { transform: rotate(4deg) translateY(1px); } }
 
 /* Frozen by the page's pause button, and while a section is off screen. */
 html[data-motion="paused"] .asset, html[data-motion="paused"] .asset *,

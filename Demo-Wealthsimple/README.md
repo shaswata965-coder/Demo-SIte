@@ -64,7 +64,7 @@ artifact.html            the published Artifact (generated, do not edit)
 | About: coin stack, huge serif, thesis | "Machine learning, accounted for" | lichen | A coin stack with a larch growing out of it, fading in. The thesis rises word by word. |
 | Trade: trading UI | **Fraud** | oxblood | A live payments monitor whose feed never stops, a few payments held or sent for review, and an open case: seven accounts around one device, money moving round the ring and out to a new wire payee. |
 | Summit: a floating mountaintop | **Forecasting** | dawn (gradient) | The cash forecast on a floating slab in 3D. The forecast draws itself, its range fills in, and a pin stands up off the surface at the low point. |
-| Classic: an animated pie | **Risk** | fog | A donut of one-day 99% VaR by factor that rebalances between "before hedge" and "after rates hedge", with its centre total and legend changing with it. |
+| Classic: an animated pie | **Risk** | fog | A donut of one-day 99% VaR by factor that rebalances between "before hedge" and "after rates hedge", with its centre total and legend changing with it. Hover a legend row to pick out its slice. |
 | TLDR: newsletter card with a video portrait | **The Residual** | moss card on lichen | The wordmark beside an illustrated portrait of its editor, who tilts her head. |
 | Final CTA: full-height close | "Every decision, explained to your regulator." | peat | Canvas. A dotted loss surface, breathing. A point rolls downhill with momentum to the minimum, shows "converged", and starts again elsewhere. The last word of the headline turns over like a drum: regulator, auditors, board, customers. |
 
@@ -92,16 +92,44 @@ readers.
 One ease for everything, the reference's own: `cubic-bezier(0.241, 0.969,
 0.635, 0.997)`, fast out of the gate with a long settle.
 
-- **Headline entrances.** `js/site.js` splits a headline into words when it
-  first comes into view. Each word rises half an em and fades in, a few
-  hundredths of a second after the one before and a little more for each new
-  line. Screen readers get the sentence once, whole.
+**Every visit replays.** Each entrance plays when its element comes into
+view and resets once it is wholly off screen, so scrolling back to a section
+plays it again. Its product picture's loop is rewound to the first frame on
+arrival, so each visit opens on the whole sequence (the score counting up,
+the forecast drawing itself) rather than wherever the loop was paused. The two
+canvas scenes start their story over too: the tree refills, the point starts
+a fresh descent.
+
+- **Headline entrances.** `js/site.js` splits a headline into words. Each word
+  rises half an em and fades in, a few hundredths of a second after the one
+  before. The big serif lines (about, the close) rise out of a mask instead,
+  the reference's cropping mode. Screen readers get the sentence once, whole.
 - **Supporting copy** fades in over 914 ms after its headline: eyebrows first,
   then buttons and forms.
-- **Background loops** run in CSS (the product pictures) and canvas (the
-  opener and the close). Sections off screen stop their loops.
+- **The product menu** names rise out of their rows one after another; on a
+  phone the rule under each row draws across.
+- **The pictures** rise into place as their section arrives, then loop: short
+  cycles with brief holds, plus continuous secondary motion (the phone
+  floats, held payments glow, the slab bobs, the legend drifts). Where the
+  browser can tie animation to scrolling, each picture also drifts a little
+  against the scroll.
+- **Small things:**
+  - pills lift on hover, press in on click, and catch a sweep of light
+  - a reading-progress hairline runs along the foot of the header
+  - each eyebrow's larch sprouts up from its trunk
+  - the about icon builds: three coins drop onto the stack, the larch grows out of the top, its needles bud
+  - the thesis lights up word by word as you read down it
+  - with a mouse, the floating parts of each picture shift against the pointer, and the model card tilts toward it
+  - hovering a risk legend row dims the other slices
+  - the menu picture settles with a spring
+  - the newsletter editor pops in
+  - the theme and pause icons spin in when they change
+  - the close's button breathes a ring of gold
+  - footer links underline from the left
+  - the form's message slides in, and the copy button pops
 - **The pause button** on every moving section stops all of it at once, and
-  the choice is remembered in this browser.
+  the choice is remembered in this browser. Sections off screen stop their
+  loops.
 - **Reduced motion.** Nothing waits to enter and nothing loops: every picture
   shows its finished frame and each canvas draws one still frame.
 - **Without the script** every headline is simply shown. The early inline
@@ -157,6 +185,9 @@ Checked with Playwright in this container, with the webfonts loaded:
 - Menu hover reveal, the Products panel (closes after a link), the phone
   drawer, the form's two messages, theme toggle, copy button, and pause (the
   canvas holds still while paused and moves again after).
+- Replay: scrolled down, to the bottom and back, the menu rows, headlines and
+  about lines reset off screen and play again on return, and the credit
+  loop is back at its first frame.
 - Reduced motion: every section complete at rest, nothing hidden.
 
 ## Porting
