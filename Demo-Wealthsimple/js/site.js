@@ -3,6 +3,8 @@
    ----------------------------------------------------------------------------
    The page reads completely without it. This adds:
 
+     · the opening: skipping it, removing it when it ends, and holding the
+       page's entrances until then
      · the theme toggle and the pause button (both remembered in this
        browser, if storage is allowed)
      · headline entrances: words rise half an em and fade in as a headline
@@ -26,6 +28,40 @@
   var root = document.documentElement;
   var still = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
+
+  /* ---- the opening ------------------------------------------------------
+     Its whole timeline is CSS (css/intro.css). Here: any key, click, wheel
+     or touch skips it; when it ends it is removed, the page scrolls again,
+     and everything waiting on it (the page's entrances, the opener's tree)
+     is told. */
+  var intro = document.getElementById('intro'), introOver = false;
+  function introDone() {
+    if (introOver) return;
+    introOver = true;
+    root.classList.remove('intro-on', 'intro-skip');
+    if (intro && intro.parentNode) intro.parentNode.removeChild(intro);
+    var h = document.getElementById('hdr'); if (h) h.classList.add('hdr-drop');
+    document.dispatchEvent(new CustomEvent('larch:intro-done'));
+  }
+  function afterIntro(fn) {
+    if (introOver || !root.classList.contains('intro-on')) fn();
+    else document.addEventListener('larch:intro-done', fn, { once: true });
+  }
+  if (intro && root.classList.contains('intro-on')) {
+    intro.addEventListener('animationend', function (e) {
+      if (e.target === intro) introDone();
+    });
+    setTimeout(introDone, 5000);                 /* in case no animation ever ends */
+    var skip = function () { if (!introOver) root.classList.add('intro-skip'); };
+    setTimeout(function () {
+      ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (t) {
+        addEventListener(t, skip, { once: true, passive: true });
+      });
+    }, 250);
+  } else {
+    introOver = true;
+    if (intro && intro.parentNode) intro.parentNode.removeChild(intro);
+  }
 
   /* ---- theme ------------------------------------------------------------ */
   var themeBtn = document.getElementById('themeBtn');
@@ -263,7 +299,10 @@
   var outView = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (!e.isIntersecting) leave(e.target); });
   }, { threshold: 0 });
-  heads.concat(fades, reveals).forEach(function (el) { inView.observe(el); outView.observe(el); });
+  /* Nothing enters until the opening has handed over. */
+  afterIntro(function () {
+    heads.concat(fades, reveals).forEach(function (el) { inView.observe(el); outView.observe(el); });
+  });
 
   /* The product pictures rise into place as their section arrives, and sink
      back out of sight once it has gone, so they rise again next time. */
@@ -275,7 +314,9 @@
   var stageOut = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('is-live'); });
   });
-  stages.forEach(function (s) { stageIn.observe(s); stageOut.observe(s); });
+  afterIntro(function () {
+    stages.forEach(function (s) { stageIn.observe(s); stageOut.observe(s); });
+  });
 
   var lit = document.querySelector('[data-lit]');
   if (lit) { thesis = { el: lit, words: lit.querySelectorAll('.at-w'), n: -1 }; lightThesis(); }

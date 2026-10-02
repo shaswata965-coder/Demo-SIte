@@ -45,13 +45,39 @@ index.html               the page; the forecast chart is drawn into it between m
 css/tokens.css           nine rooms, the product-screen set and the card metal (generated)
 css/main.css             type, layout, header, menu, sections, entrances
 css/assets.css           the five product pictures and their loops
-js/site.js               theme, pause, headline entrances, header, menus, form, copy
+css/intro.css            the opening, after clyde.us's loader
+js/site.js               the opening's skip and hand-off, theme, pause, entrances, header, menus, form, copy
 js/scenes.js             the two canvas backgrounds: the decision tree and the loss surface
 tools/solve-palette.mjs  solves and checks every colour, writes tokens.css
 tools/draw-assets.mjs    draws the forecast chart from its series into index.html
 tools/make-embed.mjs     single-file build (dist/, or artifact.html)
 artifact.html            the published Artifact (generated, do not edit)
 ```
+
+## The opening
+
+Every load opens with a short sequence after the loader on
+[clyde.us](https://clyde.us/), beat for beat, with Larch's own picture in
+place of that site's logo and triangles:
+
+| Time | Clyde | Larch |
+|---|---|---|
+| 0.00–0.65 s | An off-white screen covers the page, then fades | A lichen-paper screen covers the page, then fades |
+| 0.45 s | The letters of the wordmark arrive one at a time, spread wide | The five letters of "larch" arrive one at a time, spread wide |
+| 1.05 s | They close up into the wordmark | They close up, and the larch makes room beside them |
+| 1.20 s | | **The larch draws itself**: the trunk, then three pairs of branches (a decision tree's splits), then a gold bud at each branch tip |
+| 1.55 s | The logo pulses with an overshoot | The lockup pulses with an overshoot |
+| 1.60 s | Yellow triangles burst outward; purple turns to black | **Gold larch needles** burst outward on an ellipse, each pointing the way it travels; petrol turns to the opener's spruce |
+| 2.35 s | The logo slides over; "Ready for impact" opens beside it | The lockup slides over; "Machine learning, accounted for" opens beside it (below it on a phone) |
+| 3.25–4.0 s | The page takes over | The lockup lifts away and the screen fades onto the opener, which shares its spruce ground. The header drops in, the opener's headline plays, and its tree fills from empty |
+
+The timeline is CSS (`css/intro.css`), so it runs and clears itself without
+any script. `js/site.js` lets a click, key, wheel or touch skip it, removes it
+when it ends, and holds the page's entrances until then. It does not lock
+scrolling, because any attempt to scroll skips it. It never plays for reduced
+motion, when motion is paused, or without JavaScript. If the main script
+fails, the opening still fades out by itself and the header's hold lifts at
+4.1 s.
 
 ## Section by section
 
@@ -185,6 +211,10 @@ Checked with Playwright in this container, with the webfonts loaded:
 - Menu hover reveal, the Products panel (closes after a link), the phone
   drawer, the form's two messages, theme toggle, copy button, and pause (the
   canvas holds still while paused and moves again after).
+- The opening: frame by frame on desktop and phone, in light and dark; it
+  hands over to the opener (removed, header shown, headline played). A
+  click or a key skips it at once, it clears itself on a full run, and it
+  never appears with reduced motion or without JavaScript.
 - Replay: scrolled down, to the bottom and back, the menu rows, headlines and
   about lines reset off screen and play again on return, and the credit
   loop is back at its first frame.

@@ -1224,17 +1224,190 @@ html[data-motion="paused"] .asset, html[data-motion="paused"] .asset *,
 html[data-motion="paused"] .bubble *,
 [data-offscreen] .asset, [data-offscreen] .asset *, [data-offscreen] .bubble * { animation-play-state: paused !important; }
 </style>
+<style>
+/* css/intro.css */
+/* ===========================================================================
+   LARCH — the opening
+   ---------------------------------------------------------------------------
+   After the reference's loader, beat for beat, with Larch's own picture:
+
+     0.00  a paper screen covers the page                       (preloader)
+     0.25  it lifts in 0.4s
+     0.45  the five letters arrive one by one, spread apart
+     1.05  they close up into the wordmark; the larch makes room beside it
+     1.20  the larch draws itself: trunk, then three pairs of branches,
+           then a gold bud at the end of each branch
+     1.55  the lockup pulses once, with a little overshoot
+     1.60  a ring of gold needles bursts outward
+     1.60  the ground turns from petrol to the opener's spruce
+     2.35  the line opens out beside the mark
+     3.25  the lockup lifts away, and the screen fades onto the opener
+
+   The whole timeline is CSS, so it runs and clears itself without any
+   script; js/site.js only lets a key, click or scroll skip it, removes it
+   when it ends, and starts the page's own entrances after it. The early
+   script in index.html adds .intro-on, and never for reduced motion or when
+   motion is paused. The page is not locked while it plays: a wheel, touch
+   or key skips it.
+   ========================================================================= */
+
+.intro { display: none; }
+
+.intro-on .intro {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center;
+  padding: 0 var(--gutter);
+  color: var(--k-spruce-ink);
+  animation: intro-out .55s ease 3.45s forwards;
+  pointer-events: auto;
+}
+/* No scroll lock: a wheel, touch or key during the opening skips it, so
+   there is nothing to hold, and the scrollbar never comes and goes. */
+
+/* The header waits (a hold that lifts by itself at 4.1s), then drops into
+   place once the opening has gone. */
+.intro-on .hdr-wrap { animation: hdr-wait 4.1s step-end both; }
+.hdr-wrap.hdr-drop { animation: hdr-drop .9s var(--e1) .1s both; }
+@keyframes hdr-wait { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hdr-drop { from { opacity: 0; translate: 0 -1.5rem; } to { opacity: 1; translate: 0 0; } }
+
+.intro-bg { position: absolute; inset: 0; background: var(--k-petrol-bg); animation: intro-ground 1.1s ease 1.6s both; }
+.intro-paper { position: absolute; inset: 0; background: var(--k-lichen-bg); animation: intro-lift .4s ease .25s both; }
+
+.intro-lockup {
+  position: relative; display: flex; align-items: center;
+  font: 600 clamp(3.25rem, 10vw, 8rem)/1 var(--f-sans);
+  animation: lockup-out .6s cubic-bezier(.6, 0, .4, 1) 3.25s both;
+}
+.intro-logo {
+  position: relative; display: flex; align-items: center;
+  animation: logo-pulse .55s 1.55s both;
+}
+
+/* The wordmark: five letters, spread, then closed up. */
+.intro-word { display: flex; letter-spacing: -.02em; margin-top: -.12em; }
+.intro-word > span {
+  display: inline-block;
+  animation:
+    letter-in .55s var(--e1) calc(.45s + var(--i) * .08s) both,
+    letter-close .6s cubic-bezier(.7, 0, .2, 1) 1.05s both;
+}
+
+/* The larch: it takes no room until the letters close, then grows into
+   its place and draws itself. */
+.intro-mark {
+  flex: none; width: 1.02em; height: 1.02em; margin-right: .16em; overflow: visible;
+  animation: mark-room .6s cubic-bezier(.7, 0, .2, 1) 1.05s both;
+}
+.im-line {
+  fill: none; stroke: currentColor; stroke-width: 8.5; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: draw .45s var(--e1) both;
+}
+.im-trunk { animation-delay: 1.2s; animation-duration: .5s; }
+.im-b1 { animation-delay: 1.38s; }
+.im-b2 { animation-delay: 1.48s; }
+.im-b3 { animation-delay: 1.58s; }
+.im-tip {
+  fill: var(--k-spruce-glow);
+  transform-box: fill-box; transform-origin: center;
+  animation: bud .5s cubic-bezier(.34, 1.8, .64, 1) calc(1.72s + var(--k) * .05s) both;
+}
+
+/* The burst: eight gold needles thrown outward on an ellipse around the
+   lockup, each pointing the way it travels. */
+@property --R { syntax: '<length>'; inherits: true; initial-value: 0px; }
+.intro-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; --R: .5em; animation: burst-r .95s cubic-bezier(.2, .8, .3, 1) 1.6s both; }
+.intro-burst i {
+  position: absolute; left: -.045em; top: -.21em; width: .09em; height: .42em; border-radius: 1em;
+  background: var(--k-spruce-glow);
+  translate: calc(var(--x) * var(--R) * 1.8) calc(var(--y) * var(--R));
+  rotate: var(--a);
+  animation: needle .95s ease-out 1.6s both;
+}
+
+/* The line: opens out beside the mark, which slides over to make room. */
+.intro-tag {
+  overflow: hidden; white-space: nowrap; max-width: 0;
+  font: 500 clamp(.8rem, .7vw + .5rem, 1.15rem)/1 var(--f-sans);
+  letter-spacing: .26em; text-transform: uppercase;
+  animation: tag-open .8s cubic-bezier(.7, 0, .2, 1) 2.35s both;
+}
+.intro-tag > span { display: inline-block; padding-left: 2.2em; animation: tag-text .7s var(--e1) 2.6s both; }
+
+@media (max-width: 640px) {
+  .intro-lockup { flex-direction: column; }
+  .intro-tag { max-width: none; max-height: 0; animation-name: tag-open-v; white-space: normal; text-align: center; letter-spacing: .2em; line-height: 1.5; }
+  .intro-tag > span { padding: 1.2em 0 0; }
+}
+
+/* Skipping: the screen fades straight away. */
+html.intro-skip .intro { animation: intro-skip-out .3s ease forwards; }
+
+@keyframes intro-out { to { opacity: 0; visibility: hidden; } }
+@keyframes intro-skip-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+@keyframes intro-lift { to { opacity: 0; visibility: hidden; } }
+@keyframes intro-ground { from { background-color: var(--k-petrol-bg); } to { background-color: var(--k-spruce-bg); } }
+@keyframes letter-in { from { opacity: 0; transform: translateY(.28em); } to { opacity: 1; transform: none; } }
+@keyframes letter-close { from { translate: var(--sx) 0; } to { translate: 0 0; } }
+@keyframes mark-room { from { width: 0; margin-right: 0; opacity: 0; } 30% { opacity: 1; } to { width: 1.02em; margin-right: .16em; opacity: 1; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes bud { from { transform: scale(0); } to { transform: none; } }
+@keyframes logo-pulse { 0% { transform: none; } 45% { transform: scale(.95); } 75% { transform: scale(1.025); } 100% { transform: none; } }
+@keyframes burst-r { from { --R: .55em; } to { --R: 1.45em; } }
+@keyframes needle { 0% { opacity: 0; scale: .4; } 18% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: .7; } }
+@keyframes tag-open { from { max-width: 0; } to { max-width: 30em; } }
+@keyframes tag-open-v { from { max-height: 0; } to { max-height: 6em; } }
+@keyframes tag-text { from { opacity: 0; transform: translateX(-1.2em); } to { opacity: 1; transform: none; } }
+@keyframes lockup-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-1.25rem) scale(.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-on .intro { display: none; }
+  .intro-on .hdr-wrap, .hdr-wrap.hdr-drop { animation: none; }
+}
+</style>
 <script>
-/* Before first paint: the saved theme and motion choice, and whether
-   headings may wait for their entrance. Without this script every heading is
-   simply shown. */
+/* Before first paint: the saved theme and motion choice, whether headings
+   may wait for their entrance, and whether the opening plays. Without this
+   script every heading is simply shown and there is no opening. */
 (function (d) {
   try { var t = localStorage.getItem('larch-theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
   try { if (localStorage.getItem('larch-motion') === 'paused') d.setAttribute('data-motion', 'paused'); } catch (e) {}
   var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!still && 'IntersectionObserver' in window) d.classList.add('at-on');
+  /* The opening plays on every load, unless motion is reduced or paused. */
+  if (!still && d.getAttribute('data-motion') !== 'paused') d.classList.add('intro-on');
 })(document.documentElement);
 </script>
+
+<!-- ================================================================= intro
+     The opening, after the reference loader: a paper screen lifts, the
+     letters of the wordmark arrive spread apart and close up, the larch
+     draws itself beside them branch by branch, a ring of gold needles bursts
+     out as the ground turns to the opener's spruce, and the line opens out
+     beside the mark before the whole thing hands over to the page. Played
+     only when the early script allows it (not for reduced motion, not when
+     motion is paused); any key, click or scroll skips it. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-bg"></div>
+  <div class="intro-lockup">
+    <div class="intro-logo">
+      <svg class="intro-mark" viewBox="0 0 120 120">
+        <path class="im-line im-trunk" pathLength="1" d="M60 106V14"/>
+        <path class="im-line im-b1" pathLength="1" d="M60 37.5 43 52"/><path class="im-line im-b1" pathLength="1" d="M60 37.5 77 52"/>
+        <path class="im-line im-b2" pathLength="1" d="M60 57.5 35 77.5"/><path class="im-line im-b2" pathLength="1" d="M60 57.5 85 77.5"/>
+        <path class="im-line im-b3" pathLength="1" d="M60 77.5 27.5 102.5"/><path class="im-line im-b3" pathLength="1" d="M60 77.5 92.5 102.5"/>
+        <circle class="im-tip" style="--k:0" cx="43" cy="52" r="4.6"/><circle class="im-tip" style="--k:1" cx="77" cy="52" r="4.6"/>
+        <circle class="im-tip" style="--k:2" cx="35" cy="77.5" r="4.6"/><circle class="im-tip" style="--k:3" cx="85" cy="77.5" r="4.6"/>
+        <circle class="im-tip" style="--k:4" cx="27.5" cy="102.5" r="4.6"/><circle class="im-tip" style="--k:5" cx="92.5" cy="102.5" r="4.6"/>
+      </svg>
+      <span class="intro-word"><span style="--i:0;--sx:-.95em">l</span><span style="--i:1;--sx:-.48em">a</span><span style="--i:2;--sx:0em">r</span><span style="--i:3;--sx:.48em">c</span><span style="--i:4;--sx:.95em">h</span></span>
+      <span class="intro-burst"><i style="--x:0.924;--y:0.383;--a:103.0deg;--k:0"></i><i style="--x:0.383;--y:0.924;--a:143.3deg;--k:1"></i><i style="--x:-0.383;--y:0.924;--a:-143.3deg;--k:2"></i><i style="--x:-0.924;--y:0.383;--a:-103.0deg;--k:3"></i><i style="--x:-0.924;--y:-0.383;--a:-77.0deg;--k:4"></i><i style="--x:-0.383;--y:-0.924;--a:-36.7deg;--k:5"></i><i style="--x:0.383;--y:-0.924;--a:36.7deg;--k:6"></i><i style="--x:0.924;--y:-0.383;--a:77.0deg;--k:7"></i></span>
+    </div>
+    <span class="intro-tag"><span>Machine learning, accounted for</span></span>
+  </div>
+  <div class="intro-paper"></div>
+</div>
 
 <a class="skip" href="#main">Skip to main content</a>
 
@@ -1729,6 +1902,8 @@ html[data-motion="paused"] .bubble *,
    ----------------------------------------------------------------------------
    The page reads completely without it. This adds:
 
+     · the opening: skipping it, removing it when it ends, and holding the
+       page's entrances until then
      · the theme toggle and the pause button (both remembered in this
        browser, if storage is allowed)
      · headline entrances: words rise half an em and fade in as a headline
@@ -1752,6 +1927,40 @@ html[data-motion="paused"] .bubble *,
   var root = document.documentElement;
   var still = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
+
+  /* ---- the opening ------------------------------------------------------
+     Its whole timeline is CSS (css/intro.css). Here: any key, click, wheel
+     or touch skips it; when it ends it is removed, the page scrolls again,
+     and everything waiting on it (the page's entrances, the opener's tree)
+     is told. */
+  var intro = document.getElementById('intro'), introOver = false;
+  function introDone() {
+    if (introOver) return;
+    introOver = true;
+    root.classList.remove('intro-on', 'intro-skip');
+    if (intro && intro.parentNode) intro.parentNode.removeChild(intro);
+    var h = document.getElementById('hdr'); if (h) h.classList.add('hdr-drop');
+    document.dispatchEvent(new CustomEvent('larch:intro-done'));
+  }
+  function afterIntro(fn) {
+    if (introOver || !root.classList.contains('intro-on')) fn();
+    else document.addEventListener('larch:intro-done', fn, { once: true });
+  }
+  if (intro && root.classList.contains('intro-on')) {
+    intro.addEventListener('animationend', function (e) {
+      if (e.target === intro) introDone();
+    });
+    setTimeout(introDone, 5000);                 /* in case no animation ever ends */
+    var skip = function () { if (!introOver) root.classList.add('intro-skip'); };
+    setTimeout(function () {
+      ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (t) {
+        addEventListener(t, skip, { once: true, passive: true });
+      });
+    }, 250);
+  } else {
+    introOver = true;
+    if (intro && intro.parentNode) intro.parentNode.removeChild(intro);
+  }
 
   /* ---- theme ------------------------------------------------------------ */
   var themeBtn = document.getElementById('themeBtn');
@@ -1989,7 +2198,10 @@ html[data-motion="paused"] .bubble *,
   var outView = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (!e.isIntersecting) leave(e.target); });
   }, { threshold: 0 });
-  heads.concat(fades, reveals).forEach(function (el) { inView.observe(el); outView.observe(el); });
+  /* Nothing enters until the opening has handed over. */
+  afterIntro(function () {
+    heads.concat(fades, reveals).forEach(function (el) { inView.observe(el); outView.observe(el); });
+  });
 
   /* The product pictures rise into place as their section arrives, and sink
      back out of sight once it has gone, so they rise again next time. */
@@ -2001,7 +2213,9 @@ html[data-motion="paused"] .bubble *,
   var stageOut = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (!e.isIntersecting) e.target.classList.remove('is-live'); });
   });
-  stages.forEach(function (s) { stageIn.observe(s); stageOut.observe(s); });
+  afterIntro(function () {
+    stages.forEach(function (s) { stageIn.observe(s); stageOut.observe(s); });
+  });
 
   var lit = document.querySelector('[data-lit]');
   if (lit) { thesis = { el: lit, words: lit.querySelectorAll('.at-w'), n: -1 }; lightThesis(); }
@@ -2139,6 +2353,8 @@ html[data-motion="paused"] .bubble *,
       .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
     if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { readColors(); if (!raf) { ctx.clearRect(0, 0, w, h); impl.draw(ctx, w, h, t, colors); } });
     document.addEventListener('larch:motion', function () { if (paused()) stop(); else schedule(); });
+    /* As the opening hands over, the opener's tree fills from empty. */
+    document.addEventListener('larch:intro-done', function () { if (impl.enter && w && visible && !still.matches) impl.enter(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else schedule(); });
     if (still.addEventListener) still.addEventListener('change', refresh);
     refresh();

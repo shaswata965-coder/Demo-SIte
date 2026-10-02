@@ -84,6 +84,10 @@ built here.
   a reading-progress line, the thesis lighting up as you read, depth under
   the pointer. A pause button stops everything; reduced motion shows
   finished frames.
+- Each load opens with a sequence after [clyde.us](https://clyde.us/)'s
+  loader: the letters close up, the larch draws itself beside them, gold
+  needles burst out as the ground turns to spruce, and the line opens out
+  before the page takes over. Any key, click or scroll skips it.
 - Colours are its own, solved by `tools/solve-palette.mjs` (text 4.5:1 or
   better on every ground, in light and dark).
 

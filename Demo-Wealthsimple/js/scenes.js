@@ -84,6 +84,8 @@
       .observe(root, { attributes: true, attributeFilter: ['data-theme'] });
     if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { readColors(); if (!raf) { ctx.clearRect(0, 0, w, h); impl.draw(ctx, w, h, t, colors); } });
     document.addEventListener('larch:motion', function () { if (paused()) stop(); else schedule(); });
+    /* As the opening hands over, the opener's tree fills from empty. */
+    document.addEventListener('larch:intro-done', function () { if (impl.enter && w && visible && !still.matches) impl.enter(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else schedule(); });
     if (still.addEventListener) still.addEventListener('change', refresh);
     refresh();

@@ -11,19 +11,51 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/assets.css">
+<link rel="stylesheet" href="css/intro.css">
 </head>
 <body>
 <script>
-/* Before first paint: the saved theme and motion choice, and whether
-   headings may wait for their entrance. Without this script every heading is
-   simply shown. */
+/* Before first paint: the saved theme and motion choice, whether headings
+   may wait for their entrance, and whether the opening plays. Without this
+   script every heading is simply shown and there is no opening. */
 (function (d) {
   try { var t = localStorage.getItem('larch-theme'); if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t); } catch (e) {}
   try { if (localStorage.getItem('larch-motion') === 'paused') d.setAttribute('data-motion', 'paused'); } catch (e) {}
   var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!still && 'IntersectionObserver' in window) d.classList.add('at-on');
+  /* The opening plays on every load, unless motion is reduced or paused. */
+  if (!still && d.getAttribute('data-motion') !== 'paused') d.classList.add('intro-on');
 })(document.documentElement);
 </script>
+
+<!-- ================================================================= intro
+     The opening, after the reference loader: a paper screen lifts, the
+     letters of the wordmark arrive spread apart and close up, the larch
+     draws itself beside them branch by branch, a ring of gold needles bursts
+     out as the ground turns to the opener's spruce, and the line opens out
+     beside the mark before the whole thing hands over to the page. Played
+     only when the early script allows it (not for reduced motion, not when
+     motion is paused); any key, click or scroll skips it. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-bg"></div>
+  <div class="intro-lockup">
+    <div class="intro-logo">
+      <svg class="intro-mark" viewBox="0 0 120 120">
+        <path class="im-line im-trunk" pathLength="1" d="M60 106V14"/>
+        <path class="im-line im-b1" pathLength="1" d="M60 37.5 43 52"/><path class="im-line im-b1" pathLength="1" d="M60 37.5 77 52"/>
+        <path class="im-line im-b2" pathLength="1" d="M60 57.5 35 77.5"/><path class="im-line im-b2" pathLength="1" d="M60 57.5 85 77.5"/>
+        <path class="im-line im-b3" pathLength="1" d="M60 77.5 27.5 102.5"/><path class="im-line im-b3" pathLength="1" d="M60 77.5 92.5 102.5"/>
+        <circle class="im-tip" style="--k:0" cx="43" cy="52" r="4.6"/><circle class="im-tip" style="--k:1" cx="77" cy="52" r="4.6"/>
+        <circle class="im-tip" style="--k:2" cx="35" cy="77.5" r="4.6"/><circle class="im-tip" style="--k:3" cx="85" cy="77.5" r="4.6"/>
+        <circle class="im-tip" style="--k:4" cx="27.5" cy="102.5" r="4.6"/><circle class="im-tip" style="--k:5" cx="92.5" cy="102.5" r="4.6"/>
+      </svg>
+      <span class="intro-word"><span style="--i:0;--sx:-.95em">l</span><span style="--i:1;--sx:-.48em">a</span><span style="--i:2;--sx:0em">r</span><span style="--i:3;--sx:.48em">c</span><span style="--i:4;--sx:.95em">h</span></span>
+      <span class="intro-burst"><i style="--x:0.924;--y:0.383;--a:103.0deg;--k:0"></i><i style="--x:0.383;--y:0.924;--a:143.3deg;--k:1"></i><i style="--x:-0.383;--y:0.924;--a:-143.3deg;--k:2"></i><i style="--x:-0.924;--y:0.383;--a:-103.0deg;--k:3"></i><i style="--x:-0.924;--y:-0.383;--a:-77.0deg;--k:4"></i><i style="--x:-0.383;--y:-0.924;--a:-36.7deg;--k:5"></i><i style="--x:0.383;--y:-0.924;--a:36.7deg;--k:6"></i><i style="--x:0.924;--y:-0.383;--a:77.0deg;--k:7"></i></span>
+    </div>
+    <span class="intro-tag"><span>Machine learning, accounted for</span></span>
+  </div>
+  <div class="intro-paper"></div>
+</div>
 
 <a class="skip" href="#main">Skip to main content</a>
 
