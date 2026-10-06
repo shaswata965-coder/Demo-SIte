@@ -62,7 +62,7 @@
      both follow. The names here and the .sk-* classes in index.html have to
      agree. */
   var CHAPTERS = [
-    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4 },
+    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4, edge: 1.15 },
     { id: 'bloom',  x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'violet', graph: true },
     { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
     { id: 'settle', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'lemon',  graph: true },
@@ -162,6 +162,7 @@
       var c = CHAPTERS[i], a = anchor(c.x);
       return wide() && c.nudge ? a + c.nudge * wideness() * innerW / Math.max(1, innerWidth) : a;
     }
+    function edgeOf(i) { return CHAPTERS[i].edge || 1; }
     function stretchOf(i) {
       var k = CHAPTERS[i].stretch;
       return wide() && k ? 1 + (k - 1) * wideness() : 1;
@@ -812,6 +813,7 @@
 
       var x = lerp(anchorOf(lo), anchorOf(hi), e);
       field.stretchX = lerp(stretchOf(lo), stretchOf(hi), e);
+      field.edgeScale = lerp(edgeOf(lo), edgeOf(hi), e);
       var base = lerp(dimOf(lo), dimOf(hi), e);
       field.originX = x;
       /* Receding reads as depth, not just fade: it shrinks as it travels. */

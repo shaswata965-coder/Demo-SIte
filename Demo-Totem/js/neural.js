@@ -900,7 +900,7 @@
        model tripled the blended area at 2560 for no visual gain. uBase is the
        unzoomed unit, so a backgrounded model at zoom 1.34 gets longer edges
        but not fatter ones. */
-    ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.uBase * 0.38);
+    ctx.lineWidth = (ink ? 1.05 : 1) * Math.min(1.35, 0.6 + this.uBase * 0.38) * (this.edgeScale || 1);
     ctx.lineCap = 'butt';
     /* Only two or three families are visible in any one arrangement, so most
        of the eighteen lanes are empty — stroking them still costs a call. */
