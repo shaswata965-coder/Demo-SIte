@@ -1395,3 +1395,83 @@ html.theming .rig i, html.theming .rig b {
     margin-top: -.07em; }
   #c0 .lede { align-self: end; font-size: clamp(1rem, min(1.3vw, 2.5svh), 1.4rem); max-width: 38ch; }
 }
+
+/* ===========================================================================
+   First screen only — headline, lede, and the call to action
+   =========================================================================== */
+
+/* The headline is black with purple and orange running through it: ink for the
+   most of its length, the skin's purple and orange where the gradient peaks. In
+   the dark theme ink is the light colour, so it is a light headline with the
+   same two colours in it. The gradient is on the <h1>, clipped to its text, and
+   restarts on each line (1lh), so every line of the headline carries it. */
+#c0 h1 {
+  color: var(--ink);
+  background-size: 100% 1lh; background-repeat: repeat-y;
+  background-image: linear-gradient(100deg,
+    var(--ink) 0%, var(--ink) 8%,
+    color-mix(in srgb, var(--c-second) 88%, var(--ink)) 24%,
+    var(--ink) 40%,
+    color-mix(in srgb, var(--accent) 92%, var(--ink)) 57%,
+    var(--ink) 73%,
+    color-mix(in srgb, var(--c-second) 70%, var(--ink)) 89%,
+    var(--ink) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+/* background-clip: text only reaches in-flow inline text — not atomic
+   inline-blocks, not positioned elements — so the words stay unbreakable
+   (nowrap) but stop being inline-block here, and the letters are not
+   positioned, except the one carrying the caret, which has to be, and which is
+   plain ink until the caret moves on. */
+#c0 h1 .tw-w { display: inline; }
+#c0 h1 .tw-c { position: static; }
+#c0 h1 .tw-c.cursor { position: relative; -webkit-text-fill-color: var(--ink); }
+
+/* The line under it sits halfway between the headline and the button. */
+@media (min-width: 900px) {
+  #c0 .lede { align-self: center; }
+}
+
+/* The button: dark purple circuitry, very muted, on the orange — and a glow
+   that barely moves. Two copies of the same tile, one in each colour: the
+   purple one shows at rest, the orange one fades in on hover as the button
+   inverts to dark purple. The layers sit behind the label (isolation +
+   z-index -1 puts them above the button's fill and below its content). */
+.cta-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  transition: transform var(--d-base) var(--e-out), box-shadow var(--d-base) var(--e-out),
+              background-color .45s var(--e-out), color .45s var(--e-out);
+}
+.cta-hero::before, .cta-hero::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-repeat: repeat-x; background-size: auto 100%; background-position: 0 50%;
+  transition: opacity .45s var(--e-out);
+}
+.cta-hero::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 84' fill='none' stroke='%232a0f5c' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M0 6H110L118 14H170L178 6H240'/%3E%3Cpath d='M0 20H40L52 32H96L108 20H240'/%3E%3Cpath d='M0 62H30L44 48H88L100 62H170L182 50L194 62H240'/%3E%3Cpath d='M0 74H60L68 66H140L148 74H240'/%3E%3Cpath d='M120 20V44M120 44L128 52H150'/%3E%3Ccircle cx='110' cy='6' r='2.4'/%3E%3Ccircle cx='170' cy='14' r='2.4'/%3E%3Ccircle cx='96' cy='32' r='2.4'/%3E%3Ccircle cx='170' cy='62' r='2.4'/%3E%3Ccircle cx='140' cy='66' r='2.4'/%3E%3Ccircle cx='150' cy='52' r='2.4'/%3E%3Crect x='196' y='26' width='24' height='16' rx='2'/%3E%3Cpath d='M202 26V20M214 26V20M202 42V48M214 42V48'/%3E%3C/svg%3E");
+  opacity: .34;
+  -webkit-mask-image: linear-gradient(100deg, rgba(0,0,0,.55) 0 30%, #000 50%, rgba(0,0,0,.55) 70% 100%);
+          mask-image: linear-gradient(100deg, rgba(0,0,0,.55) 0 30%, #000 50%, rgba(0,0,0,.55) 70% 100%);
+  -webkit-mask-size: 260% 100%; mask-size: 260% 100%;
+  animation: cta-glow 7s ease-in-out infinite;
+}
+.cta-hero::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 84' fill='none' stroke='%23ff8a3d' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M0 6H110L118 14H170L178 6H240'/%3E%3Cpath d='M0 20H40L52 32H96L108 20H240'/%3E%3Cpath d='M0 62H30L44 48H88L100 62H170L182 50L194 62H240'/%3E%3Cpath d='M0 74H60L68 66H140L148 74H240'/%3E%3Cpath d='M120 20V44M120 44L128 52H150'/%3E%3Ccircle cx='110' cy='6' r='2.4'/%3E%3Ccircle cx='170' cy='14' r='2.4'/%3E%3Ccircle cx='96' cy='32' r='2.4'/%3E%3Ccircle cx='170' cy='62' r='2.4'/%3E%3Ccircle cx='140' cy='66' r='2.4'/%3E%3Ccircle cx='150' cy='52' r='2.4'/%3E%3Crect x='196' y='26' width='24' height='16' rx='2'/%3E%3Cpath d='M202 26V20M214 26V20M202 42V48M214 42V48'/%3E%3C/svg%3E");
+  opacity: 0;
+}
+@keyframes cta-glow {
+  0%, 100% { -webkit-mask-position: 100% 0; mask-position: 100% 0; opacity: .30; }
+  50%      { -webkit-mask-position: 0 0;    mask-position: 0 0;    opacity: .42; }
+}
+.cta-hero:hover, .cta-hero:focus-visible {
+  background-color: #1d1040;
+  color: var(--accent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .06),
+              0 18px 34px -16px rgba(96, 48, 210, .75);
+}
+.cta-hero:hover::before, .cta-hero:focus-visible::before { opacity: 0; animation: none; }
+.cta-hero:hover::after, .cta-hero:focus-visible::after { opacity: .26; }
+@media (prefers-reduced-motion: reduce) {
+  .cta-hero::before { animation: none; }
+}
