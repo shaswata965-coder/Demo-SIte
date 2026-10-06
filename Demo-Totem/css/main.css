@@ -381,7 +381,9 @@ html.no-banner .demo-banner {
 
    What makes a panel read as live is movement and small dense detail, so this
    one has: a scanning beam that carries its own scanline texture and whose
-   first pass is what reveals the copy, and a strip along the
+   first pass is what reveals the copy, a circuit layer in the margins (a bus
+   down the outer edge, a chip wired into a small network on the model's side),
+   and a strip along the
    bottom with a waveform and a meter of how far through this screen you are —
    the same `progress` the rest of the page is built on. It carries no text:
    the readout that used to sit in that strip went, so the only words in the
@@ -441,6 +443,101 @@ html.no-banner .demo-banner {
   4%   { opacity: 1; }
   90%  { opacity: 1; }
   100% { top: 100%; opacity: 0; }
+}
+
+/* --- circuit layer --------------------------------------------------------
+   Drawn by js/circuit.js into one <svg class="rig-circ"> per panel: a bus down
+   the outer edge, and a chip wired into a small three-layer network on the
+   model's side (or, where the model is behind the copy, in the empty end of the
+   readout strip). Three rules keep it from being decoration for its own sake:
+
+     · it lives in the margins — nothing in it is ever under a line of copy
+     · it draws itself in with the rest of the panel, as the scan starts
+     · it moves only on the live screen, and what moves is a signal: pulses ride
+       the bus, and one inference runs chip → inputs → hidden → output on a
+       loop, the output ring firing as it lands
+
+   Traces take the rig's colour, the structure hue; signal is the accent; units
+   are the data hue and the output the signal hue — the page's four, in the
+   roles the model gives them.
+   ------------------------------------------------------------------------ */
+.rig-circ { position: absolute; left: 0; top: 0; overflow: visible; }
+
+/* Draw-in: every trace has pathLength="100", so one dash pattern draws any of
+   them from end to end whatever its real length. --d staggers the pieces. */
+.rig-circ .tr, .rig-circ .lk {
+  fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round;
+  stroke-dasharray: 100 100; stroke-dashoffset: 100;
+}
+.rig-circ .tr { stroke-opacity: .62; }
+.rig-circ .lk { stroke-opacity: .3; }
+.chapter.typed .rig-circ .tr, .chapter.typed .rig-circ .lk {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s var(--e-out) var(--d, 0s);
+}
+
+.rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd, .ring) {
+  opacity: 0; transition: opacity .45s var(--e-out) var(--d, 0s);
+}
+.rig-circ .via  { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
+.rig-circ .pad  { fill: currentColor; }
+.rig-circ .chip { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
+.rig-circ .chip-dot { fill: currentColor; }
+.rig-circ .pin  { stroke: currentColor; stroke-width: 1.2; --d: .15s; }
+.rig-circ .nd   { fill: var(--data); }
+.rig-circ .nd.out { fill: var(--c-signal); }
+.rig-circ .ring { fill: none; stroke: var(--c-signal); stroke-width: 1; }
+.chapter.typed .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
+.chapter.typed .rig-circ .ring { opacity: .5; }
+
+/* Signal. Pulses travel in real pixels (--len is each path's length), so a
+   comet is the same size on a 40px link and a 600px bus. */
+.rig-circ .pl {
+  fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round;
+  stroke-dasharray: 9px 4000px; stroke-dashoffset: 9px; opacity: 0;
+  filter: drop-shadow(0 0 2.5px var(--accent));
+}
+.rig-circ .pl.bus { stroke-dasharray: 14px 4000px; stroke-dashoffset: 14px; }
+.rig-circ .hl { fill: var(--accent); opacity: 0; }
+.rig-circ .fire {
+  fill: none; stroke: var(--c-signal); stroke-width: 1.2; opacity: 0;
+  transform-box: fill-box; transform-origin: center;
+}
+
+.chapter.live.typed .rig-circ .pl.bus {
+  animation: cp-run 3.4s linear calc(1s + var(--pd, 0s)) infinite;
+}
+.chapter.live.typed .rig-circ .pl.s1 { animation: cp-s1 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .pl.s2 { animation: cp-s2 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .pl.s3 { animation: cp-s3 4.8s linear 1.4s infinite; }
+.chapter.live.typed .rig-circ .hl.f1 { animation: cp-f1 4.8s ease-out 1.4s infinite; }
+.chapter.live.typed .rig-circ .hl.f2 { animation: cp-f2 4.8s ease-out 1.4s infinite; }
+.chapter.live.typed .rig-circ .fire { animation: cp-fire 4.8s var(--e-out) 1.4s infinite; }
+
+/* One 4.8s inference: feed (0–27%), inputs → hidden (29–48%), hidden → output
+   (50–66%), output fires (64–90%). The stages hand over rather than overlap,
+   so it reads as one signal moving through, not three things blinking. */
+@keyframes cp-s1 {
+  0%        { stroke-dashoffset: 9px; opacity: 0; }
+  3%, 24%   { opacity: 1; }
+  27%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-s2 {
+  0%, 29%   { stroke-dashoffset: 9px; opacity: 0; }
+  31%, 45%  { opacity: 1; }
+  48%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-s3 {
+  0%, 50%   { stroke-dashoffset: 9px; opacity: 0; }
+  52%, 63%  { opacity: 1; }
+  66%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
+}
+@keyframes cp-f1 { 0%, 25% { opacity: 0; } 29% { opacity: .5; } 42%, 100% { opacity: 0; } }
+@keyframes cp-f2 { 0%, 46% { opacity: 0; } 50% { opacity: .5; } 63%, 100% { opacity: 0; } }
+@keyframes cp-fire {
+  0%, 64%   { transform: scale(.5); opacity: 0; }
+  67%       { transform: scale(1); opacity: .9; }
+  90%, 100% { transform: scale(2.3); opacity: 0; }
 }
 
 /* Travelling pulse along a graph link (.g-pulse). */
@@ -1214,7 +1311,9 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
   .card { padding: .8rem .9rem; }
 }
 
-/* On a phone the readout strip drops its waveform. */
+/* On a phone the copy column is the whole screen, so a bus down the outer edge
+   would sit in the 20px gutter and read as a stray line — js/circuit.js does
+   not draw it below 900px, and the network moves into the readout strip. */
 @media (max-width: 899px) {
   .rig .rig-wave { display: none; }
 }
@@ -1235,6 +1334,11 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
   .rig > .rig-beam { display: none; }
   .chapter .rig { opacity: 1; }
   .chapter .rig-strip { opacity: 1; transform: none; }
+  /* The circuit is drawn, not drawing: traces whole, units on, no signal. */
+  .rig-circ .tr, .rig-circ .lk { stroke-dashoffset: 0; }
+  .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
+  .rig-circ .ring { opacity: .5; }
+  .rig-circ :is(.pl, .hl, .fire) { display: none; }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for

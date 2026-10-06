@@ -246,6 +246,24 @@
     });
     field.start();
 
+    /* ---- circuit layer ---------------------------------------------------- */
+    /* Drawn per panel by js/circuit.js. The one thing it needs from here is
+       what only this file knows: how much room there is between a panel's
+       inner edge and the model standing beside it, so the network can reach
+       towards the model without touching it. The model's half-width is the
+       arrangement's own reach (see NeuralField#reach), plus the largest a
+       unit is drawn — the widest ring is about 10px. */
+    var rigs = sections.map(function (el) { return el.querySelector('.rig'); });
+
+    function modelGap(i, rig) {
+      var c = CHAPTERS[i];
+      if (!wide() || typeof c.x === 'number') return 0;
+      var r = rig.getBoundingClientRect();
+      var cx = anchor(c.x) * innerWidth;
+      var half = field.radius * zoomOf(i) * field.reach(i) + 10;
+      return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
+    }
+
     /* ---- section graphs --------------------------------------------------- */
     /* Wired once; laid out again whenever the page changes shape. Each layout
        also hands back where the model's units go in that section — measured
@@ -261,6 +279,18 @@
       var mode = graphMode() ? 'graph' : 'spine';
       for (var i = 0; i < graphs.length; i++) {
         if (graphs[i]) graphTargets[i] = SectionGraph.layout(graphs[i], mode, field.cfg.nodes, liftRect);
+      }
+    }
+
+    function drawCircuits() {
+      if (!window.RigCircuit) return;
+      for (var i = 0; i < rigs.length; i++) {
+        if (!rigs[i]) continue;
+        RigCircuit.draw(rigs[i], {
+          side: typeof CHAPTERS[i].x === 'number' ? 'full' : CHAPTERS[i].x,
+          wide: wide(),
+          gap: modelGap(i, rigs[i])
+        });
       }
     }
 
@@ -616,10 +646,12 @@
         relayoutQueued = true;
         requestAnimationFrame(function () {
           relayoutQueued = false;
+          drawCircuits();
           layoutGraphs();
           if (navCurrent >= 0) setNavCurrent(navCurrent);
         });
       });
+      for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
       if (navList) ro.observe(navList);
       for (var gi = 0; gi < graphs.length; gi++) if (graphs[gi]) ro.observe(graphs[gi].root);
     }
@@ -707,7 +739,7 @@
         field.setTheme(sk.mode, sk.colors);
       }
 
-      /* Only the screen you are on animates — the signal pulses, the meter.
+      /* Only the screen you are on animates — the circuit's signal, the meter.
          Seven panels pulsing at once would compete with the canvas for the
          frame budget, and you can only ever see one of them. */
       var live = liveIndex();
@@ -912,7 +944,7 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); layoutGraphs(); setMenu(false); paint(true);
+        measure(); computeSpin(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
         if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
@@ -921,6 +953,7 @@
 
     measure();
     computeSpin();
+    drawCircuits();
     layoutGraphs();
     field.originY = 0.5;
     paint(true);
