@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/main.css">
+<script src="js/banner.js"></script>
 </head>
 <body>
 
@@ -36,6 +37,20 @@
     </div>
   </div>
 </div>
+
+<!-- The other demos. A strip above the nav, shown until the visitor closes
+     it (remembered). Its height is --banner-h, which the nav and the pinned
+     chapters add to their own offsets; js/banner.js zeroes it on close. -->
+<aside class="demo-banner" id="demoBanner" aria-label="Other demos">
+  <div class="demo-banner-in">
+    <span class="demo-banner-label">More demos</span>
+    <a href="../demo-crafted/">AXON Flight<span class="demo-banner-ref">&middot; craftedbygc</span></a>
+    <a href="../Demo-Wealthsimple/">Larch<span class="demo-banner-ref">&middot; Wealthsimple</span></a>
+    <button class="demo-banner-x" id="demoBannerClose" type="button" aria-label="Hide the demos banner">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+  </div>
+</aside>
 
 <!-- The navigation. At the top of the page it is a plain header sitting on
      the intro; once you scroll it condenses into an island — a compact dark
