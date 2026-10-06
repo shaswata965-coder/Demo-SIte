@@ -1,0 +1,75 @@
+/* ===========================================================================
+   DEMO-WEALTHSIMPLE — the other-demos banner
+   ---------------------------------------------------------------------------
+   The same strip as Demo-Totem's: pinned to the top, in dark glass, linking
+   the repo's other demos. Shown by default; js/banner.js hides it on close and
+   remembers the choice.
+
+   Self-contained on purpose, so it can be lifted from page to page: every
+   value is set here rather than read from this demo's tokens. Its height is
+   published as --banner-h (zeroed by html.no-banner), and the page
+   makes room for it: the body is pushed down by it and the floating header and
+   its panels move down with it. It sits under the opening animation.
+   ========================================================================= */
+:root { --banner-h: 2.25rem; --banner-dur: .45s; --banner-ease: cubic-bezier(.16, 1, .3, 1); }
+html.no-banner { --banner-h: 0px; }
+
+.demo-banner {
+  position: fixed; z-index: 60; left: 0; right: 0; top: 0;
+  height: 2.25rem;
+  color: #F6F6FA;
+  background: rgba(13, 13, 20, .92);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+          backdrop-filter: blur(18px) saturate(1.6);
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+  font: 400 .8125rem/1 'IBM Plex Sans', system-ui, sans-serif;
+  transition: transform var(--banner-dur) var(--banner-ease), visibility 0s;
+}
+html.no-banner .demo-banner {
+  transform: translateY(-100%); visibility: hidden;
+  transition: transform var(--banner-dur) var(--banner-ease), visibility 0s linear var(--banner-dur);
+}
+.demo-banner-in {
+  position: relative; height: 100%; padding-inline: clamp(1rem, 3vw, 2.25rem);
+  display: flex; align-items: center; justify-content: center; gap: .35rem;
+}
+.demo-banner-label {
+  margin-right: .4rem;
+  font: 500 .6875rem/1 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(246, 246, 250, .6);
+}
+.demo-banner a {
+  display: inline-flex; align-items: center; height: 1.6rem; padding: 0 .7rem;
+  border-radius: 999px; white-space: nowrap;
+  color: inherit; text-decoration: none; font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, .13);
+  transition: background-color .25s var(--banner-ease), border-color .25s var(--banner-ease);
+}
+.demo-banner a:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .22); }
+.demo-banner-ref { margin-left: .35em; color: rgba(246, 246, 250, .6); font-weight: 400; }
+.demo-banner-x {
+  position: absolute; right: calc(clamp(1rem, 3vw, 2.25rem) - .4rem); top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0;
+  border: 0; border-radius: 999px; background: none; color: inherit; cursor: pointer;
+}
+.demo-banner-x:hover { background: rgba(255, 255, 255, .1); }
+.demo-banner-x svg { display: block; width: .8rem; height: .8rem; }
+.demo-banner :focus-visible { outline: 2px solid #F6F6FA; outline-offset: 2px; }
+@media (max-width: 719px) {
+  .demo-banner-in { justify-content: flex-start; padding-right: calc(clamp(1rem, 3vw, 2.25rem) + 1.75rem); }
+  .demo-banner-ref { display: none; }
+}
+@media (max-width: 379px) { .demo-banner-label { display: none; } }
+@media (prefers-reduced-motion: reduce) { :root { --banner-dur: 0s; } }
+
+/* --- making room ---------------------------------------------------------- */
+body {
+  padding-top: var(--banner-h);
+  transition: padding-top var(--banner-dur) var(--banner-ease);
+}
+.hdr-wrap {
+  top: var(--banner-h);
+  transition: top var(--banner-dur) var(--banner-ease);
+}
+.pop, .drawer { margin-top: var(--banner-h); }
