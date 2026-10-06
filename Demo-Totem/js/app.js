@@ -62,7 +62,7 @@
      both follow. The names here and the .sk-* classes in index.html have to
      agree. */
   var CHAPTERS = [
-    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4, edge: 1.15 },
+    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4, edge: 1.38 },
     { id: 'bloom',  x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'violet', graph: true },
     { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
     { id: 'settle', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'lemon',  graph: true },
