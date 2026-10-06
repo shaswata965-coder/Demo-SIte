@@ -514,38 +514,16 @@ There are no corner marks on the panels or the model's frame and no axis gizmo.
 
 ### The circuit layer
 
-`js/circuit.js` draws one SVG into each panel — electrical traces carrying a
-small neural network, the idiom most AI sites reach for, kept to two pieces so
-it frames the copy rather than competing with it:
+`js/circuit.js` draws one SVG into each panel on a wide screen: a **bus down the
+outer edge**, the side the model is *not* on — two traces with 45° jogs and
+vias, the long one running into the strip's rail, with pulses riding it. It sits
+in the 1.8rem the rig extends past the column, never under a line of copy, is
+drawn in the panel's own pixels (so a 45° trace stays 45°) and redrawn when the
+panel changes size. It draws itself in as the scan starts and, like the rest of
+the rig, only moves on the live screen.
 
-- **A bus down the outer edge**, the side the model is *not* on: two traces with
-  45° jogs and vias, the long one running into the strip's rail, with
-  pulses riding it.
-- **A chip wired into a network on the model's side.** Four traces fan out of a
-  chip on the panel's inner edge into a 4–3–1 network pointed at the model's
-  centre — the copy is literally wired to the thing it describes. Once a loop a
-  signal runs chip → inputs → hidden → output and the output ring fires, the
-  same idea as the traced inference through the model, at the scale of the
-  panel.
-
-Everything sits in the margins, **never under a line of copy**: the bus in the
-1.8rem the rig extends past the column, the network in the gap between the
-column and the model. That gap is measured, not assumed — `modelGap()` in
-`app.js` takes the model's anchor and its arrangement's own reach
-(`NeuralField#reach`: the widest unit's distance from the vertical axis times
-the pose scale, which bounds it at any yaw) — and the network is sized to it: a
-wide fan when there is room, a tighter one down to ~56px, then a chip with three
-stubs, then nothing when the model is already over the panel's edge (around
-1024px wide). On a phone, and on the two full-width sections where the model is
-behind the copy, there is no gap to wire across, so a flat version of the
-network sits in the empty end of the strip instead.
-
-It is drawn in the panel's own pixels rather than a stretched `viewBox`, so a
-45° trace stays 45° whatever shape the panel is, and redrawn whenever the panel
-changes size — a `ResizeObserver` on each rig catches the webfont landing and
-copy reflowing, not only window resizes. It draws itself in with the panel as
-the scan starts (every trace has `pathLength="100"`, so one dash pattern draws
-any of them), and like the rest of the rig it only moves on the live screen.
+A chip wired into a small network between the copy and the model used to be
+drawn here too. It was removed — the model is the only network on screen.
 
 ## Narrow screens
 
@@ -886,7 +864,7 @@ The split is deliberate:
 |---|---|
 | `js/neural.js` | A React Three Fiber scene. `STATES`, the arrangement generators, `VIS` and `POSE_*` carry over unchanged; the hand projection is replaced by instanced meshes and a vertex shader. |
 | `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. The travel, zoom and dim become a scrubbed timeline; `dragEase` becomes its ease. |
-| `js/circuit.js` | A `<Circuit side gap />` component rendering the same SVG; the geometry functions carry over unchanged. |
+| `js/circuit.js` | A `<Circuit side />` component rendering the same SVG; the geometry functions carry over unchanged. |
 | `js/graph.js` | A `<Graph links>` component that measures its children with a ResizeObserver and renders the same traces; `layout()`'s targets feed the scene's scatter uniform. |
 | `css/tokens.css` | Unchanged. Tailwind v4 reads CSS custom properties directly. |
 | `css/main.css` | Component styles; the `[data-chapter]` block stays as-is. |
@@ -910,3 +888,10 @@ and writes `--m-top` / `--m-h` onto `#c0`; the `#c0` block at the end of
 `css/main.css` starts the headline at the model's top and runs the copy down to
 its bottom (headline up top, the line under it and the button at the bottom).
 Nothing here applies below 900px or to any other section.
+
+The first screen's model also stands wider and further right than the others:
+`CHAPTERS[0]` carries `stretch` (the projection is widened across the screen
+only, so the height — and the copy's alignment with it — is unchanged) and
+`nudge` (a fraction of the container's width added to its anchor). Both ease in
+between 900 and 1400px so the model never runs into the copy or the viewport's
+edge.

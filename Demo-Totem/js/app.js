@@ -62,7 +62,7 @@
      both follow. The names here and the .sk-* classes in index.html have to
      agree. */
   var CHAPTERS = [
-    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper' },
+    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4 },
     { id: 'bloom',  x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'violet', graph: true },
     { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
     { id: 'settle', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'lemon',  graph: true },
@@ -153,6 +153,20 @@
     }
     function scatterOf(i) { return CHAPTERS[i].graph && graphMode() ? 1 : 0; }
 
+    /* Where chapter i parks the model: its half's anchor, plus an optional
+       nudge (a fraction of the container's width), and an optional stretch
+       across the screen only — the first screen's model stands wider and
+       further right than the rest. */
+    function wideness() { return clamp((innerWidth - 900) / 500, 0, 1); }   /* 0 at 900px, 1 from 1400px */
+    function anchorOf(i) {
+      var c = CHAPTERS[i], a = anchor(c.x);
+      return wide() && c.nudge ? a + c.nudge * wideness() * innerW / Math.max(1, innerWidth) : a;
+    }
+    function stretchOf(i) {
+      var k = CHAPTERS[i].stretch;
+      return wide() && k ? 1 + (k - 1) * wideness() : 1;
+    }
+
     /* Cumulative roll, signed by the direction of travel: the model turns the
        way it is being pulled. Recomputed on resize because the anchors are. */
     var SPIN_AT = [];
@@ -160,7 +174,7 @@
       SPIN_AT = [0];
       for (var i = 1; i < CHAPTERS.length; i++) {
         SPIN_AT.push(SPIN_AT[i - 1]
-          + (anchor(CHAPTERS[i].x) - anchor(CHAPTERS[i - 1].x)) * SPIN_PER_WIDTH);
+          + (anchorOf(i) - anchorOf(i - 1)) * SPIN_PER_WIDTH);
       }
     }
 
@@ -246,23 +260,7 @@
     });
     field.start();
 
-    /* ---- circuit layer ---------------------------------------------------- */
-    /* Drawn per panel by js/circuit.js. The one thing it needs from here is
-       what only this file knows: how much room there is between a panel's
-       inner edge and the model standing beside it, so the network can reach
-       towards the model without touching it. The model's half-width is the
-       arrangement's own reach (see NeuralField#reach), plus the largest a
-       unit is drawn — the widest ring is about 10px. */
     var rigs = sections.map(function (el) { return el.querySelector('.rig'); });
-
-    function modelGap(i, rig) {
-      var c = CHAPTERS[i];
-      if (!wide() || typeof c.x === 'number') return 0;
-      var r = rig.getBoundingClientRect();
-      var cx = anchor(c.x) * innerWidth;
-      var half = field.radius * zoomOf(i) * field.reach(i) + 10;
-      return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
-    }
 
     /* ---- the first screen's copy, level with the model ----------------------
        The model is centred on the middle of the viewport, so where its top and
@@ -311,8 +309,7 @@
         if (!rigs[i]) continue;
         RigCircuit.draw(rigs[i], {
           side: typeof CHAPTERS[i].x === 'number' ? 'full' : CHAPTERS[i].x,
-          wide: wide(),
-          gap: modelGap(i, rigs[i])
+          wide: wide()
         });
       }
     }
@@ -813,7 +810,8 @@
       field.setScatter(scat, owner >= 0 ? graphTargets[owner] : null);
       var recede = owner >= 0 && graphMode() ? 0.12 : 0.72;
 
-      var x = lerp(anchor(CHAPTERS[lo].x), anchor(CHAPTERS[hi].x), e);
+      var x = lerp(anchorOf(lo), anchorOf(hi), e);
+      field.stretchX = lerp(stretchOf(lo), stretchOf(hi), e);
       var base = lerp(dimOf(lo), dimOf(hi), e);
       field.originX = x;
       /* Receding reads as depth, not just fade: it shrinks as it travels. */

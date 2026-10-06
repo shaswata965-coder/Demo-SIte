@@ -785,7 +785,7 @@
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy;
       var y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var d = fov / (fov + z2);
-      var px = ox + x1 * R * d, py = oy + y1 * R * d;
+      var px = ox + x1 * R * d * (this.stretchX || 1), py = oy + y1 * R * d;
       if (px < minX) minX = px; if (px > maxX) maxX = px;
       if (py < minY) minY = py; if (py > maxY) maxY = py;
 

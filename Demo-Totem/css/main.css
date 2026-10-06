@@ -699,8 +699,8 @@ html.no-banner .demo-banner {
 .cta-lg { padding: 1.15rem 1.8rem; font-size: clamp(.75rem, .9vw, .9375rem); }
 /* The one on the first screen: the page's main ask, so it is the biggest thing
    in the row. */
-.cta-hero { padding: 1.4rem 2.4rem; gap: .9rem; border-radius: calc(var(--panel-radius) + 2px);
-  font-size: clamp(.875rem, 1.1vw, 1.0625rem); letter-spacing: .11em; }
+.cta-hero { padding: 1.68rem 2.88rem; gap: 1.08rem; border-radius: calc(var(--panel-radius) + 2px);
+  font-size: clamp(1.05rem, 1.32vw, 1.275rem); letter-spacing: .11em; }
 
 .link-btn {
   font: inherit; font-family: var(--f-mono); font-size: clamp(.6875rem, .78vw, .8125rem);
@@ -1393,5 +1393,5 @@ html.theming .rig i, html.theming .rig b {
      up to the model's top. */
   #c0 h1 { font-size: clamp(3rem, min(6.1vw, 12svh), 7rem); line-height: .94; max-width: 12ch;
     margin-top: -.07em; }
-  #c0 .lede { align-self: end; font-size: clamp(1.15rem, min(1.75vw, 3.3svh), 1.9rem); max-width: 36ch; }
+  #c0 .lede { align-self: end; font-size: clamp(1rem, min(1.3vw, 2.5svh), 1.4rem); max-width: 38ch; }
 }
