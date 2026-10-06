@@ -62,7 +62,7 @@
      both follow. The names here and the .sk-* classes in index.html have to
      agree. */
   var CHAPTERS = [
-    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4, edge: 1.38 },
+    { id: 'seed',   x: 'right', dim: 1.00, zoom: 0.82, skin: 'paper', nudge: 0.04, stretch: 1.4, edge: 1.38, edgeAlpha: 1.45 },
     { id: 'bloom',  x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'violet', graph: true },
     { id: 'infer',  x: 'right', dim: 1.00, zoom: 0.76, skin: 'paper' },
     { id: 'settle', x: 0.50,    dim: 1.00, zoom: 0.95, skin: 'lemon',  graph: true },
@@ -163,6 +163,7 @@
       return wide() && c.nudge ? a + c.nudge * wideness() * innerW / Math.max(1, innerWidth) : a;
     }
     function edgeOf(i) { return CHAPTERS[i].edge || 1; }
+    function edgeAlphaOf(i) { return CHAPTERS[i].edgeAlpha || 1; }
     function stretchOf(i) {
       var k = CHAPTERS[i].stretch;
       return wide() && k ? 1 + (k - 1) * wideness() : 1;
@@ -585,14 +586,14 @@
     /* The links are in the markup. This keeps the bar in step with the page:
        which link is current (the pill slides onto it), how far down the page
        you are (the hairline along the bottom edge), and the menu that the
-       links fold into below 1024px. */
+       links fold into below 1200px. */
     var nav = $('nav'), navMenu = $('navMenu'), navProgress = $('navProgress');
     var navList = $('navLinks'), navInd = nav ? nav.querySelector('.nav-ind') : null;
     var navLinks = navList ? [].slice.call(navList.querySelectorAll('a')) : [];
     var navCurrent = -1, navP = -1, navOn = null, navPeek = null, navStuck = null;
     /* The header condenses into the island once you leave the top; below
-       1024px it is always the island. */
-    var navDesk = matchMedia('(min-width: 1024px)');
+       1200px it is always the island. */
+    var navDesk = matchMedia('(min-width: 1200px)');
 
     /* The pill: sized from a link's own box, so it lands exactly whatever the
        labels' widths. On the intro nothing is current — the mark is home — so
@@ -814,6 +815,7 @@
       var x = lerp(anchorOf(lo), anchorOf(hi), e);
       field.stretchX = lerp(stretchOf(lo), stretchOf(hi), e);
       field.edgeScale = lerp(edgeOf(lo), edgeOf(hi), e);
+      field.edgeAlpha = lerp(edgeAlphaOf(lo), edgeAlphaOf(hi), e);
       var base = lerp(dimOf(lo), dimOf(hi), e);
       field.originX = x;
       /* Receding reads as depth, not just fade: it shrinks as it travels. */

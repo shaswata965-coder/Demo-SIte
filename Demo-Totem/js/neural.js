@@ -910,7 +910,7 @@
       ctx.strokeStyle = PAL[ln];
       for (var p2 = 0; p2 < B; p2++) {
         if (!used[ln][p2]) continue;
-        var al = ((p2 + 0.6) / B) * (ink ? 0.62 : 0.40) * boost;
+        var al = ((p2 + 0.6) / B) * (ink ? 0.62 : 0.40) * boost * (this.edgeAlpha || 1);
         ctx.globalAlpha = Math.min(ink ? 0.70 : 0.72, al);
         ctx.stroke(lanes[ln][p2]);
       }
