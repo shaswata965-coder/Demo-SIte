@@ -246,24 +246,6 @@
     });
     field.start();
 
-    /* ---- circuit layer ---------------------------------------------------- */
-    /* Drawn per panel by js/circuit.js. The one thing it needs from here is
-       what only this file knows: how much room there is between a panel's
-       inner edge and the model standing beside it, so the network can reach
-       towards the model without touching it. The model's half-width is the
-       arrangement's own reach (see NeuralField#reach), plus the largest a
-       unit is drawn — the widest ring is about 10px. */
-    var rigs = sections.map(function (el) { return el.querySelector('.rig'); });
-
-    function modelGap(i, rig) {
-      var c = CHAPTERS[i];
-      if (!wide() || typeof c.x === 'number') return 0;
-      var r = rig.getBoundingClientRect();
-      var cx = anchor(c.x) * innerWidth;
-      var half = field.radius * zoomOf(i) * field.reach(i) + 10;
-      return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
-    }
-
     /* ---- section graphs --------------------------------------------------- */
     /* Wired once; laid out again whenever the page changes shape. Each layout
        also hands back where the model's units go in that section — measured
@@ -279,18 +261,6 @@
       var mode = graphMode() ? 'graph' : 'spine';
       for (var i = 0; i < graphs.length; i++) {
         if (graphs[i]) graphTargets[i] = SectionGraph.layout(graphs[i], mode, field.cfg.nodes, liftRect);
-      }
-    }
-
-    function drawCircuits() {
-      if (!window.RigCircuit) return;
-      for (var i = 0; i < rigs.length; i++) {
-        if (!rigs[i]) continue;
-        RigCircuit.draw(rigs[i], {
-          side: typeof CHAPTERS[i].x === 'number' ? 'full' : CHAPTERS[i].x,
-          wide: wide(),
-          gap: modelGap(i, rigs[i])
-        });
       }
     }
 
@@ -646,12 +616,10 @@
         relayoutQueued = true;
         requestAnimationFrame(function () {
           relayoutQueued = false;
-          drawCircuits();
           layoutGraphs();
           if (navCurrent >= 0) setNavCurrent(navCurrent);
         });
       });
-      for (var ri = 0; ri < rigs.length; ri++) if (rigs[ri]) ro.observe(rigs[ri]);
       if (navList) ro.observe(navList);
       for (var gi = 0; gi < graphs.length; gi++) if (graphs[gi]) ro.observe(graphs[gi].root);
     }
@@ -676,8 +644,6 @@
     }
 
     /* ---- painting --------------------------------------------------------- */
-    var axX = $('axX'), axY = $('axY'), axZ = $('axZ');
-
     var lastChapter = -1, lastSkinKey = null, shiftedCopy = -1;
     var liveSec = -1, meterTick = 0, scrollP = 0;
 
@@ -741,10 +707,9 @@
         field.setTheme(sk.mode, sk.colors);
       }
 
-      /* Only the screen you are on animates — the idle beam, the circuit's
-         signal, the meter. Seven panels beaming and pulsing at once would
-         compete with the canvas for the frame budget, and you can only ever
-         see one of them. */
+      /* Only the screen you are on animates — the signal pulses, the meter.
+         Seven panels pulsing at once would compete with the canvas for the
+         frame budget, and you can only ever see one of them. */
       var live = liveIndex();
       if (live !== liveSec) {
         if (liveSec >= 0 && sections[liveSec]) sections[liveSec].classList.remove('live');
@@ -809,33 +774,14 @@
       field.detail = clamp(0.30 + base * 0.62 - (field.zoom - 1) * 0.30, 0, 1);
 
       stage.style.opacity = (base * (1 - recede * crossing)).toFixed(3);
-      /* On .stage, not on :root. Both would work — .hud is a descendant — but
-         a custom property written to the root every frame dirties style for
-         the whole document, and this one is read by exactly one element. */
+      /* On .stage, not on :root: a custom property written to the root every
+         frame dirties style for the whole document. */
       stage.style.setProperty('--model-x', x.toFixed(4));
-      /* The readout belongs to a model you are inspecting, not to one lying
-         behind a screen of copy — it goes with the dimming. */
-      stage.style.setProperty('--hud-a',
-        (clamp((base - 0.55) / 0.45, 0, 1) * (1 - scat)).toFixed(3));
 
       /* Parallax. The pinned copy lifts a little through its chapter, which
          gives the copy and the model separation while the model does the
          travelling. */
       shiftCopy(lo, t);
-
-      /* Axis gizmo, projected with the same yaw and pitch as the model — the
-         one piece of readout kept, because it is a picture, not a number. */
-      var yaw = field.viewYaw !== undefined ? field.viewYaw
-              : field.spinBase + p * field.cfg.spinPerChapter;
-      var cy = Math.cos(yaw), sy = Math.sin(yaw);
-      var cp = Math.cos(field.pitch), sp = Math.sin(field.pitch);
-      function ax(el, ax0, ay0, az0) {
-        var x1 = ax0 * cy - az0 * sy, z1 = ax0 * sy + az0 * cy;
-        var y1 = ay0 * cp - z1 * sp;
-        el.setAttribute('x2', (x1 * 14).toFixed(1));
-        el.setAttribute('y2', (-y1 * 14).toFixed(1));
-      }
-      ax(axX, 1, 0, 0); ax(axY, 0, 1, 0); ax(axZ, 0, 0, 1);
     }
 
     var lastFrame = performance.now();
@@ -966,7 +912,7 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
+        measure(); computeSpin(); layoutGraphs(); setMenu(false); paint(true);
         if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
@@ -975,7 +921,6 @@
 
     measure();
     computeSpin();
-    drawCircuits();
     layoutGraphs();
     field.originY = 0.5;
     paint(true);

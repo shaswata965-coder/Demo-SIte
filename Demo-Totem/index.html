@@ -23,19 +23,6 @@
      and lie behind a full screen of it in the next. -->
 <div class="stage" id="stage">
   <canvas id="field" aria-label="Neural model. Scroll to turn and reconfigure it; drag to rotate."></canvas>
-  <!-- The frame travels with the model rather than sitting in a page
-       corner: --model-x, written from the same value that positions it. -->
-  <div class="hud" aria-hidden="true">
-    <span class="corner c3"></span><span class="corner c4"></span>
-    <div></div>
-    <div class="hud-bot">
-      <svg class="gizmo" viewBox="-20 -20 40 40" id="gizmo">
-        <line id="axX" x1="0" y1="0" x2="14" y2="0" stroke="currentColor"></line>
-        <line id="axY" x1="0" y1="0" x2="0" y2="-14" stroke="currentColor"></line>
-        <line id="axZ" x1="0" y1="0" x2="0" y2="0" stroke="currentColor"></line>
-      </svg>
-    </div>
-  </div>
 </div>
 
 <!-- The other demos. A strip above the nav, shown until the visitor closes
@@ -106,17 +93,9 @@
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
       <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
+           moves in it runs only while this screen is the live one. -->
       <div class="rig" aria-hidden="true">
         <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
-        <div class="rig-strip">
-          <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
-            <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
-          </svg>
-          <i class="rig-meter"></i>
-        </div>
       </div>
 
       <h1>Same model.<br>Half the bill.</h1>
@@ -125,15 +104,9 @@
       <strong>measured against your p99 and your evals.</strong></p>
 
       <div class="cta-row rv">
-        <button class="cta" type="button" data-goto="6">Book an inference teardown <i aria-hidden="true">&rarr;</i></button>
+        <button class="cta cta-hero" type="button" data-goto="6">Book an inference teardown <i aria-hidden="true">&rarr;</i></button>
         <button class="link-btn" type="button" data-goto="3">See selected work</button>
       </div>
-
-      <p class="trust rv">
-        <span><b>42</b> engagements</span>
-        <span><b>3.1&times;</b> median throughput gain</span>
-        <span><b>4wk</b> typical build</span>
-      </p>
 
     </div></div></div>
   </section>
@@ -191,11 +164,9 @@
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
       <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
+           moves in it runs only while this screen is the live one. -->
       <div class="rig" aria-hidden="true">
         <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
         <div class="rig-strip">
           <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
             <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
@@ -389,11 +360,9 @@
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
       <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
+           moves in it runs only while this screen is the live one. -->
       <div class="rig" aria-hidden="true">
         <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
         <div class="rig-strip">
           <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
             <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
@@ -536,11 +505,9 @@
     <span class="band" aria-hidden="true"></span>
     <div class="ch-body"><div class="ch-inner"><div class="ch-col">
       <!-- instrument rig: a live panel around the copy. Everything that
-           moves in it runs only while this screen is the live one; the
-           circuit layer inside it is drawn by js/circuit.js. -->
+           moves in it runs only while this screen is the live one. -->
       <div class="rig" aria-hidden="true">
         <i class="rig-beam"></i>
-        <i class="rig-reg tl"></i><i class="rig-reg tr"></i><i class="rig-reg bl"></i><i class="rig-reg br"></i>
         <div class="rig-strip">
           <svg class="rig-wave" viewBox="0 0 132 20" preserveAspectRatio="none">
             <path d="M0 14 H14 L18 6 L23 14 H38 L42 3 L47 14 H63 L67 9 L71 14 H88 L92 5 L97 14 H132"/>
@@ -582,7 +549,6 @@
 </main>
 
 <script src="js/neural.js"></script>
-<script src="js/circuit.js"></script>
 <script src="js/graph.js"></script>
 <script src="js/app.js"></script>
 </body>

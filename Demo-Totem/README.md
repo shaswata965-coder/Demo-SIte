@@ -30,7 +30,6 @@ index.html            markup and copy
 css/tokens.css        the colour system — five skins, each in light and dark
 css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
-js/circuit.js         the circuit layer drawn around each panel of copy
 js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/app.js             scroll → everything else
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
@@ -481,10 +480,8 @@ What makes a panel read as live is movement and small dense detail:
 
 | | |
 |---|---|
-| `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read. Its first pass reveals the copy (above); after that it sweeps idly while the screen is live |
-| `.rig-reg` | registration crosshairs at the corners. A bracket says "border"; a crosshair says the panel has been aligned to something |
-| `.rig-circ` | the circuit layer — see below |
-| `.rig-strip` | a waveform and a segmented meter of how far through this screen you are — no text |
+| `.rig-beam` | a scanning beam that **carries its own scanlines**, so the fine texture exists only where the scanner is. That is the difference between a screen with a scanline filter on it and a screen being read. Its one pass reveals the copy (above) and it does not return |
+| `.rig-strip` | a waveform and a segmented meter of how far through this screen you are — no text. Every panel has it except the first screen's, which stays clear under its call to action |
 
 There is **no grid**. The panel used to stand on a 72px measurement grid and
 the page on a 30px dot grid; both went, because two grids behind copy that
@@ -506,51 +503,15 @@ previous one still owns the middle.
 The rig is sized to `.ch-col`, so the same panel fits a hero, a four-item list
 and a three-card grid with no per-breakpoint geometry.
 
-One trap to know before editing it: `.rig > i` is `(0,1,1)`, so a bare
-`.rig-reg { … }` in a media query **loses** to it. The phone overrides are
-written `.rig > .rig-reg` for that reason — an earlier pass was silently doing
-nothing.
+On a phone the waveform is dropped. The beam stays. Under
+`prefers-reduced-motion` there is no typing, no caret, no beam, no scan and no
+pulses — every line is simply there, and the meter still updates, because it is
+information rather than animation and it only changes when you scroll.
 
-On a phone the waveform is dropped and the circuit layer changes shape (below).
-The beam stays. Under `prefers-reduced-motion` there is no typing, no caret, no
-beam, no scan and no pulses — every line is simply there, the circuit is drawn
-but still, and the meter still updates, because it is information rather than
-animation and it only changes when you scroll.
-
-### The circuit layer
-
-`js/circuit.js` draws one SVG into each panel — electrical traces carrying a
-small neural network, the idiom most AI sites reach for, kept to two pieces so
-it frames the copy rather than competing with it:
-
-- **A bus down the outer edge**, the side the model is *not* on: two traces with
-  45° jogs and vias, the long one running into the strip's rail, with
-  pulses riding it.
-- **A chip wired into a network on the model's side.** Four traces fan out of a
-  chip on the panel's inner edge into a 4–3–1 network pointed at the model's
-  centre — the copy is literally wired to the thing it describes. Once a loop a
-  signal runs chip → inputs → hidden → output and the output ring fires, the
-  same idea as the traced inference through the model, at the scale of the
-  panel.
-
-Everything sits in the margins, **never under a line of copy**: the bus in the
-1.8rem the rig extends past the column, the network in the gap between the
-column and the model. That gap is measured, not assumed — `modelGap()` in
-`app.js` takes the model's anchor and its arrangement's own reach
-(`NeuralField#reach`: the widest unit's distance from the vertical axis times
-the pose scale, which bounds it at any yaw) — and the network is sized to it: a
-wide fan when there is room, a tighter one down to ~56px, then a chip with three
-stubs, then nothing when the model is already over the panel's edge (around
-1024px wide). On a phone, and on the two full-width sections where the model is
-behind the copy, there is no gap to wire across, so a flat version of the
-network sits in the empty end of the strip instead.
-
-It is drawn in the panel's own pixels rather than a stretched `viewBox`, so a
-45° trace stays 45° whatever shape the panel is, and redrawn whenever the panel
-changes size — a `ResizeObserver` on each rig catches the webfont landing and
-copy reflowing, not only window resizes. It draws itself in with the panel as
-the scan starts (every trace has `pathLength="100"`, so one dash pattern draws
-any of them), and like the rest of the rig it only moves on the live screen.
+There are no corner marks on the panels or the model's frame, no axis gizmo, and
+no circuit layer (a bus down the panel's edge and a small network between the
+copy and the model) — all of it was removed to leave only the copy, the model and
+the beam's single reveal.
 
 ## Narrow screens
 
@@ -891,7 +852,6 @@ The split is deliberate:
 |---|---|
 | `js/neural.js` | A React Three Fiber scene. `STATES`, the arrangement generators, `VIS` and `POSE_*` carry over unchanged; the hand projection is replaced by instanced meshes and a vertex shader. |
 | `js/app.js` | A scroll provider — Lenis + GSAP ScrollTrigger — exposing `progress` through context. The travel, zoom and dim become a scrubbed timeline; `dragEase` becomes its ease. |
-| `js/circuit.js` | A `<Circuit side gap />` component rendering the same SVG; the geometry functions carry over unchanged. |
 | `js/graph.js` | A `<Graph links>` component that measures its children with a ResizeObserver and renders the same traces; `layout()`'s targets feed the scene's scatter uniform. |
 | `css/tokens.css` | Unchanged. Tailwind v4 reads CSS custom properties directly. |
 | `css/main.css` | Component styles; the `[data-chapter]` block stays as-is. |

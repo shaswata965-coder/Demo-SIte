@@ -64,33 +64,6 @@ img, canvas { max-width: 100%; }
    z-index, which is what puts the copy above it. */
 .doc { position: relative; }
 
-/* --- stage HUD ------------------------------------------------------------
-   A frame around the model rather than the page, so it travels with it:
-   --model-x is the model's own position, written once a frame by app.js.
-   Two corners and an axis gizmo — no text. It used to carry a readout of the
-   arrangement's name and unit count, and the model carried a label on a
-   leader line per arrangement; both went, along with the readout under the
-   copy, so the only words on screen are the copy's own.
-   ------------------------------------------------------------------------ */
-.hud {
-  position: absolute; top: 12svh; bottom: 11svh;
-  left: calc(var(--model-x) * 100%);
-  width: min(46vw, 620px);
-  transform: translateX(-50%);
-  opacity: var(--hud-a, 1);
-  pointer-events: none;
-  color: var(--faint);
-  padding: clamp(.9rem, 2vw, 1.6rem);
-  display: none;                      /* pointer devices only; see 900px up */
-  grid-template-rows: 1fr auto; gap: .5rem;
-}
-.hud-bot { display: flex; align-items: flex-end; justify-content: flex-end; }
-.hud .corner { position: absolute; width: 14px; height: 14px; border: 1px solid var(--rule-hi); }
-.hud .c3 { bottom: .7rem; left: .7rem; border-right: 0; border-top: 0; }
-.hud .c4 { bottom: .7rem; right: .7rem; border-left: 0; border-top: 0; }
-.hud .gizmo { width: clamp(34px, 2.6vw, 54px); height: clamp(34px, 2.6vw, 54px); opacity: .75 }
-.hud .gizmo line { stroke-width: 1; }
-
 /* --- other-demos banner ---------------------------------------------------
    A strip pinned above the nav, linking the repo's other demos. Fixed, so it
    takes no space in the flow: section tops — which js/app.js reads as scroll
@@ -408,9 +381,7 @@ html.no-banner .demo-banner {
 
    What makes a panel read as live is movement and small dense detail, so this
    one has: a scanning beam that carries its own scanline texture and whose
-   first pass is what reveals the copy, a circuit layer in the margins (a bus
-   down the outer edge, a chip wired into a small network on the model's side),
-   registration crosshairs rather than plain corners, and a strip along the
+   first pass is what reveals the copy, and a strip along the
    bottom with a waveform and a meter of how far through this screen you are —
    the same `progress` the rest of the page is built on. It carries no text:
    the readout that used to sit in that strip went, so the only words in the
@@ -451,8 +422,8 @@ html.no-banner .demo-banner {
    to agree. Both are written onto the <section> by that same calculation, and
    the pass runs for as long as the section carries .scanning — whether or not
    it is the live one, because on a phone a section can be landing in the top
-   half of the screen while the previous one still owns the middle. After it,
-   the slower idle sweep takes over for as long as the screen is live. */
+   half of the screen while the previous one still owns the middle. It is a
+   single pass: once the beam has left the panel it does not come back. */
 .rig-beam { inset: 0; overflow: hidden; }
 .rig-beam::before {
   content: ''; position: absolute; left: 0; right: 0; top: -150px; height: 150px;
@@ -465,137 +436,19 @@ html.no-banner .demo-banner {
   box-shadow: 0 6px 18px -6px var(--accent);
 }
 .chapter.scanning .rig-beam::before { animation: rig-scan var(--scan-d, 2s) linear; }
-.chapter.live.typed:not(.scanning) .rig-beam::before {
-  animation: rig-beam 5.4s var(--e-inout) 1.4s infinite;
-}
 @keyframes rig-scan {
   0%   { top: calc(var(--scan-from, 0px) - 150px); opacity: 0; }
   4%   { opacity: 1; }
   90%  { opacity: 1; }
   100% { top: 100%; opacity: 0; }
 }
-@keyframes rig-beam {
-  0%   { top: -150px; opacity: 0; }
-  10%  { opacity: .9; }
-  86%  { opacity: .9; }
-  100% { top: 100%; opacity: 0; }
-}
 
-/* Registration crosshairs. A bracket says "border"; a crosshair says the panel
-   has been aligned to something. */
-.rig-reg { width: 15px; height: 15px; opacity: 0; transform: scale(.3);
-  transition: opacity .45s var(--e-out), transform .45s var(--e-out); }
-.rig-reg::before, .rig-reg::after { content: ''; position: absolute; background: currentColor; }
-.rig-reg::before { left: 0; right: 0; top: 50%; height: 1px; }
-.rig-reg::after { top: 0; bottom: 0; left: 50%; width: 1px; }
-.rig-reg.tl { top: -7px; left: -7px; }
-.rig-reg.tr { top: -7px; right: -7px; }
-.rig-reg.bl { bottom: -7px; left: -7px; }
-.rig-reg.br { bottom: -7px; right: -7px; }
-.chapter.typed .rig-reg { opacity: .85; transform: scale(1); }
-.chapter.typed .rig-reg.tr { transition-delay: .05s; }
-.chapter.typed .rig-reg.bl { transition-delay: .10s; }
-.chapter.typed .rig-reg.br { transition-delay: .15s; }
-
-/* --- circuit layer --------------------------------------------------------
-   Drawn by js/circuit.js into one <svg class="rig-circ"> per panel: a bus down
-   the outer edge, and a chip wired into a small three-layer network on the
-   model's side (or, where the model is behind the copy, in the empty end of the
-   readout strip). Three rules keep it from being decoration for its own sake:
-
-     · it lives in the margins — nothing in it is ever under a line of copy
-     · it draws itself in with the rest of the panel, as the scan starts
-     · it moves only on the live screen, and what moves is a signal: pulses ride
-       the bus, and one inference runs chip → inputs → hidden → output on a
-       loop, the output ring firing as it lands
-
-   Traces take the rig's colour, the structure hue; signal is the accent; units
-   are the data hue and the output the signal hue — the page's four, in the
-   roles the model gives them.
-   ------------------------------------------------------------------------ */
-.rig-circ { position: absolute; left: 0; top: 0; overflow: visible; }
-
-/* Draw-in: every trace has pathLength="100", so one dash pattern draws any of
-   them from end to end whatever its real length. --d staggers the pieces. */
-.rig-circ .tr, .rig-circ .lk {
-  fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round;
-  stroke-dasharray: 100 100; stroke-dashoffset: 100;
-}
-.rig-circ .tr { stroke-opacity: .62; }
-.rig-circ .lk { stroke-opacity: .3; }
-.chapter.typed .rig-circ .tr, .chapter.typed .rig-circ .lk {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.1s var(--e-out) var(--d, 0s);
-}
-
-.rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd, .ring) {
-  opacity: 0; transition: opacity .45s var(--e-out) var(--d, 0s);
-}
-.rig-circ .via  { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
-.rig-circ .pad  { fill: currentColor; }
-.rig-circ .chip { fill: var(--bg); stroke: currentColor; stroke-width: 1; }
-.rig-circ .chip-dot { fill: currentColor; }
-.rig-circ .pin  { stroke: currentColor; stroke-width: 1.2; --d: .15s; }
-.rig-circ .nd   { fill: var(--data); }
-.rig-circ .nd.out { fill: var(--c-signal); }
-.rig-circ .ring { fill: none; stroke: var(--c-signal); stroke-width: 1; }
-.chapter.typed .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
-.chapter.typed .rig-circ .ring { opacity: .5; }
-
-/* Signal. Pulses travel in real pixels (--len is each path's length), so a
-   comet is the same size on a 40px link and a 600px bus. */
-.rig-circ .pl {
-  fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round;
-  stroke-dasharray: 9px 4000px; stroke-dashoffset: 9px; opacity: 0;
-  filter: drop-shadow(0 0 2.5px var(--accent));
-}
-.rig-circ .pl.bus { stroke-dasharray: 14px 4000px; stroke-dashoffset: 14px; }
-.rig-circ .hl { fill: var(--accent); opacity: 0; }
-.rig-circ .fire {
-  fill: none; stroke: var(--c-signal); stroke-width: 1.2; opacity: 0;
-  transform-box: fill-box; transform-origin: center;
-}
-
-.chapter.live.typed .rig-circ .pl.bus {
-  animation: cp-run 3.4s linear calc(1s + var(--pd, 0s)) infinite;
-}
-.chapter.live.typed .rig-circ .pl.s1 { animation: cp-s1 4.8s linear 1.4s infinite; }
-.chapter.live.typed .rig-circ .pl.s2 { animation: cp-s2 4.8s linear 1.4s infinite; }
-.chapter.live.typed .rig-circ .pl.s3 { animation: cp-s3 4.8s linear 1.4s infinite; }
-.chapter.live.typed .rig-circ .hl.f1 { animation: cp-f1 4.8s ease-out 1.4s infinite; }
-.chapter.live.typed .rig-circ .hl.f2 { animation: cp-f2 4.8s ease-out 1.4s infinite; }
-.chapter.live.typed .rig-circ .fire { animation: cp-fire 4.8s var(--e-out) 1.4s infinite; }
-
+/* Travelling pulse along a graph link (.g-pulse). */
 @keyframes cp-run {
   0%   { stroke-dashoffset: 14px; opacity: 0; }
   6%   { opacity: 1; }
   90%  { opacity: 1; }
   100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
-}
-/* One 4.8s inference: feed (0–27%), inputs → hidden (29–48%), hidden → output
-   (50–66%), output fires (64–90%). The stages hand over rather than overlap,
-   so it reads as one signal moving through, not three things blinking. */
-@keyframes cp-s1 {
-  0%        { stroke-dashoffset: 9px; opacity: 0; }
-  3%, 24%   { opacity: 1; }
-  27%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
-}
-@keyframes cp-s2 {
-  0%, 29%   { stroke-dashoffset: 9px; opacity: 0; }
-  31%, 45%  { opacity: 1; }
-  48%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
-}
-@keyframes cp-s3 {
-  0%, 50%   { stroke-dashoffset: 9px; opacity: 0; }
-  52%, 63%  { opacity: 1; }
-  66%, 100% { stroke-dashoffset: calc(var(--len) * -1px); opacity: 0; }
-}
-@keyframes cp-f1 { 0%, 25% { opacity: 0; } 29% { opacity: .5; } 42%, 100% { opacity: 0; } }
-@keyframes cp-f2 { 0%, 46% { opacity: 0; } 50% { opacity: .5; } 63%, 100% { opacity: 0; } }
-@keyframes cp-fire {
-  0%, 64%   { transform: scale(.5); opacity: 0; }
-  67%       { transform: scale(1); opacity: .9; }
-  90%, 100% { transform: scale(2.3); opacity: 0; }
 }
 
 /* The strip: a waveform and a meter of how far through this screen you are. */
@@ -747,6 +600,10 @@ html.no-banner .demo-banner {
               0 18px 34px -16px color-mix(in srgb, var(--accent) 95%, transparent); }
 .cta:hover i { transform: translateX(3px); }
 .cta-lg { padding: 1.15rem 1.8rem; font-size: clamp(.75rem, .9vw, .9375rem); }
+/* The one on the first screen: the page's main ask, so it is the biggest thing
+   in the row. */
+.cta-hero { padding: 1.4rem 2.4rem; gap: .9rem; border-radius: calc(var(--panel-radius) + 2px);
+  font-size: clamp(.875rem, 1.1vw, 1.0625rem); letter-spacing: .11em; }
 
 .link-btn {
   font: inherit; font-family: var(--f-mono); font-size: clamp(.6875rem, .78vw, .8125rem);
@@ -757,15 +614,6 @@ html.no-banner .demo-banner {
   transition: color var(--d-base) var(--e-out), border-color var(--d-base) var(--e-out);
 }
 .link-btn:hover { color: var(--accent-ink); border-color: var(--accent-ink); }
-
-/* --- hero trust strip ----------------------------------------------------- */
-.chapter .trust {
-  display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; max-width: none;
-  font-family: var(--f-mono); font-size: clamp(.625rem, .68vw, .75rem);
-  letter-spacing: .12em; text-transform: uppercase; color: var(--faint);
-  border-top: var(--rule-weight) solid var(--rule); padding-top: 1rem;
-}
-.trust b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
 
 /* --- cards ---------------------------------------------------------------- */
 /* Translucent rather than solid: the model is behind them, and the point of
@@ -1269,8 +1117,6 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
    ≥ 900px — the model comes out from behind the copy and stands beside it
    =========================================================================== */
 @media (min-width: 900px) {
-  .hud { display: grid; }
-
   .chapter { min-height: 182svh; --seam: 64svh; }
   .ch-body { position: sticky; top: 0; height: 100svh; min-height: 0;
     padding-block: clamp(4.5rem, 13svh, 8rem) clamp(2.5rem, 7svh, 5rem); }
@@ -1354,7 +1200,6 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
   #c0 h1 { font-size: clamp(2.4rem, 4.2vw, 4rem); }
   .card { padding: .9rem 1rem; }
   .quote blockquote { font-size: 1.0625rem; }
-  .trust { padding-top: .7rem; }
   .is-side .ch-col { gap: .9rem; }
   .steps .card { padding: .6rem .75rem; gap: .3rem; }
   .chapter .steps p { font-size: .8125rem; line-height: 1.4; }
@@ -1369,14 +1214,8 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
   .card { padding: .8rem .9rem; }
 }
 
-/* On a phone the copy column is the whole screen, so a bus down the outer edge
-   would sit in the 20px gutter and read as a stray line — js/circuit.js does
-   not draw it below 900px, and the network moves into the readout strip.
-   Corners, bar and tag carry the rest. */
+/* On a phone the readout strip drops its waveform. */
 @media (max-width: 899px) {
-  /* .rig > i is (0,1,1), so a bare .rig-reg here would lose to it — these
-     have to be at least as specific to change anything. */
-  .rig > .rig-reg { width: 11px; height: 11px; }
   .rig .rig-wave { display: none; }
 }
 
@@ -1395,13 +1234,7 @@ html.reveals-armed .ln-w:not(.in) { opacity: 0; }
   .rig, .rig * { transition: none !important; }
   .rig > .rig-beam { display: none; }
   .chapter .rig { opacity: 1; }
-  .chapter .rig-reg { opacity: .85; transform: none; }
   .chapter .rig-strip { opacity: 1; transform: none; }
-  /* The circuit is drawn, not drawing: traces whole, units on, no signal. */
-  .rig-circ .tr, .rig-circ .lk { stroke-dashoffset: 0; }
-  .rig-circ :is(.via, .pad, .chip, .chip-dot, .pin, .nd) { opacity: .9; }
-  .rig-circ .ring { opacity: .5; }
-  .rig-circ :is(.pl, .hl, .fire) { display: none; }
 }
 
 /* Flipping light/dark is a genuine step change. The toggle adds .theming for
@@ -1411,7 +1244,7 @@ html.theming, html.theming body, html.theming .cta,
 html.theming .chapter h1,
 html.theming .chapter h2, html.theming .chapter h3, html.theming .figures dd,
 html.theming .figures dd b, html.theming .nav-links a, html.theming .nav-icon,
-html.theming .hud, html.theming .card,
+html.theming .card,
 html.theming .g-leaf .wm, html.theming .g-card, html.theming .g-round,
 html.theming .g-leaf, html.theming .thumb,
 html.theming .portrait, html.theming .roster li,
