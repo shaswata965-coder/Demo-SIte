@@ -900,3 +900,13 @@ Nothing here depends on the DOM structure except `app.js`, and nothing in
 AXON is a fictional company invented for this demo. The team, the projects, the
 partner brands, the testimonial and every figure on the page are made up, and
 `hello@axon.example` is a reserved example domain that goes nowhere.
+
+## First screen layout
+
+On a wide screen the first section's copy is lined up with the model rather
+than centred on the viewport. `levelFirst()` in `js/app.js` asks
+`NeuralField#extentY` how tall the first arrangement stands at its resting pose
+and writes `--m-top` / `--m-h` onto `#c0`; the `#c0` block at the end of
+`css/main.css` starts the headline at the model's top and runs the copy down to
+its bottom (headline up top, the line under it and the button at the bottom).
+Nothing here applies below 900px or to any other section.

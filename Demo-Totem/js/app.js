@@ -264,6 +264,29 @@
       return c.x === 'right' ? (cx - half) - r.right : r.left - (cx + half);
     }
 
+    /* ---- the first screen's copy, level with the model ----------------------
+       The model is centred on the middle of the viewport, so where its top and
+       bottom fall depends on the screen. They are measured (NeuralField#extentY)
+       and written onto #c0 as --m-top and --m-h, which css/main.css uses to
+       start the headline at the model's top and run the copy down to its
+       bottom. Only on a wide screen — on a phone the model is a backdrop. */
+    var firstSec = sections[0];
+    function levelFirst() {
+      if (!firstSec) return;
+      if (!wide()) {
+        firstSec.style.removeProperty('--m-top');
+        firstSec.style.removeProperty('--m-h');
+        return;
+      }
+      /* The renderer centres the model's bounding box on the viewport's
+         middle, so only its height matters; the marks at the ends are a few
+         pixels bigger than the points they sit on. */
+      var e = field.extentY(0, zoomOf(0));
+      var h = e.bottom - e.top + 14;
+      firstSec.style.setProperty('--m-top', Math.round(field.h * 0.5 - h / 2) + 'px');
+      firstSec.style.setProperty('--m-h', Math.round(h) + 'px');
+    }
+
     /* ---- section graphs --------------------------------------------------- */
     /* Wired once; laid out again whenever the page changes shape. Each layout
        also hands back where the model's units go in that section — measured
@@ -944,7 +967,7 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
+        measure(); computeSpin(); levelFirst(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
         if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
@@ -953,6 +976,7 @@
 
     measure();
     computeSpin();
+    levelFirst();
     drawCircuits();
     layoutGraphs();
     field.originY = 0.5;

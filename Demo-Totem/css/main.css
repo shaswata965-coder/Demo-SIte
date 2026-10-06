@@ -1371,3 +1371,27 @@ html.theming .rig i, html.theming .rig b {
    that strength a "colour" is a change of paper, not a change of room, and
    three of them in a row read as one long grey page.
    =========================================================================== */
+
+/* ===========================================================================
+   First screen, wide: the copy fills the model's height
+   ---------------------------------------------------------------------------
+   js/app.js measures where the model's top falls and how tall it stands
+   (levelFirst) and writes them as --m-top and --m-h. The headline starts at
+   the model's top, the call to action ends at its bottom, and the line under
+   the headline sits just above the button — the room between them is the
+   headline's, so the type can be big. Everything here is #c0 only.
+   =========================================================================== */
+@media (min-width: 900px) {
+  #c0 .ch-body { align-content: start; padding-top: 0; }
+  #c0 .ch-inner { padding-top: max(0px, calc(var(--m-top, 20svh) - var(--banner-h))); }
+  #c0 .ch-col {
+    min-height: var(--m-h, 62svh);
+    grid-template-rows: auto 1fr auto;
+    gap: clamp(1rem, 2.4svh, 1.8rem);
+  }
+  /* The negative margin takes the headline's cap height, not its line box,
+     up to the model's top. */
+  #c0 h1 { font-size: clamp(3rem, min(6.1vw, 12svh), 7rem); line-height: .94; max-width: 12ch;
+    margin-top: -.07em; }
+  #c0 .lede { align-self: end; font-size: clamp(1.15rem, min(1.75vw, 3.3svh), 1.9rem); max-width: 36ch; }
+}

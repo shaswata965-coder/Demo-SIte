@@ -649,6 +649,27 @@
     this.render();
   };
 
+  /* How far arrangement `state` stands above and below the point it is
+     centred on, in canvas pixels, at its resting pose and the given zoom — the
+     same projection as _project(), without the idle wander. The page uses it
+     to line a section's copy up with the model's top and bottom. */
+  NeuralField.prototype.extentY = function (state, zoom) {
+    var s = clamp(state | 0, 0, NS - 1), P = this.shapes[s], c = this.centres[s];
+    var yaw = (this.spinBase || 0) + POSE_YAW[s];
+    var pitch = clamp(this.pitch + POSE_PITCH[s], -1.1, 1.1);
+    var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    var R = this.radius * zoom * POSE_SCALE[s], fov = this.cfg.fov;
+    var lo = 1e9, hi = -1e9;
+    for (var i = 0; i < this.cfg.nodes; i++) {
+      var x = P[i * 3] - c[0], y = P[i * 3 + 1] - c[1], z = P[i * 3 + 2] - c[2];
+      var z1 = x * sy + z * cy;
+      var y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+      var py = y1 * R * fov / (fov + z2);
+      if (py < lo) lo = py; if (py > hi) hi = py;
+    }
+    return { top: lo, bottom: hi };
+  };
+
   /* How far arrangement `state` can reach sideways from its centre, as a
      multiple of the drawn radius at zoom 1: its widest unit's distance from
      the vertical axis, times its pose scale. Yaw is the only rotation that
