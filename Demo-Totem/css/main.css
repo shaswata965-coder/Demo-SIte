@@ -91,6 +91,70 @@ img, canvas { max-width: 100%; }
 .hud .gizmo { width: clamp(34px, 2.6vw, 54px); height: clamp(34px, 2.6vw, 54px); opacity: .75 }
 .hud .gizmo line { stroke-width: 1; }
 
+/* --- other-demos banner ---------------------------------------------------
+   A strip pinned above the nav, linking the repo's other demos. Fixed, so it
+   takes no space in the flow: section tops — which js/app.js reads as scroll
+   progress — stay exactly where they were. Instead its height is published
+   as --banner-h, and the two things that sit at the top of the viewport add
+   it to their offsets: the nav (top) and the pinned chapter body (a
+   transparent top border, which stacks on every breakpoint's own padding
+   without restating any of them). Closing it zeroes --banner-h, and both
+   glide up together over --banner-dur. Drawn in the island's dark glass, so
+   it reads as part of the nav rather than as one more skin.
+   ------------------------------------------------------------------------ */
+:root { --banner-h: 2.25rem; --banner-dur: .45s; }
+html.no-banner { --banner-h: 0px; }
+
+.demo-banner {
+  position: fixed; z-index: 7; left: 0; right: 0; top: 0;
+  height: 2.25rem;
+  color: #F6F6FA;
+  background: rgba(13, 13, 20, .92);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+          backdrop-filter: blur(18px) saturate(1.6);
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+  font-size: .8125rem; line-height: 1;
+  transition: transform var(--banner-dur) var(--e-out), visibility 0s;
+}
+html.no-banner .demo-banner {
+  transform: translateY(-100%); visibility: hidden;
+  transition: transform var(--banner-dur) var(--e-out), visibility 0s linear var(--banner-dur);
+}
+.demo-banner-in {
+  height: 100%; max-width: var(--maxw); margin-inline: auto;
+  padding-inline: var(--gutter);
+  display: flex; align-items: center; justify-content: center; gap: .35rem;
+}
+.demo-banner-label {
+  margin-right: .4rem;
+  font-family: var(--f-mono); font-size: .6875rem; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(246, 246, 250, .6);
+}
+.demo-banner a {
+  display: inline-flex; align-items: center; height: 1.6rem; padding: 0 .7rem;
+  border-radius: 999px; white-space: nowrap;
+  color: inherit; text-decoration: none; font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, .13);
+  transition: background-color .25s var(--e-out), border-color .25s var(--e-out);
+}
+.demo-banner a:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .22); }
+.demo-banner-ref { margin-left: .35em; color: rgba(246, 246, 250, .6); font-weight: 400; }
+.demo-banner-x {
+  position: absolute; right: calc(var(--gutter) - .4rem); top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0;
+  border: 0; border-radius: 999px; background: none; color: inherit; cursor: pointer;
+}
+.demo-banner-x:hover { background: rgba(255, 255, 255, .1); }
+.demo-banner-x svg { display: block; width: .8rem; height: .8rem; }
+.demo-banner :focus-visible { outline-color: #F6F6FA; }
+@media (max-width: 719px) {
+  /* Room for the two names and the close button, left-aligned clear of it. */
+  .demo-banner-in { justify-content: flex-start; padding-right: calc(var(--gutter) + 1.75rem); }
+  .demo-banner-ref { display: none; }
+}
+@media (max-width: 379px) { .demo-banner-label { display: none; } }
+@media (prefers-reduced-motion: reduce) { :root { --banner-dur: 0s; } }
+
 /* --- navigation -----------------------------------------------------------
    Two states, and the move between them is the design.
 
@@ -111,9 +175,10 @@ img, canvas { max-width: 100%; }
 :root { --nav-h: 3.25rem; --nav-top: clamp(.6rem, 1.2vw, 1rem); }
 
 .nav {
-  position: fixed; z-index: 6; left: 0; right: 0; top: var(--nav-top);
+  position: fixed; z-index: 6; left: 0; right: 0; top: calc(var(--nav-top) + var(--banner-h));
   padding-inline: var(--gutter);
   pointer-events: none;
+  transition: top var(--banner-dur) var(--e-out);
 }
 .nav-bar {
   /* The island's palette, as four variables, so every part of the bar is
@@ -597,6 +662,9 @@ img, canvas { max-width: 100%; }
   /* The column takes pointer events over its own content only, so the exposed
      half of the canvas stays draggable. */
   pointer-events: none;
+  /* Head room for the demos banner, on top of whichever padding applies. */
+  border-top: var(--banner-h) solid transparent;
+  transition: border-top-width var(--banner-dur) var(--e-out);
 }
 .ch-inner { width: 100%; max-width: var(--maxw); margin-inline: auto; }
 .ch-col { display: grid; gap: clamp(1rem, 2.4vw, 2rem); }
