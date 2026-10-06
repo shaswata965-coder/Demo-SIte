@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fintech demos</title>
+<meta name="description" content="Three scroll-driven fintech demo sites: Demo-Totem, demo-crafted and Demo-Wealthsimple.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,500..800&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F7F8FA;
+    --ink: #14151A;
+    --muted: #5A5E6B;
+    --card: #FFFFFF;
+    --line: #DCDFE6;
+    --accent: #FF5F0C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0B0C10;
+      --ink: #F2F3F6;
+      --muted: #A3A7B3;
+      --card: #16181F;
+      --line: #2A2D37;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.5 "IBM Plex Sans", system-ui, sans-serif;
+  }
+  main { width: 100%; max-width: 960px; }
+  h1 {
+    margin: 0 0 8px;
+    font: 800 clamp(2rem, 6vw, 3.5rem)/1.05 "Archivo", system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .lead { margin: 0 0 40px; color: var(--muted); max-width: 52ch; }
+  .demos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .demo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card);
+    color: inherit;
+    text-decoration: none;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .demo:hover, .demo:focus-visible { transform: translateY(-3px); border-color: var(--accent); }
+  .demo:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .demo h2 { margin: 0; font: 700 1.375rem/1.2 "Archivo", system-ui, sans-serif; }
+  .demo p { margin: 0 0 12px; color: var(--muted); font-size: .9375rem; flex: 1; }
+  .btn {
+    align-self: flex-start;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #14151A;
+    font-weight: 500;
+  }
+  footer { margin-top: 40px; color: var(--muted); font-size: .8125rem; }
+  @media (prefers-reduced-motion: reduce) { .demo { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fintech demos</h1>
+  <p class="lead">Three scroll-driven demo sites for fictional fintech brands, built from one set of design decisions.</p>
+
+  <div class="demos">
+    <a class="demo" href="Demo-Totem/">
+      <h2>Demo-Totem</h2>
+      <p>AXON, a neural fintech consultancy. A neural model turns and rewires as you scroll.</p>
+      <span class="btn">Open Demo-Totem</span>
+    </a>
+    <a class="demo" href="demo-crafted/">
+      <h2>demo-crafted</h2>
+      <p>The same AXON content, re-staged as a flight through seven rooms in depth.</p>
+      <span class="btn">Open demo-crafted</span>
+    </a>
+    <a class="demo" href="Demo-Wealthsimple/">
+      <h2>Demo-Wealthsimple</h2>
+      <p>Larch, a machine-learning company for finance, on a Wealthsimple-style homepage.</p>
+      <span class="btn">Open Demo-Wealthsimple</span>
+    </a>
+  </div>
+
+  <footer>AXON and Larch are fictional. Every figure on every page is invented.</footer>
+</main>
+</body>
+</html>

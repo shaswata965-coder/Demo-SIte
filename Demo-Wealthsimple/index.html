@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/intro.css">
+<link rel="stylesheet" href="css/banner.css">
+<script src="js/banner.js"></script>
 </head>
 <body>
 <script>
@@ -60,6 +62,20 @@
 <a class="skip" href="#main">Skip to main content</a>
 
 <!-- ================================================================ header -->
+<!-- The other demos. A strip pinned to the top, shown until the visitor
+     closes it (remembered). css/banner.css makes room for it; js/banner.js
+     hides it. -->
+<aside class="demo-banner" id="demoBanner" aria-label="Other demos">
+  <div class="demo-banner-in">
+    <span class="demo-banner-label">More demos</span>
+    <a href="../Demo-Totem/">AXON<span class="demo-banner-ref">&middot; Totem</span></a>
+    <a href="../demo-crafted/">AXON Flight<span class="demo-banner-ref">&middot; craftedbygc</span></a>
+    <button class="demo-banner-x" id="demoBannerClose" type="button" aria-label="Hide the demos banner">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+    </button>
+  </div>
+</aside>
+
 <div class="hdr-wrap" id="hdr">
   <header class="hdr">
     <div class="hdr-left">
