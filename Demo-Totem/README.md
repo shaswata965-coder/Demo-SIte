@@ -32,9 +32,8 @@ css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
 js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/circuit.js         the circuit layer drawn around each panel of copy
+js/space.js           the space behind the page — see "The space"
 js/app.js             scroll → everything else
-img/backdrop.svg      the network behind the page, used as a mask — see "The backdrop"
-tools/make-backdrop.mjs  writes img/backdrop.svg
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
 
@@ -256,11 +255,11 @@ just its midpoint.
 
 Two parallax layers give the page depth. The pinned copy lifts 22px through
 its chapter; only the chapter you are in carries an offset — one style write a
-frame at most. And behind everything the backdrop network drifts up at about a
-quarter of the scroll speed — see "The backdrop". (There used to be a 30px dot
+frame at most. And behind everything is real depth: the space, a 3D field the
+camera flies down and forward through as you scroll — see "The space". (There used to be a 30px dot
 grid there instead, drifting at 7%. It went with the panel's own grid, because
-two grids behind the copy read as graph paper; see "The rig". The network is a
-picture rather than a grid, and fainter.)
+two grids behind the copy read as graph paper; see "The rig". The space is a
+volume rather than a grid, and soft.)
 
 ## Section rhythm
 
@@ -293,7 +292,7 @@ knowing before you touch it:
 ```
 body background
   .band              z-index: -1   full-bleed, sized to the chapter
-  .backdrop          z-index: -1   fixed; after .doc in the markup, so over the bands
+  .space (canvas)    z-index: -1   fixed; after .doc in the markup, so over the bands
   .stage (canvas)    z-index:  1
   .ch-body (copy)    z-index:  3
 ```
@@ -604,45 +603,52 @@ Each of these costs fill area, which is the frame budget (see above). The
 trail in particular: four stacked dots and one thick stroke both read the same
 and both cost more than they look like they should.
 
-## The backdrop
+## The space
 
-Behind the whole page sits one faint picture of a network: nine layers of
-neurons stacked top to bottom, each wired to the next by S-curves whose opacity
-is the connection's weight, a few residual links skipping a layer, signals in
-flight on some of the wires. The top row is wide and fine — the input — and the
-bottom few and heavy — the output — so the page's descent is a pass through the
-network, ending where the close sits.
+Behind the whole page is a slow flight through space, after the way
+[totem.itsoffbrand.com](https://totem.itsoffbrand.com/) carries you through its
+scene while the content stays put. `js/space.js` draws it on one fixed,
+viewport-sized canvas (`.space`), from a seeded 3D volume in front of a camera:
 
-**It is fixed, and it never changes.** `.backdrop` is a fixed layer taller than
-the screen (`max(300lvh, min(225vw, 420lvh))` — 3240px at 1440×900) that slides
-up as you scroll: top of the picture at the top of the page, bottom at the
-bottom, about a quarter of the copy's speed. Nothing swaps per section and
-nothing repeats, so scrolling reads as travelling down one image. Where the
-browser has scroll-driven animations (`animation-timeline: scroll()`) the
-compositor drives it; elsewhere `frame()` in `app.js` writes the same transform,
-measured from `.doc`'s rectangle like `progress()`. Reduced motion holds it
-still at its top.
+| | |
+|---|---|
+| **dust** | the bulk of it — fine points, crisp far off and drawn as soft out-of-focus discs when they come close |
+| **neurons** | a sparser population with rings, each wired by a synapse to its nearest neighbours; a third of the synapses carry a signal |
+| **haze** | a few very large, faint glows far behind everything — the atmosphere, painted at a quarter resolution and stretched |
 
-**It is a mask, not an image.** `img/backdrop.svg` is white on transparent; the
-layer is painted in the root skin's `--ink` at the skin's `--backdrop-a`, and
-the SVG only decides where that ink shows. So the network follows the section
-you are in — dark lines on paper, lemon and cyan, light ones on violet and the
-close — and both theme and skin changes fade it over `--d-theme`. A solid colour
-under a mask recolours on the compositor, so the fade is not a repaint.
+**Scroll is the flight.** Scrolling moves the camera down and forward through
+the volume, so near things rush past and far things barely move — real depth,
+not a picture sliding. The nearest field moves at half the copy's speed and the
+farthest at a twentieth; the descent is sized to the page, so that holds
+however long the page is. Positions are a pure function of the scroll, so
+scrolling back up flies you back to exactly the same view. On top of that the
+camera drifts forward on its own, slowly, so the space is alive when you stop.
+Depth and height both wrap, so the flight never runs out and every mote is
+somewhere you can see it.
 
-The strengths are per skin, in `tokens.css` (`--k-*-bd`): lower on paper, where
-dark ink on near-white reads loudest, higher on the floods and the dark grounds.
-At those values a wire is 2–5% ink and a neuron 6–11% — a texture under the
-model and the cards, never a second subject. The picture also thins across the
-middle, where the copy and the model live, to about two thirds of its strength
-at the edges.
+**It keeps out of the way.** Nothing in it is bright. The nearest marks — the
+big out-of-focus discs — are the faintest rather than the loudest. A synapse
+long enough to cross a paragraph fades out. And wherever the model stands
+whole, a clearing opens round it (read from `__axon.field`), so nothing in the
+space crosses the main asset; in the taken-apart sections, where the model has
+no disc, the clearing closes.
 
-To change the picture, edit `tools/make-backdrop.mjs` and run it; it is seeded,
-so the same script always writes the same file.
+**It is drawn in the palette, by role**, the way the model is: dust in ink,
+neurons in structure, synapses in data, signals in signal, and the haze
+adding the accent — the light rising at the bottom of the page, through the
+close, is orange. The roles come from the root skin through `--sp-*` in
+`tokens.css` (lemon draws its synapses in its accent, because blue over yellow
+reads olive), at the skin's strength `--space-a`. A section change eases the
+colours across rather than cutting them. Dark grounds carry it best — there it
+is closest to the reference — and on the bright ones it is an airy haze with
+the field in colour.
 
-```sh
-node tools/make-backdrop.mjs   # writes img/backdrop.svg
-```
+**Cost.** One 2D canvas at no more than ~1.6 megapixels (1.5x density at
+most — it is soft, it does not need the model's), dust batched into a couple
+of dozen paths a frame, the haze repainted only when it has moved, and 30
+frames a second at rest, when only the drift moves. The same three device
+tiers as the model decide how much dust and how many neurons. Reduced motion
+draws one still frame.
 
 ## Performance
 
@@ -670,8 +676,8 @@ node tools/make-embed.mjs   # writes dist/index.html
 ```
 
 That emits **one self-contained file**: no doctype, no `<html>`, no `<head>`, no
-`<body>`, every stylesheet and script inlined (and the images the stylesheets
-point at, the backdrop's mask, as `data:` URIs), nothing left to fetch but the
+`<body>`, every stylesheet and script inlined (and any local images the
+stylesheets point at, as `data:` URIs), nothing left to fetch but the
 webfont. `app.js` sets `lang` and `data-chapter` on the root itself, so the
 embed build behaves identically to the standalone one. Use it for anywhere you
 are pasting the page into someone else's document; use `index.html` for hosting.

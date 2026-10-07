@@ -64,75 +64,23 @@ img, canvas { max-width: 100%; }
    z-index, which is what puts the copy above it. */
 .doc { position: relative; }
 
-/* --- the backdrop ---------------------------------------------------------
-   One picture of a network behind the whole page: nine layers of neurons
-   wired top to bottom, the input a wide row of fine units at the top and the
-   output a few heavy ones at the bottom (img/backdrop-*.svg, written by
-   tools/make-backdrop.mjs).
-
-   It is fixed, and taller than the screen, and it slides up at a fraction of
-   the scroll — top of the picture at the top of the page, bottom at the
-   bottom — so it never changes or repeats: scrolling the page is travelling
-   down the one network, at roughly a quarter of the copy's speed. The
-   scroll-driven animation runs on the compositor where there is one;
-   elsewhere js/app.js writes the same transform from its frame loop.
-
-   It is drawn in the palette, by role, the way the model is. The picture is
-   three masks stacked in one moving box — wires, neurons, signals — and each
-   is painted in the colour the root skin gives that role (--bd-wire,
-   --bd-neuron, --bd-signal, see tokens.css) at the skin's --bd-a. So on paper
-   the wiring is azure, the units violet and the signals magenta, and a
-   flooded section recolours all three to the hues it was solved for. Theme
-   and section changes fade the colours over --d-theme.
+/* --- the space -----------------------------------------------------------
+   A slow flight through a field of neurons behind the whole page, drawn by
+   js/space.js: dust that is crisp far off and soft close up, neurons wired
+   into constellations with signals on their synapses, and a few huge faint
+   glows of haze behind it all. Scroll moves the camera down and forward
+   through it, so near things pass quickly and far ones barely move; it
+   drifts forward on its own when you stop. Colours are the root skin's, by
+   role (--sp-* in tokens.css), at the skin's --space-a.
 
    Stacking: z-index -1 and *after* .doc in the markup, so it paints over the
    bands (also -1, earlier in the document) and under everything else — the
-   model, the copy, the cards and the networks of the flooded sections. */
-.backdrop {
-  position: fixed; left: 0; top: 0; z-index: -1;
-  width: 100%;
-  /* Tall enough to drift through, capped so an ultrawide does not blow the
-     line weights up. At 1440x900 this is 3240px: ~2.3 screens of travel. */
-  height: max(300vh, min(225vw, 420vh));
-  height: max(300lvh, min(225vw, 420lvh));
+   model, the copy, the cards and the networks of the flooded sections. Like
+   the stage, it is fixed at viewport size and never scaled by CSS. */
+.space {
+  position: fixed; inset: 0; z-index: -1;
+  display: block; width: 100%; height: 100%;
   pointer-events: none;
-  will-change: transform;
-}
-.backdrop > i {
-  position: absolute; inset: 0;
-  -webkit-mask-position: 50% 50%; -webkit-mask-size: cover; -webkit-mask-repeat: no-repeat;
-          mask-position: 50% 50%;         mask-size: cover;         mask-repeat: no-repeat;
-  transition: background-color var(--d-theme) var(--e-inout),
-              opacity var(--d-theme) var(--e-inout);
-}
-.bd-wires {
-  background-color: var(--bd-wire); opacity: var(--bd-wire-a);
-  -webkit-mask-image: url(../img/backdrop-wires.svg); mask-image: url(../img/backdrop-wires.svg);
-}
-.bd-neurons {
-  background-color: var(--bd-neuron); opacity: var(--bd-neuron-a);
-  -webkit-mask-image: url(../img/backdrop-neurons.svg); mask-image: url(../img/backdrop-neurons.svg);
-}
-.bd-signals {
-  background-color: var(--bd-signal); opacity: var(--bd-signal-a);
-  -webkit-mask-image: url(../img/backdrop-signals.svg); mask-image: url(../img/backdrop-signals.svg);
-}
-@keyframes backdrop-descend {
-  to {
-    transform: translate3d(0, calc(100vh - 100%), 0);
-    transform: translate3d(0, calc(100lvh - 100%), 0);
-  }
-}
-@supports (animation-timeline: scroll()) {
-  .backdrop {
-    animation: backdrop-descend linear both;
-    animation-timeline: scroll(root block);
-  }
-}
-/* Scroll-linked motion is still motion: with it reduced, the picture holds
-   still at its top and the page scrolls over it. */
-@media (prefers-reduced-motion: reduce) {
-  .backdrop { animation: none; transform: none !important; }
 }
 
 /* --- other-demos banner ---------------------------------------------------

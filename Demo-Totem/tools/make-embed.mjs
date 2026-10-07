@@ -27,7 +27,7 @@ const file = (rel) => resolve(root, rel.replace(/[?#].*$/, ''));
 const read = (rel) => readFileSync(file(rel), 'utf8');
 
 // A stylesheet's url()s are relative to the stylesheet, which an inlined
-// <style> no longer is — so local images (the backdrop's mask) go in as data:
+// <style> no longer is — so any local images they point at go in as data:
 // URIs, and the build stays one file.
 const TYPES = { svg: 'image/svg+xml', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg' };
 const inlineUrls = (css, from) =>

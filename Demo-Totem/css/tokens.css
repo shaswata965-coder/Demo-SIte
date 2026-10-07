@@ -34,18 +34,17 @@
    4.5:1 against its own ground — and against its own panel on the skins that
    carry cards. There are no sub-4.5 pairs in this file.
 
-   One value per skin, bd, is not a colour: it is how strongly the backdrop
-   network (img/backdrop.svg, see .backdrop in main.css) shows on that skin.
-   The network is drawn in the skin's own ink, so a ground only needs a
-   strength — lower on paper, where dark ink on near-white reads loudest, and
-   higher on the floods and the dark grounds, where the same ink has less
-   contrast to spend. None of them is more than a texture: at these values a
-   wire is 2–5% ink and a neuron 6–11%.
+   One value per skin, space, is not a colour: it is how strongly the space
+   behind the page (js/space.js, see .space in main.css) is drawn on that
+   skin. It is drawn in the skin's own hues, so a ground only needs a
+   strength — a touch lower on the bright grounds, where colour reads
+   loudest, and higher on the dark ones, where the same marks have less
+   contrast to spend.
    ========================================================================= */
 
 /* ---------------------------------------------------------------------------
    1. Skin colour tables. Raw values only; nothing consumes these directly.
-   Nine colours per skin, plus how the model (canvas) and the backdrop (bd)
+   Nine colours per skin, plus how the model (canvas) and the space (space)
    are drawn on it — everything else is derived in §3.
 
    acc is the accent as a FILL — the call to action, the marker rule, the
@@ -60,31 +59,31 @@
   --k-paper-bg:  #F7F8FA;  --k-paper-panel: #FFFFFF;  --k-paper-ink: #0B0D14;
   --k-paper-acc: #FF5F0C;  --k-paper-acc-ink: #CA4500; --k-paper-on-acc: #1A0A00;
   --k-paper-con: #6600FF;  --k-paper-data: #0076C0;   --k-paper-sig: #DC0081;
-  --k-paper-canvas: ink; --k-paper-bd: .34;
+  --k-paper-canvas: ink; --k-paper-space: .62;
 
   /* violet — flooded, ink inverts, the model becomes light */
   --k-violet-bg:  #3F11BC;  --k-violet-panel: #5320E0;  --k-violet-ink: #F4EEFF;
   --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
   --k-violet-con: #FF8C50;  --k-violet-data: #3AB4FF;   --k-violet-sig: #FF7EC9;
-  --k-violet-canvas: glow; --k-violet-bd: .40;
+  --k-violet-canvas: glow; --k-violet-space: .66;
 
   /* lemon — electric yellow, dark ink, near-white cards on top */
   --k-lemon-bg:  #FFD82E;  --k-lemon-panel: #FFFEF5;  --k-lemon-ink: #1A1400;
   --k-lemon-acc: #E04400;  --k-lemon-acc-ink: #AB3B00; --k-lemon-on-acc: #1A0A00;
   --k-lemon-con: #6600FF;  --k-lemon-data: #0064A2;   --k-lemon-sig: #BC006D;
-  --k-lemon-canvas: ink; --k-lemon-bd: .36;
+  --k-lemon-canvas: ink; --k-lemon-space: .6;
 
   /* cyan — electric, dark ink */
   --k-cyan-bg:  #3FDDF5;  --k-cyan-panel: #F2FEFF;  --k-cyan-ink: #041820;
   --k-cyan-acc: #D63500;  --k-cyan-acc-ink: #993400; --k-cyan-on-acc: #FFFFFF;
   --k-cyan-con: #6200F6;  --k-cyan-data: #005991;   --k-cyan-sig: #A80062;
-  --k-cyan-canvas: ink; --k-cyan-bd: .36;
+  --k-cyan-canvas: ink; --k-cyan-space: .6;
 
   /* ember — the close, where the call to action sits */
   --k-ember-bg:  #160A30;  --k-ember-panel: #251349;  --k-ember-ink: #F7F2FF;
   --k-ember-acc: #FF5F0C;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
   --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0496;
-  --k-ember-canvas: glow; --k-ember-bd: .42;
+  --k-ember-canvas: glow; --k-ember-space: .8;
 
   color-scheme: light;
 }
@@ -98,27 +97,27 @@
     --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
     --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
     --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
-    --k-paper-canvas: glow; --k-paper-bd: .40;
+    --k-paper-canvas: glow; --k-paper-space: .75;
 
     --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
     --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
     --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
-    --k-violet-canvas: glow; --k-violet-bd: .40;
+    --k-violet-canvas: glow; --k-violet-space: .72;
 
     --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
     --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
     --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
-    --k-lemon-canvas: glow; --k-lemon-bd: .42;
+    --k-lemon-canvas: glow; --k-lemon-space: .75;
 
     --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
     --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
     --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
-    --k-cyan-canvas: glow; --k-cyan-bd: .40;
+    --k-cyan-canvas: glow; --k-cyan-space: .75;
 
     --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
     --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
     --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
-    --k-ember-canvas: glow; --k-ember-bd: .42;
+    --k-ember-canvas: glow; --k-ember-space: .8;
 
     color-scheme: dark;
   }
@@ -128,27 +127,27 @@
   --k-paper-bg:  #0B0C10;  --k-paper-panel: #171A21;  --k-paper-ink: #F0F2F7;
   --k-paper-acc: #FF8038;  --k-paper-acc-ink: #FF5700; --k-paper-on-acc: #1A0A00;
   --k-paper-con: #9E5DFF;  --k-paper-data: #009DFF;   --k-paper-sig: #FF0095;
-  --k-paper-canvas: glow; --k-paper-bd: .40;
+  --k-paper-canvas: glow; --k-paper-space: .75;
 
   --k-violet-bg:  #26096B;  --k-violet-panel: #341480;  --k-violet-ink: #F1E7FF;
   --k-violet-acc: #FFC800;  --k-violet-acc-ink: #FFC800; --k-violet-on-acc: #1A0A00;
   --k-violet-con: #FF5700;  --k-violet-data: #009DFF;   --k-violet-sig: #FF22A3;
-  --k-violet-canvas: glow; --k-violet-bd: .40;
+  --k-violet-canvas: glow; --k-violet-space: .72;
 
   --k-lemon-bg:  #3E2D00;  --k-lemon-panel: #503B00;  --k-lemon-ink: #FFF5D2;
   --k-lemon-acc: #FF8038;  --k-lemon-acc-ink: #FF884A; --k-lemon-on-acc: #1A0A00;
   --k-lemon-con: #BF94FF;  --k-lemon-data: #33B1FF;   --k-lemon-sig: #FF7AC8;
-  --k-lemon-canvas: glow; --k-lemon-bd: .42;
+  --k-lemon-canvas: glow; --k-lemon-space: .75;
 
   --k-cyan-bg:  #03303F;  --k-cyan-panel: #063F52;  --k-cyan-ink: #DEF8FF;
   --k-cyan-acc: #FF8038;  --k-cyan-acc-ink: #FF5B06; --k-cyan-on-acc: #1A0A00;
   --k-cyan-con: #AC75FF;  --k-cyan-data: #009DFF;   --k-cyan-sig: #FF45B2;
-  --k-cyan-canvas: glow; --k-cyan-bd: .40;
+  --k-cyan-canvas: glow; --k-cyan-space: .75;
 
   --k-ember-bg:  #0C0524;  --k-ember-panel: #190D3A;  --k-ember-ink: #F7F2FF;
   --k-ember-acc: #FF8038;  --k-ember-acc-ink: #FF5700; --k-ember-on-acc: #1A0A00;
   --k-ember-con: #FFC800;  --k-ember-data: #009DFF;   --k-ember-sig: #FF0095;
-  --k-ember-canvas: glow; --k-ember-bd: .42;
+  --k-ember-canvas: glow; --k-ember-space: .8;
 
   color-scheme: dark;
 }
@@ -168,8 +167,7 @@
   --on-accent: var(--k-paper-on-acc);
   --c-second: var(--k-paper-con); --c-third: var(--k-paper-data);
   --c-signal: var(--k-paper-sig); --canvas-mode: var(--k-paper-canvas);
-  --bd-a: var(--k-paper-bd);
-  --bd-wire: var(--k-paper-data); --bd-neuron: var(--k-paper-con); --bd-signal: var(--k-paper-sig);
+  --space-a: var(--k-paper-space);
 }
 .sk-violet, :root[data-skin="violet"] {
   --bg: var(--k-violet-bg); --panel: var(--k-violet-panel); --ink: var(--k-violet-ink);
@@ -177,8 +175,7 @@
   --on-accent: var(--k-violet-on-acc);
   --c-second: var(--k-violet-con); --c-third: var(--k-violet-data);
   --c-signal: var(--k-violet-sig); --canvas-mode: var(--k-violet-canvas);
-  --bd-a: var(--k-violet-bd);
-  --bd-wire: var(--k-violet-data); --bd-neuron: var(--k-violet-con); --bd-signal: var(--k-violet-sig);
+  --space-a: var(--k-violet-space);
 }
 .sk-lemon, :root[data-skin="lemon"] {
   --bg: var(--k-lemon-bg); --panel: var(--k-lemon-panel); --ink: var(--k-lemon-ink);
@@ -186,8 +183,8 @@
   --on-accent: var(--k-lemon-on-acc);
   --c-second: var(--k-lemon-con); --c-third: var(--k-lemon-data);
   --c-signal: var(--k-lemon-sig); --canvas-mode: var(--k-lemon-canvas);
-  --bd-a: var(--k-lemon-bd);
-  --bd-wire: var(--k-lemon-acc); --bd-neuron: var(--k-lemon-con); --bd-signal: var(--k-lemon-sig);
+  --space-a: var(--k-lemon-space);
+  --sp-wire: var(--k-lemon-acc);   /* blue over yellow reads olive — no green */
 }
 .sk-cyan, :root[data-skin="cyan"] {
   --bg: var(--k-cyan-bg); --panel: var(--k-cyan-panel); --ink: var(--k-cyan-ink);
@@ -195,8 +192,7 @@
   --on-accent: var(--k-cyan-on-acc);
   --c-second: var(--k-cyan-con); --c-third: var(--k-cyan-data);
   --c-signal: var(--k-cyan-sig); --canvas-mode: var(--k-cyan-canvas);
-  --bd-a: var(--k-cyan-bd);
-  --bd-wire: var(--k-cyan-data); --bd-neuron: var(--k-cyan-con); --bd-signal: var(--k-cyan-sig);
+  --space-a: var(--k-cyan-space);
 }
 .sk-ember, :root[data-skin="ember"] {
   --bg: var(--k-ember-bg); --panel: var(--k-ember-panel); --ink: var(--k-ember-ink);
@@ -204,8 +200,7 @@
   --on-accent: var(--k-ember-on-acc);
   --c-second: var(--k-ember-con); --c-third: var(--k-ember-data);
   --c-signal: var(--k-ember-sig); --canvas-mode: var(--k-ember-canvas);
-  --bd-a: var(--k-ember-bd);
-  --bd-wire: var(--k-ember-data); --bd-neuron: var(--k-ember-con); --bd-signal: var(--k-ember-sig);
+  --space-a: var(--k-ember-space);
 }
 
 /* ---------------------------------------------------------------------------
@@ -238,12 +233,16 @@
   --contrast:  var(--c-second);
   --data:      var(--c-third);
 
-  /* The backdrop's three layers share the skin's strength. The units are a
-     shade under it — they are the densest marks, and the model's own are
-     the same hue — and the signals, sparse, take it whole. */
-  --bd-wire-a:   var(--bd-a);
-  --bd-neuron-a: calc(var(--bd-a) * .85);
-  --bd-signal-a: var(--bd-a);
+  /* The space behind the page (js/space.js), by role, the way the model is
+     coloured: dust in ink, neurons in structure, synapses in data, signals in
+     signal, and the haze adding the accent — the light at the bottom of the
+     page is orange. A skin overrides a role only where its ground would turn
+     it muddy. */
+  --sp-dust:   var(--ink);
+  --sp-neuron: var(--contrast);
+  --sp-wire:   var(--data);
+  --sp-signal: var(--c-signal);
+  --sp-haze:   var(--accent);
 }
 
 :root {
