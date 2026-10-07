@@ -1,4 +1,4 @@
-/* Generate img/backdrop.svg — the faint network the whole page scrolls down.
+/* Generate img/backdrop-*.svg — the network the whole page scrolls down.
 
    One tall picture of a feed-forward network laid on its side: nine layers of
    neurons stacked top to bottom, each wired to the next by S-curves whose
@@ -7,10 +7,17 @@
    (the input), the bottom few and heavy (the output), so travelling down the
    page is travelling through the network.
 
-   It is drawn in white on transparent because it is used as a MASK, never as
-   an image: css/main.css paints .backdrop in the section's own ink and lets
-   this file's alpha decide where that ink shows. One file, every skin, both
-   themes.
+   It is written as three files, one per colour role, each white on
+   transparent because each is used as a MASK, never as an image:
+
+     backdrop-wires.svg    the connections, residual links and dust   → data hue
+     backdrop-neurons.svg  the units, their rings, out-of-focus discs → structure hue
+     backdrop-signals.svg  signals in flight and the glow on hubs     → signal hue
+
+   css/main.css paints each layer in the section's own colour for that role
+   and lets the file's alpha decide where it shows, so one picture serves
+   every skin and both themes and follows the palette's role assignments the
+   same way the model does.
 
    Deterministic — the same seed always writes the same file, so the SVG in
    git is reproducible and a diff only shows a change you meant.
@@ -22,7 +29,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const out = resolve(here, '..', 'img', 'backdrop.svg');
+const outDir = resolve(here, '..', 'img');
 
 const W = 1600, H = 3600;
 
@@ -99,34 +106,38 @@ const at = (c, t) => {
 
 /* ---- buckets ---------------------------------------------------------------
    Thousands of elements would make every tile of this slow to rasterise, so
-   marks are merged into one <path> per (kind, opacity) bucket instead. */
+   marks are merged into one <path> per (layer, kind, opacity) bucket instead. */
+const LAYERS = ['wires', 'neurons', 'signals'];
 const buckets = new Map();
-const put = (kind, alpha, d) => {
+const put = (layer, kind, alpha, d) => {
   const a = Math.max(0.04, Math.min(1, Math.round(alpha * 20) / 20));
-  const key = kind + '|' + a.toFixed(2);
-  if (!buckets.has(key)) buckets.set(key, { kind, a, d: [] });
+  const key = layer + '|' + kind + '|' + a.toFixed(2);
+  if (!buckets.has(key)) buckets.set(key, { layer, kind, a, d: [] });
   buckets.get(key).d.push(d);
 };
+/* Neurons are drawn a fifth larger than they were laid out, so a unit reads
+   as a unit at the scale a laptop shows the picture. */
+const R = 1.2;
 const dot = (x, y, r) =>
   `M${f(x - r)} ${f(y)}a${f(r)} ${f(r)} 0 1 0 ${f(2 * r)} 0a${f(r)} ${f(r)} 0 1 0 ${f(-2 * r)} 0`;
 
 for (const e of edges) {
   const c = curve(e.a, e.b);
   const mid = (e.a.x + e.b.x) / 2;
-  put(e.strong ? 'wire-strong' : 'wire', e.w * edgeWeight(mid),
+  put('wires', e.strong ? 'wire-strong' : 'wire', e.w * edgeWeight(mid),
     `M${f(c[0])} ${f(c[1])}C${c.slice(2).map(f).join(' ')}`);
   // Signals in flight: a bead or two partway down some of the wires.
   if (rand() < 0.16) {
     const beads = 1 + Math.floor(rand() * 3), t0 = range(0.18, 0.62);
     for (let i = 0; i < beads; i++) {
       const [x, y] = at(c, t0 + i * 0.07);
-      put('fill', (0.95 - i * 0.22) * edgeWeight(x), dot(x, y, 2.6 - i * 0.5));
+      put('signals', 'fill', (1 - i * 0.2) * edgeWeight(x), dot(x, y, (2.6 - i * 0.5) * R));
     }
   }
 }
 for (const { a, b } of skips) {
   const c = curve(a, b);
-  put('skip', 0.3 * edgeWeight((a.x + b.x) / 2), `M${f(c[0])} ${f(c[1])}C${c.slice(2).map(f).join(' ')}`);
+  put('wires', 'skip', 0.45 * edgeWeight((a.x + b.x) / 2), `M${f(c[0])} ${f(c[1])}C${c.slice(2).map(f).join(' ')}`);
 }
 
 /* ---- neurons ------------------------------------------------------------ */
@@ -137,11 +148,11 @@ rows.forEach((row, k) => {
   for (const n of row) {
     const wt = edgeWeight(n.x);
     const r = last ? range(8.5, 10.5) : first ? range(3, 4.4) : range(4.6, 6.8);
-    put('fill', 0.9 * wt, dot(n.x, n.y, r));
-    if (last || hubs.has(n) || rand() < 0.42) put('ring', 0.5 * wt, dot(n.x, n.y, r + range(5, 8)));
+    put('neurons', 'fill', wt, dot(n.x, n.y, r * R));
+    if (last || hubs.has(n) || rand() < 0.42) put('neurons', 'ring', 0.6 * wt, dot(n.x, n.y, r * R + range(5, 8)));
     if (last || hubs.has(n)) {
-      put('ring', 0.28 * wt, dot(n.x, n.y, r + range(15, 20)));
-      halos.push({ x: n.x, y: n.y, r: range(70, 110), a: 0.32 * wt });
+      put('neurons', 'ring', 0.34 * wt, dot(n.x, n.y, r * R + range(15, 20)));
+      halos.push({ layer: 'signals', x: n.x, y: n.y, r: range(70, 110), a: 0.5 * wt });
     }
   }
 });
@@ -149,36 +160,39 @@ rows.forEach((row, k) => {
 /* ---- depth: dust and a few out-of-focus discs ---------------------------- */
 for (let i = 0; i < 300; i++) {
   const x = rand() * W, y = rand() * H;
-  put('fill', range(0.18, 0.5) * edgeWeight(x), dot(x, y, range(0.8, 1.7)));
+  put('wires', 'fill', range(0.25, 0.6) * edgeWeight(x), dot(x, y, range(0.8, 1.7) * R));
 }
 const bokeh = Array.from({ length: 16 }, () => {
   const x = rand() * W;
-  return { x, y: rand() * H, r: range(40, 120), a: range(0.07, 0.14) * edgeWeight(x) };
+  return { layer: 'neurons', x, y: rand() * H, r: range(40, 120), a: range(0.08, 0.16) * edgeWeight(x) };
 });
 
 /* ---- write --------------------------------------------------------------- */
-const STROKE = { wire: 1, 'wire-strong': 1.7, skip: 1, ring: 1.1 };
-const paths = [...buckets.values()]
+const STROKE = { wire: 1.5, 'wire-strong': 2.6, skip: 1.3, ring: 1.6 };
+const pathsOf = (layer) => [...buckets.values()]
+  .filter((b) => b.layer === layer)
   .sort((p, q) => p.kind.localeCompare(q.kind) || p.a - q.a)
   .map(({ kind, a, d }) => kind === 'fill'
     ? `<path fill-opacity="${a}" d="${d.join('')}"/>`
     : `<path fill="none" stroke="#fff" stroke-width="${STROKE[kind]}" stroke-opacity="${a}"` +
       (kind === 'skip' ? ' stroke-dasharray="3 7" stroke-linecap="round"' : '') + ` d="${d.join('')}"/>`);
-
-const discs = [...halos, ...bokeh]
+const discsOf = (layer) => [...halos, ...bokeh]
+  .filter((d) => d.layer === layer)
   .map(({ x, y, r, a }) => `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="url(#h)" opacity="${a.toFixed(2)}"/>`);
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-<!-- Generated by tools/make-backdrop.mjs; edit that, not this. A mask: white on transparent. -->
-<defs><radialGradient id="h"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+mkdirSync(outDir, { recursive: true });
+for (const layer of LAYERS) {
+  const discs = discsOf(layer), paths = pathsOf(layer);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<!-- Generated by tools/make-backdrop.mjs; edit that, not this. A mask (${layer}): white on transparent. -->
+` + (discs.length ? `<defs><radialGradient id="h"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
 ${discs.join('\n')}
-<g fill="#fff">
+` : '') + `<g fill="#fff">
 ${paths.join('\n')}
 </g>
 </svg>
 `;
-
-mkdirSync(dirname(out), { recursive: true });
-writeFileSync(out, svg);
-console.log(`img/backdrop.svg — ${(svg.length / 1024).toFixed(1)} KB, ${edges.length} wires, ` +
-  `${rows.flat().length} neurons, ${buckets.size + discs.length} elements`);
+  writeFileSync(resolve(outDir, `backdrop-${layer}.svg`), svg);
+  console.log(`img/backdrop-${layer}.svg — ${(svg.length / 1024).toFixed(1)} KB, ${paths.length + discs.length} elements`);
+}
+console.log(`${edges.length} wires, ${rows.flat().length} neurons`);

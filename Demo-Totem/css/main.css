@@ -65,9 +65,9 @@ img, canvas { max-width: 100%; }
 .doc { position: relative; }
 
 /* --- the backdrop ---------------------------------------------------------
-   One faint picture of a network behind the whole page: nine layers of
-   neurons wired top to bottom, the input a wide row of fine units at the top
-   and the output a few heavy ones at the bottom (img/backdrop.svg, written by
+   One picture of a network behind the whole page: nine layers of neurons
+   wired top to bottom, the input a wide row of fine units at the top and the
+   output a few heavy ones at the bottom (img/backdrop-*.svg, written by
    tools/make-backdrop.mjs).
 
    It is fixed, and taller than the screen, and it slides up at a fraction of
@@ -77,11 +77,13 @@ img, canvas { max-width: 100%; }
    scroll-driven animation runs on the compositor where there is one;
    elsewhere js/app.js writes the same transform from its frame loop.
 
-   The SVG is a mask, not an image. The layer is painted in the root skin's
-   ink at the skin's --backdrop-a, so the network follows the section you are
-   in — dark lines on paper, lemon and cyan, light ones on violet and the
-   close — and fades with the theme. Because it is a solid colour under a
-   mask, the recolour is a compositor job, not a repaint.
+   It is drawn in the palette, by role, the way the model is. The picture is
+   three masks stacked in one moving box — wires, neurons, signals — and each
+   is painted in the colour the root skin gives that role (--bd-wire,
+   --bd-neuron, --bd-signal, see tokens.css) at the skin's --bd-a. So on paper
+   the wiring is azure, the units violet and the signals magenta, and a
+   flooded section recolours all three to the hues it was solved for. Theme
+   and section changes fade the colours over --d-theme.
 
    Stacking: z-index -1 and *after* .doc in the markup, so it paints over the
    bands (also -1, earlier in the document) and under everything else — the
@@ -94,13 +96,26 @@ img, canvas { max-width: 100%; }
   height: max(300vh, min(225vw, 420vh));
   height: max(300lvh, min(225vw, 420lvh));
   pointer-events: none;
-  background-color: var(--ink);
-  opacity: var(--backdrop-a);
-  -webkit-mask: url(../img/backdrop.svg) 50% 50% / cover no-repeat;
-          mask: url(../img/backdrop.svg) 50% 50% / cover no-repeat;
+  will-change: transform;
+}
+.backdrop > i {
+  position: absolute; inset: 0;
+  -webkit-mask-position: 50% 50%; -webkit-mask-size: cover; -webkit-mask-repeat: no-repeat;
+          mask-position: 50% 50%;         mask-size: cover;         mask-repeat: no-repeat;
   transition: background-color var(--d-theme) var(--e-inout),
               opacity var(--d-theme) var(--e-inout);
-  will-change: transform;
+}
+.bd-wires {
+  background-color: var(--bd-wire); opacity: var(--bd-wire-a);
+  -webkit-mask-image: url(../img/backdrop-wires.svg); mask-image: url(../img/backdrop-wires.svg);
+}
+.bd-neurons {
+  background-color: var(--bd-neuron); opacity: var(--bd-neuron-a);
+  -webkit-mask-image: url(../img/backdrop-neurons.svg); mask-image: url(../img/backdrop-neurons.svg);
+}
+.bd-signals {
+  background-color: var(--bd-signal); opacity: var(--bd-signal-a);
+  -webkit-mask-image: url(../img/backdrop-signals.svg); mask-image: url(../img/backdrop-signals.svg);
 }
 @keyframes backdrop-descend {
   to {
