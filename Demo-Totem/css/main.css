@@ -1063,35 +1063,47 @@ html.reveals-armed .g-edge:not(.in) .g-port { opacity: 0; transition-delay: 0s; 
 }
 
 /* --- Four levers (#c1) ------------------------------------------------------
-   The second section's graph runs about 20% larger — type, cards, port circles
-   and the output — and the spacing is spent between the nodes (more room for
-   the wiring to run in) rather than around the edge of the section. The small
+   The second section's graph is scaled up and spread to fill the screen: the
+   graph is stretched to the full height under the navbar, the margin round it
+   is a thin gutter, and what room is left over goes between the nodes (taller
+   gaps, wider wiring channels) rather than round the edge. The small
    descriptions are plain white so they carry on the violet ground. Desktop
    network layout only; the spine below 1100px keeps its own sizes.
    ------------------------------------------------------------------------ */
-#c1 .g-card p, #c1 .g-claim p, #c1 .g-lever p, #c1 .g-out-l, #c1 .g-card em { color: #fff; }
+#c1 .g-card p, #c1 .g-claim p, #c1 .g-lever p, #c1 .g-out-l,
+#c1 .g-card em { color: #fff !important; -webkit-text-fill-color: #fff; }
 @media (min-width: 1100px) and (min-height: 600px) {
-  #c1 .ch-body { padding-inline: clamp(.75rem, 1.8vw, 2.25rem);
-    padding-block: clamp(3.25rem, 8svh, 5rem) clamp(1rem, 3svh, 2rem); }
+  #c1 .ch-body { align-content: stretch; padding-inline: clamp(.4rem, .9vw, 1.1rem);
+    padding-block: 5.5rem clamp(.5rem, 1.6svh, 1rem); }
+  #c1 .ch-inner { max-width: none; height: 100%; }
   #c1 .g-feed {
-    grid-template-columns: minmax(0, 1fr) minmax(4rem, .42fr) minmax(0, 1.2fr) minmax(4rem, .42fr) minmax(0, .55fr);
-    row-gap: clamp(1.2rem, 3.6vh, 2.1rem);
+    height: 100%;
+    grid-template-columns: minmax(0, .95fr) minmax(5rem, .5fr) minmax(0, 1.6fr) minmax(5rem, .5fr) minmax(0, .55fr);
+    align-content: space-between; row-gap: clamp(1rem, 3vh, 2rem);
   }
-  #c1 h2 { font-size: clamp(2.64rem, 4.08vw, 4.8rem); }
-  #c1 .g-card { gap: .55rem; padding: clamp(1.02rem, 1.5vw, 1.44rem) clamp(1.14rem, 1.68vw, 1.62rem); }
+  #c1 h2 { font-size: clamp(2.8rem, 4.2vw, 5rem); }
+  #c1 .g-card { gap: .6rem; padding: clamp(1.1rem, 1.65vw, 1.6rem) clamp(1.25rem, 1.85vw, 1.8rem); }
+  #c1 .g-claim p { font-size: clamp(1.25rem, 1.45vw, 1.6rem); }
+  #c1 .g-lever { column-gap: 1.2rem; row-gap: .35rem; }
+  #c1 .g-lever h3 { font-size: clamp(1.25rem, 1.52vw, 1.52rem); }
+  #c1 .g-lever p { font-size: clamp(1.06rem, 1.17vw, 1.25rem); }
+  #c1 .g-lever .g-num { width: 2.7rem; height: 2.7rem; font-size: .8rem; }
+  #c1 .g-out { width: min(100%, 15.5rem); }
+  #c1 .g-out-v { font-size: clamp(4rem, 5.9vw, 5.9rem); }
+  #c1 .g-out-l { font-size: .75rem; }
+}
+/* A short screen can't take the bigger type and still fit the four levers. */
+@media (min-width: 1100px) and (min-height: 600px) and (max-height: 820px) {
+  #c1 .ch-body { padding-block: 5.4rem .5rem; }
+  #c1 h2 { font-size: clamp(2.4rem, 3.6vw, 3.84rem); }
+  #c1 .g-card { padding: clamp(.95rem, 1.45vw, 1.35rem) clamp(1.1rem, 1.65vw, 1.55rem); }
   #c1 .g-claim p { font-size: clamp(1.14rem, 1.32vw, 1.44rem); }
-  #c1 .g-lever { column-gap: 1.02rem; row-gap: .3rem; }
   #c1 .g-lever h3 { font-size: clamp(1.14rem, 1.38vw, 1.38rem); }
   #c1 .g-lever p { font-size: clamp(.975rem, 1.06vw, 1.125rem); }
   #c1 .g-lever .g-num { width: 2.4rem; height: 2.4rem; font-size: .75rem; }
   #c1 .g-out { width: min(100%, 13.8rem); }
   #c1 .g-out-v { font-size: clamp(3.6rem, 5.3vw, 5.3rem); }
   #c1 .g-out-l { font-size: .675rem; }
-}
-@media (min-width: 1100px) and (min-height: 600px) and (max-height: 820px) {
-  #c1 .ch-body { padding-block: 4.4rem .6rem; }
-  #c1 .g-feed { row-gap: 1rem; }
-  #c1 h2 { font-size: clamp(2.4rem, 3.6vw, 3.84rem); }
 }
 
 /* --- card tint ------------------------------------------------------------
