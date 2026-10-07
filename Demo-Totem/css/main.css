@@ -1073,8 +1073,8 @@ html.reveals-armed .g-edge:not(.in) .g-port { opacity: 0; transition-delay: 0s; 
 #c1 .g-card p, #c1 .g-claim p, #c1 .g-lever p, #c1 .g-out-l,
 #c1 .g-card em { color: #fff !important; -webkit-text-fill-color: #fff; }
 @media (min-width: 1100px) and (min-height: 600px) {
-  #c1 .ch-body { align-content: stretch; padding-inline: clamp(.5rem, 1.1vw, 1.35rem);
-    padding-block: 6.3rem clamp(1.25rem, 3.1svh, 2rem); }
+  #c1 .ch-body { align-content: stretch; padding-inline: clamp(1.25rem, 2.75vw, 3.4rem);
+    padding-block: 8.2rem clamp(3rem, 7.7svh, 5rem); }
   #c1 .ch-inner { max-width: none; height: 100%; }
   #c1 .g-feed {
     height: 100%;
@@ -1094,7 +1094,7 @@ html.reveals-armed .g-edge:not(.in) .g-port { opacity: 0; transition-delay: 0s; 
 }
 /* A short screen can't take the bigger type and still fit the four levers. */
 @media (min-width: 1100px) and (min-height: 600px) and (max-height: 820px) {
-  #c1 .ch-body { padding-block: 6.1rem 1.1rem; }
+  #c1 .ch-body { padding-block: 7.7rem 2.75rem; }
   #c1 h2 { font-size: clamp(2.4rem, 3.6vw, 3.84rem); }
   #c1 .g-card { padding: clamp(.95rem, 1.45vw, 1.35rem) clamp(1.1rem, 1.65vw, 1.55rem); }
   #c1 .g-claim p { font-size: clamp(1.14rem, 1.32vw, 1.44rem); }
