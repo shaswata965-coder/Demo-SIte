@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/tokens.css?v=4">
-<link rel="stylesheet" href="css/main.css?v=4">
+<link rel="stylesheet" href="css/tokens.css?v=5">
+<link rel="stylesheet" href="css/main.css?v=5">
 <script src="js/banner.js"></script>
 </head>
 <body>
@@ -551,6 +551,13 @@
   </section>
 
 </main>
+
+<!-- The backdrop: one faint network the page scrolls down through. Fixed,
+     taller than the screen, and slid up at a fraction of the scroll, so the
+     picture never changes — you travel down it. It sits after <main> on
+     purpose: same z-index as the bands, later in the document, so it paints
+     over them and under everything else. See .backdrop in css/main.css. -->
+<div class="backdrop" id="backdrop" aria-hidden="true"></div>
 
 <script src="js/neural.js"></script>
 <script src="js/graph.js"></script>

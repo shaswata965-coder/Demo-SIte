@@ -33,6 +33,8 @@ js/neural.js          the model: arrangements, edge families, rendering
 js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/circuit.js         the circuit layer drawn around each panel of copy
 js/app.js             scroll → everything else
+img/backdrop.svg      the network behind the page, used as a mask — see "The backdrop"
+tools/make-backdrop.mjs  writes img/backdrop.svg
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
 
@@ -252,11 +254,13 @@ only once it has arrived and settled. The curve plateaus through the middle rath
 smoothly through it, so the screen is clean for the whole crossing rather than
 just its midpoint.
 
-One parallax layer gives the crossing depth: the pinned copy lifts 22px through
-its chapter. Only the chapter you are in carries an offset — one style write a
-frame at most. (There used to be a second, a 30px dot grid behind everything
-drifting at 7% of scroll speed. It went with the panel's own grid; see "The
-rig".)
+Two parallax layers give the page depth. The pinned copy lifts 22px through
+its chapter; only the chapter you are in carries an offset — one style write a
+frame at most. And behind everything the backdrop network drifts up at about a
+quarter of the scroll speed — see "The backdrop". (There used to be a 30px dot
+grid there instead, drifting at 7%. It went with the panel's own grid, because
+two grids behind the copy read as graph paper; see "The rig". The network is a
+picture rather than a grid, and fainter.)
 
 ## Section rhythm
 
@@ -289,7 +293,7 @@ knowing before you touch it:
 ```
 body background
   .band              z-index: -1   full-bleed, sized to the chapter
-    .hitech          sticky inside it, on the three paper sections
+  .backdrop          z-index: -1   fixed; after .doc in the markup, so over the bands
   .stage (canvas)    z-index:  1
   .ch-body (copy)    z-index:  3
 ```
@@ -600,6 +604,46 @@ Each of these costs fill area, which is the frame budget (see above). The
 trail in particular: four stacked dots and one thick stroke both read the same
 and both cost more than they look like they should.
 
+## The backdrop
+
+Behind the whole page sits one faint picture of a network: nine layers of
+neurons stacked top to bottom, each wired to the next by S-curves whose opacity
+is the connection's weight, a few residual links skipping a layer, signals in
+flight on some of the wires. The top row is wide and fine — the input — and the
+bottom few and heavy — the output — so the page's descent is a pass through the
+network, ending where the close sits.
+
+**It is fixed, and it never changes.** `.backdrop` is a fixed layer taller than
+the screen (`max(300lvh, min(225vw, 420lvh))` — 3240px at 1440×900) that slides
+up as you scroll: top of the picture at the top of the page, bottom at the
+bottom, about a quarter of the copy's speed. Nothing swaps per section and
+nothing repeats, so scrolling reads as travelling down one image. Where the
+browser has scroll-driven animations (`animation-timeline: scroll()`) the
+compositor drives it; elsewhere `frame()` in `app.js` writes the same transform,
+measured from `.doc`'s rectangle like `progress()`. Reduced motion holds it
+still at its top.
+
+**It is a mask, not an image.** `img/backdrop.svg` is white on transparent; the
+layer is painted in the root skin's `--ink` at the skin's `--backdrop-a`, and
+the SVG only decides where that ink shows. So the network follows the section
+you are in — dark lines on paper, lemon and cyan, light ones on violet and the
+close — and both theme and skin changes fade it over `--d-theme`. A solid colour
+under a mask recolours on the compositor, so the fade is not a repaint.
+
+The strengths are per skin, in `tokens.css` (`--k-*-bd`): lower on paper, where
+dark ink on near-white reads loudest, higher on the floods and the dark grounds.
+At those values a wire is 2–5% ink and a neuron 6–11% — a texture under the
+model and the cards, never a second subject. The picture also thins across the
+middle, where the copy and the model live, to about two thirds of its strength
+at the edges.
+
+To change the picture, edit `tools/make-backdrop.mjs` and run it; it is seeded,
+so the same script always writes the same file.
+
+```sh
+node tools/make-backdrop.mjs   # writes img/backdrop.svg
+```
+
 ## Performance
 
 Three quality tiers picked from `deviceMemory`, `hardwareConcurrency` and
@@ -626,7 +670,8 @@ node tools/make-embed.mjs   # writes dist/index.html
 ```
 
 That emits **one self-contained file**: no doctype, no `<html>`, no `<head>`, no
-`<body>`, every stylesheet and script inlined, nothing left to fetch but the
+`<body>`, every stylesheet and script inlined (and the images the stylesheets
+point at, the backdrop's mask, as `data:` URIs), nothing left to fetch but the
 webfont. `app.js` sets `lang` and `data-chapter` on the root itself, so the
 embed build behaves identically to the standalone one. Use it for anywhere you
 are pasting the page into someone else's document; use `index.html` for hosting.

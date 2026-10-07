@@ -49,6 +49,10 @@ python3 -m http.server 8002 --directory Demo-Wealthsimple
   networks the wiring and the model's beads follow the cards as they move.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
+- Behind it all, one faint picture of a layered network that the page
+  scrolls down through: fixed, taller than the screen and drifting at about a
+  quarter of the scroll speed, so it never changes — you travel down it. It
+  is drawn in each section's own ink.
 
 ### demo-crafted
 

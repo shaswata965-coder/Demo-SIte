@@ -697,6 +697,30 @@
       return 0;
     }
 
+    /* ---- the backdrop, where the compositor cannot drive it --------------
+       css/main.css slides .backdrop up the page with a scroll-driven
+       animation: the top of the picture at the top of the page, the bottom at
+       the bottom. Where that is not supported, the same offset is written
+       here, measured from .doc's rectangle for the same reason progress() is.
+       Read alongside progress(), written after paint(), so the frame's reads
+       still land on a clean layout. */
+    var backdrop = $('backdrop'), docEl = document.querySelector('.doc');
+    var backdropJS = !!(backdrop && docEl) && !reduced &&
+      !(window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()'));
+    var backdropTravel = 0, backdropY = NaN;
+    function measureBackdrop() {
+      if (backdropJS) backdropTravel = Math.max(0, backdrop.offsetHeight - innerHeight);
+    }
+    function backdropOffset() {
+      var r = docEl.getBoundingClientRect();
+      return -backdropTravel * clamp(-r.top / Math.max(1, r.height - innerHeight), 0, 1);
+    }
+    function placeBackdrop(y) {
+      if (Math.abs(y - backdropY) < 0.25) return;
+      backdropY = y;
+      backdrop.style.transform = 'translate3d(0,' + y.toFixed(2) + 'px,0)';
+    }
+
     /* ---- painting --------------------------------------------------------- */
     var lastChapter = -1, lastSkinKey = null, shiftedCopy = -1;
     var liveSec = -1, meterTick = 0, scrollP = 0;
@@ -865,10 +889,12 @@
          and run here, between measuring and painting, so their reads land on
          a layout that is already clean. */
       scrollP = progress();
+      var bdY = backdropJS ? backdropOffset() : 0;
       field.setProgress(scrollP);
       if (reveal) reveal(navBottom);
       liftTick(dt, now);
       paint(false);
+      if (backdropJS) placeBackdrop(bdY);
       requestAnimationFrame(frame);
     }
 
@@ -969,7 +995,7 @@
       field.resize();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
-        measure(); computeSpin(); levelFirst(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
+        measure(); measureBackdrop(); computeSpin(); levelFirst(); drawCircuits(); layoutGraphs(); setMenu(false); paint(true);
         if (navCurrent >= 0) setNavCurrent(navCurrent);
       }, 90);
       sTarget = sCurrent = sWritten = window.scrollY;
@@ -977,6 +1003,7 @@
     }, { passive: true });
 
     measure();
+    measureBackdrop();
     computeSpin();
     levelFirst();
     drawCircuits();

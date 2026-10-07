@@ -64,6 +64,62 @@ img, canvas { max-width: 100%; }
    z-index, which is what puts the copy above it. */
 .doc { position: relative; }
 
+/* --- the backdrop ---------------------------------------------------------
+   One faint picture of a network behind the whole page: nine layers of
+   neurons wired top to bottom, the input a wide row of fine units at the top
+   and the output a few heavy ones at the bottom (img/backdrop.svg, written by
+   tools/make-backdrop.mjs).
+
+   It is fixed, and taller than the screen, and it slides up at a fraction of
+   the scroll — top of the picture at the top of the page, bottom at the
+   bottom — so it never changes or repeats: scrolling the page is travelling
+   down the one network, at roughly a quarter of the copy's speed. The
+   scroll-driven animation runs on the compositor where there is one;
+   elsewhere js/app.js writes the same transform from its frame loop.
+
+   The SVG is a mask, not an image. The layer is painted in the root skin's
+   ink at the skin's --backdrop-a, so the network follows the section you are
+   in — dark lines on paper, lemon and cyan, light ones on violet and the
+   close — and fades with the theme. Because it is a solid colour under a
+   mask, the recolour is a compositor job, not a repaint.
+
+   Stacking: z-index -1 and *after* .doc in the markup, so it paints over the
+   bands (also -1, earlier in the document) and under everything else — the
+   model, the copy, the cards and the networks of the flooded sections. */
+.backdrop {
+  position: fixed; left: 0; top: 0; z-index: -1;
+  width: 100%;
+  /* Tall enough to drift through, capped so an ultrawide does not blow the
+     line weights up. At 1440x900 this is 3240px: ~2.3 screens of travel. */
+  height: max(300vh, min(225vw, 420vh));
+  height: max(300lvh, min(225vw, 420lvh));
+  pointer-events: none;
+  background-color: var(--ink);
+  opacity: var(--backdrop-a);
+  -webkit-mask: url(../img/backdrop.svg) 50% 50% / cover no-repeat;
+          mask: url(../img/backdrop.svg) 50% 50% / cover no-repeat;
+  transition: background-color var(--d-theme) var(--e-inout),
+              opacity var(--d-theme) var(--e-inout);
+  will-change: transform;
+}
+@keyframes backdrop-descend {
+  to {
+    transform: translate3d(0, calc(100vh - 100%), 0);
+    transform: translate3d(0, calc(100lvh - 100%), 0);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .backdrop {
+    animation: backdrop-descend linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+/* Scroll-linked motion is still motion: with it reduced, the picture holds
+   still at its top and the page scrolls over it. */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop { animation: none; transform: none !important; }
+}
+
 /* --- other-demos banner ---------------------------------------------------
    A strip pinned above the nav, linking the repo's other demos. Fixed, so it
    takes no space in the flow: section tops — which js/app.js reads as scroll

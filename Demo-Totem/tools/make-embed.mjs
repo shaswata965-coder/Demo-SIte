@@ -22,7 +22,21 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
-const read = (rel) => readFileSync(resolve(root, rel), 'utf8');
+// Links carry a cache-busting query (css/main.css?v=5); the file has none.
+const file = (rel) => resolve(root, rel.replace(/[?#].*$/, ''));
+const read = (rel) => readFileSync(file(rel), 'utf8');
+
+// A stylesheet's url()s are relative to the stylesheet, which an inlined
+// <style> no longer is — so local images (the backdrop's mask) go in as data:
+// URIs, and the build stays one file.
+const TYPES = { svg: 'image/svg+xml', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg' };
+const inlineUrls = (css, from) =>
+  css.replace(/url\((['"]?)(?!data:|https?:|#)([^'")]+)\1\)/g, (_, q, ref) => {
+    const type = TYPES[ref.split('.').pop().toLowerCase()];
+    if (!type) throw new Error('no data: type for ' + ref + ' in ' + from);
+    const bytes = readFileSync(resolve(dirname(file(from)), ref));
+    return `url("data:${type};base64,${bytes.toString('base64')}")`;
+  });
 
 const src = read('index.html');
 const head = /<head>([\s\S]*?)<\/head>/.exec(src)[1];
@@ -36,7 +50,7 @@ out.push(/<title>[\s\S]*?<\/title>/.exec(head)[0]);
 // The webfont is the one thing that stays a network request.
 for (const link of head.match(/<link rel="(?:preconnect|stylesheet)"[^>]*>/g) ?? []) {
   const local = /href="((?!https?:)[^"]+)"/.exec(link);
-  if (local) out.push(`<style>\n/* ${local[1]} */\n${read(local[1]).trim()}\n</style>`);
+  if (local) out.push(`<style>\n/* ${local[1]} */\n${inlineUrls(read(local[1]), local[1]).trim()}\n</style>`);
   else out.push(link);
 }
 
