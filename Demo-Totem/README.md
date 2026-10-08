@@ -618,20 +618,25 @@ everything about it:
 
 | | farthest | nearest |
 |---|---|---|
-| speed against the copy as you scroll | 0.03× | 0.8× |
-| shift with the mouse, at the screen's edge | none | 22 px sideways, 12 px up and down |
-| radius | 0.3 px | 1.8 px |
-| strength | 8% | 100% |
-| idle drift | 0.35 px | 2 px |
+| speed against the copy as you scroll | 0.02× | 0.95× |
+| swing with the mouse, at the screen's edge | 15 px sideways, 9 px up and down, *with* the pointer | 36 px sideways, 20 px up and down, *against* it |
+| radius | 0.3 px | 2.6 px |
+| strength | 6% | 100% |
+| focus | sharp | soft, out of focus |
+| idle drift | 0.35 px | 2.5 px |
 
-So far neurons are faint specks that barely move and near ones small bright
-beads that stream past — going down the page is going down through the field,
-and moving the mouse shifts your point of view the same way. Depths are skewed
-towards the far end, so most of the field is faint and a few neurons stand out;
-each neuron's strength is also up to 20% off its depth's, so the field does not
-band into neat layers of brightness. There is about one neuron per 850 px² of
-screen — some 1,400 on a 1440×900 window — and the canvas renders at up to 2x so
-the far specks stay crisp.
+So far neurons are faint specks that barely move, near ones bright beads that
+stream past nearly as fast as the copy, and the very nearest — about one in
+ten — are larger soft discs, out of focus the way something close to the eye
+is. Size, speed and blur rise steeply only at the near end, so most of the field
+stays fine and quiet and the depth reads as deep. Moving the mouse turns your
+point of view round a point inside the field (`LOOK_PIVOT`, three tenths of the
+way from far to near): neurons behind it swing with the pointer and neurons in
+front of it against, which opens the depth up far more than a plain shift
+would. Each neuron's strength is also up to 20% off its depth's, so the field
+does not band into neat layers of brightness. There is about one neuron per
+850 px² of screen — some 1,400 on a 1440×900 window — and the canvas renders at
+up to 2x so the far specks stay crisp.
 
 **Alive, but going nowhere.** Each neuron drifts very slightly on its own, a
 pixel or two on a slow loop of ten to twenty seconds, so the field breathes
@@ -647,9 +652,13 @@ on the scroll (and its slow drift), so scrolling back up returns the same view.
 It is seeded, so it is the same field on every visit.
 
 **The wiring is found when it fires.** There is no fixed wiring to draw: a
-firing neuron signals two or three of its nearest neighbours at a similar depth,
-found at that moment among whatever is near. A coarse grid over the screen keeps
-that search, and the pointer's, from looking at every neuron.
+firing neuron signals two or three of its nearest neighbours, found at that
+moment among whatever is near — in front or behind as well as beside, so a
+ripple travels back into the field and out of it. A coarse grid over the screen
+keeps that search, and the pointer's, from looking at every neuron. A synapse
+is drawn in perspective: a tapered band, wider and stronger at its near end and
+narrowing and fading towards the far one, and a signal's head shrinks as it
+runs back into the field and grows as it comes forward.
 
 **It fires where you interact.** Every neuron is leaky integrate-and-fire:
 
@@ -661,11 +670,14 @@ that search, and the pointer's, from looking at every neuron.
 | **clicking, tapping** | the nearest few neurons fire outright, at full strength |
 | **keyboard** | whatever takes focus fires the neurons behind it; scrolling with no pointer fires a little below the middle of the screen |
 
-Charge leaks away (0.6 s); a neuron that crosses threshold flashes and sends a
-signal down each synapse at 520 px/s. Each signal that arrives fires the next
-neuron at 0.68 of the strength, so a click spreads four synapses out and a
-brush of the pointer two, then dies away. A neuron rests 1.1 s after
-firing, which is what keeps the spread a ripple rather than a flood.
+Charge leaks away (0.6 s); a neuron that crosses threshold flashes and, after a
+pause of 70–180 ms, sends a signal down each synapse at 170 px/s — slowly, so
+you can watch it spread. Each signal that arrives fires the next neuron at 0.68
+of the strength, so a click spreads four synapses out over a second or two and
+a brush of the pointer two, then dies away; a lit synapse fades over about a
+second and a flash over three quarters of one. A neuron rests 2.6 s after
+firing — longer than a ripple lasts — which is what keeps the spread a ripple
+rather than a flood.
 
 **It keeps out of the way.** At rest there are no lines and the neurons are at
 most a few pixels across. The firing — the flashes, the signals and the lit
@@ -685,8 +697,10 @@ near ones, so the firing has depth too. On a ground where the model is drawn as 
 colours across rather than cutting them.
 
 **Cost.** At rest, fifteen frames a second for the drift; the full rate only
-while something moves. A frame is about two milliseconds of script: the
-neurons are batched into a few dozen paths by hue and strength. A jump in the
+while something moves. A frame is two to three and a half milliseconds of
+script: the sharp neurons are batched into a few dozen paths by hue and
+strength, the soft near ones are one sprite each, and a synapse whose ends are
+at about the same depth skips its gradient. A jump in the
 scroll — the browser restoring it on reload, an anchor — charges nothing, so it
 never sets off a burst. Reduced motion draws one still frame and does not fire.
 `__synapses.stats()` in the console reports the field and the cost;
