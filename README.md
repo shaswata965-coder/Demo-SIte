@@ -50,13 +50,12 @@ python3 -m http.server 8002 --directory Demo-Wealthsimple
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
 - Behind it all, a dense field of tiny coloured neurons at every depth,
-  drifting very slightly: far ones faint specks that barely move, the
-  nearest soft and out of focus, streaming past as you scroll, and the
-  mouse turns the view round a point inside the field, so going down the
-  page is moving through it. At rest it is only the neurons; synapses
-  appear only when they fire — wherever you scroll, point, click, tap or
-  tab — rippling slowly a few neurons out, in perspective, and dying away.
-  It keeps a clearing round the model.
+  drifting very slightly: as you scroll, near ones stream past and far ones
+  barely move, and neighbouring neurons differ in strength, so one dot beside
+  another reads as nearer or farther. At rest it is only the neurons;
+  synapses appear only when they fire — wherever you scroll, point, click,
+  tap or tab — rippling slowly a long way out over several seconds and
+  dying away. It keeps a clearing round the model.
 
 ### demo-crafted
 
