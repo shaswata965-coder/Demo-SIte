@@ -231,10 +231,10 @@
   --data:      var(--c-third);
 
   /* The neurons behind the page (js/synapses.js) take the four hues above
-     as they are, and wire them in ink: at rest a synapse is a faint ink line,
-     and only firing lights it in its neuron's hue — so low-alpha colour never
-     sits on a ground that would turn it muddy. */
-  --syn-wire: var(--ink);
+     as they are. There is no wiring colour: at rest no synapse is drawn, and
+     a firing one lights in the hue of the neuron that fired it, at full
+     strength for an instant — so low-alpha colour never sits on a ground
+     that would turn it muddy. */
 }
 
 :root {

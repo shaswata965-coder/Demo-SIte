@@ -65,14 +65,15 @@ img, canvas { max-width: 100%; }
 .doc { position: relative; }
 
 /* --- the neurons behind the page --------------------------------------
-   A still structure of small coloured neurons wired to their neighbours,
-   drawn by js/synapses.js. They sit at different depths, and scrolling
-   carries the view straight down past them — near ones faster, far ones
-   slower — so the page reads as descending a 3D structure. Nothing in it
-   moves on its own: it fires where you interact — scrolling, pointing,
-   clicking, tapping, tabbing — and the signal spreads a few synapses out
-   and dies away. Colours are the root skin's four hues, the wiring its ink,
-   at the skin's --syn-a.
+   A still structure of small coloured neurons, drawn by js/synapses.js. At
+   rest it is only the neurons — no lines. They sit in six layers at six
+   depths, and scrolling carries the view straight down past them: near
+   layers larger, brighter and faster, far ones tiny, faint and nearly still,
+   so the page reads as descending through depth. Nothing in it moves on its
+   own: it fires where you interact — scrolling, pointing, clicking, tapping,
+   tabbing — and only then do synapses appear, drawn out behind each signal
+   as it spreads a few neurons out and dies away. Colours are the root
+   skin's four hues, at the skin's --syn-a.
 
    Stacking: z-index -1 and *after* .doc in the markup, so it paints over the
    bands (also -1, earlier in the document) and under everything else — the

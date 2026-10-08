@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
-<link rel="stylesheet" href="css/tokens.css?v=8">
-<link rel="stylesheet" href="css/main.css?v=8">
+<link rel="stylesheet" href="css/tokens.css?v=9">
+<link rel="stylesheet" href="css/main.css?v=9">
 <script src="js/banner.js"></script>
 </head>
 <body>
@@ -552,12 +552,13 @@
 
 </main>
 
-<!-- The neurons behind the page (js/synapses.js): a still 3D structure of
-     small coloured neurons that the page descends past as you scroll, and
-     that fires wherever you scroll, point, click or tap. It sits after
-     <main> on purpose: same z-index as the bands, later in the document, so
-     it paints over them and under everything else. See .synapses in
-     css/main.css. -->
+<!-- The neurons behind the page (js/synapses.js): a still structure of small
+     coloured neurons in six layers at six depths, which the page descends
+     past as you scroll, near layers faster than far ones. At rest it is only
+     the neurons; synapses appear only when they fire, wherever you scroll,
+     point, click or tap. It sits after <main> on purpose: same z-index as the
+     bands, later in the document, so it paints over them and under
+     everything else. See .synapses in css/main.css. -->
 <canvas class="synapses" id="synapses" aria-hidden="true"></canvas>
 
 <script src="js/synapses.js"></script>

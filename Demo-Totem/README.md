@@ -255,8 +255,8 @@ just its midpoint.
 
 Two parallax layers give the page depth. The pinned copy lifts 22px through
 its chapter; only the chapter you are in carries an offset — one style write a
-frame at most. And behind everything is real depth: a still 3D structure of
-neurons in five layers, each sliding at its own speed as you scroll — see "The
+frame at most. And behind everything is real depth: a still structure of
+neurons in six layers, each sliding at its own speed as you scroll — see "The
 neurons behind the page". (There used to be a 30px dot grid there instead,
 drifting at 7%. It went with the panel's own grid, because two grids behind the
 copy read as graph paper; see "The rig". The neurons are a structure in depth
@@ -606,23 +606,37 @@ and both cost more than they look like they should.
 
 ## The neurons behind the page
 
-Behind the whole page is a still structure of small coloured neurons wired to
-their neighbours, and it fires wherever you touch the page. `js/synapses.js`
-draws it on one fixed, viewport-sized canvas (`.synapses`) that takes no
-pointer events — it listens to the window, so it hears the page without
-getting in its way.
+Behind the whole page is a still structure of small coloured neurons, and it
+fires wherever you touch the page. At rest it is only the neurons — no lines at
+all; a synapse appears only while it is active. `js/synapses.js` draws it on
+one fixed, viewport-sized canvas (`.synapses`) that takes no pointer events —
+it listens to the window, so it hears the page without getting in its way.
 
-**Still, and in depth.** Nothing in it moves on its own. The neurons sit in five
-layers at five depths, like the layers of a cortex, and scrolling carries the
-view straight down past them: the nearest layer at two thirds of the copy's
-speed, the farthest at a fifth. So the page reads as descending a 3D structure,
-and it is exactly where it was when you scroll back up. A layer moves as one
-sheet, so its wiring is exact — each neuron to its nearest three in the same
-sheet (hubs, about one in fourteen, to five). About a third of the neurons also
-reach one layer deeper; those synapses swing as you pass them, which is what
-makes the structure 3D rather than a stack of flat pictures. Each layer is laid
-out on a jittered grid, so it is even without being regular, and seeded, so it
-is the same structure on every visit.
+**Still, and in depth.** Nothing in it moves on its own. The neurons sit in six
+layers at six depths, and scrolling carries the view straight down past them.
+Speed is depth: a layer moves r px for every px the copy does, and its neurons'
+size and brightness fall off with it:
+
+| layer | speed | radius | strength |
+|---|---|---|---|
+| farthest | 0.07× | 0.75 px | 34% |
+| | 0.15× | 1 px | 46% |
+| | 0.26× | 1.35 px | 59% |
+| | 0.4× | 1.8 px | 73% |
+| | 0.56× | 2.4 px | 87% |
+| nearest | 0.74× | 3.1 px | 100% |
+
+So near layers are larger, brighter and faster and far ones tiny, faint and
+nearly still — the cues that make a stack of layers read as depth — and as you
+go down the layers visibly slide past one another. Scroll back up and it is
+exactly where it was. Each layer is laid out on a jittered grid, so it is even
+without being regular, and seeded, so it is the same structure on every visit.
+
+The wiring is there, just not drawn. A layer moves as one sheet, so it is exact:
+each neuron is wired to its nearest three in the same sheet (hubs, about one in
+fourteen, to five), and about a third also reach one layer deeper. Those
+bridging synapses swing when they fire mid-scroll, because their two ends are
+travelling at different speeds.
 
 **It fires where you interact.** Every neuron is leaky integrate-and-fire:
 
@@ -640,25 +654,27 @@ neuron at 0.68 of the strength, so a click spreads four synapses out and a
 brush of the pointer two, then dies away. A neuron rests 1.1 s after
 firing, which is what keeps the spread a ripple rather than a flood.
 
-**It keeps out of the way.** At rest the wiring is a faint ink line and the
-neurons are 1–4 px in radius. Firing is brief, and only where you are. Wherever the model
+**It keeps out of the way.** At rest there are no lines and the neurons are a
+few pixels across. Firing is brief, and only where you are. Wherever the model
 stands whole, a clearing opens round it (read from `__axon.field`), so nothing
 in the structure crosses the main asset; in the taken-apart sections, where the
 model has no disc, the clearing closes.
 
 **Colour.** The neurons take the root skin's four hues as they are — action,
-structure, data, signal, the same assignment the model uses — and the wiring
-its ink (`--syn-wire`), at the skin's `--syn-a` in `tokens.css`. Only firing
-lights a synapse in its neuron's hue, so low-alpha colour never sits on a ground
-that would turn it muddy. On a ground where the model is drawn as light
+structure, data, signal, the same assignment the model uses — at the skin's
+`--syn-a` in `tokens.css`. A firing synapse lights in the hue of the neuron
+that fired it, at full strength for an instant, so low-alpha colour never sits
+on a ground that would turn it muddy; far layers fire fainter and thinner than
+near ones, so the firing has depth too. On a ground where the model is drawn as light
 (`--canvas-mode: glow`) the firing is additive too. A section change eases the
 colours across rather than cutting them.
 
 **Cost: nothing at rest.** It draws only when something has changed — a scroll,
 a signal in flight, a colour easing — and is idle otherwise, so a still page
 costs no frames at all. A frame is under a couple of milliseconds of script:
-the resting wiring and neurons are batched into a few dozen paths by opacity
-and hue. Reduced motion draws one still frame and does not fire.
+the resting neurons are batched into a few dozen paths by opacity and hue. A
+jump in the scroll — the browser restoring it on reload, an anchor — charges
+nothing, so it never sets off a burst. Reduced motion draws one still frame and does not fire.
 `__synapses.stats()` in the console reports the structure and the cost;
 `__synapses.fire(x, y)` fires it by hand.
 

@@ -1,14 +1,16 @@
 /* ===========================================================================
    AXON — the neurons behind the page
    ---------------------------------------------------------------------------
-   A still structure of small, coloured neurons behind the whole page, wired
-   to their nearest neighbours, that fires where you touch it.
+   A still structure of small, coloured neurons behind the whole page that
+   fires where you touch it. At rest it is only the neurons: the synapses
+   between them are invisible until a signal runs down one.
 
-   Still means still: nothing in it moves on its own. The neurons sit in
-   five layers at five depths, and scrolling carries the view straight down
-   past them — the nearest layer at about two thirds of the copy's speed,
-   the farthest at a fifth — so the page reads as descending a structure,
-   and a synapse bridging two layers swings as you pass it. Scroll back up
+   Still means still: nothing in it moves on its own. The neurons sit in six
+   layers at six depths, and scrolling carries the view straight down past
+   them — the nearest layer at about three quarters of the copy's speed, the
+   farthest at well under a tenth. Depth decides everything else too: the
+   nearer a layer, the larger and brighter its neurons, so the layers read as
+   near and far and slide past one another as you go down. Scroll back up
    and it is exactly where it was.
 
    Interaction fires it. Each neuron is leaky integrate-and-fire: anything
@@ -22,15 +24,16 @@
    you touched the page and dies away. A neuron that has just fired rests
    before it can fire again.
 
-   It keeps out of the way. At rest the wiring is a faint ink line and the
-   neurons are small; the firing is brief and only where you are. Wherever
-   the model stands whole, a clearing opens round it, so nothing in the
-   structure crosses the main asset.
+   It keeps out of the way. At rest there are no lines at all and the neurons
+   are small; the firing is brief and only where you are. Wherever the model
+   stands whole, a clearing opens round it, so nothing in the structure
+   crosses the main asset.
 
    Colours are the root skin's four hues — the neurons are action, structure,
-   data and signal, the same assignment the model uses — with the wiring in
-   ink, at the skin's --syn-a (css/tokens.css). On a ground the model draws as
-   light (--canvas-mode: glow) the firing is additive too.
+   data and signal, the same assignment the model uses, and a synapse lights
+   in the hue of the neuron that fired it — at the skin's --syn-a
+   (css/tokens.css). On a ground the model draws as light (--canvas-mode:
+   glow) the firing is additive too.
 
    It only draws when something changes — a scroll, a signal in flight, a
    colour easing — and is idle otherwise. Reduced motion draws one still
@@ -74,11 +77,14 @@
   var MAX_PULSES = 700;
 
   /* ---- the structure -------------------------------------------------------
-     Five layers of neurons at five depths, like the layers of a cortex. A
-     layer moves as one sheet, so its wiring is exact: each neuron is wired to
-     its nearest few in the same sheet. A few synapses bridge to the next
-     layer down, and those are the ones that swing as you pass them — the
-     structure is 3D, not a stack of flat pictures. Each neuron is nudged a
+     Six layers of neurons at six depths. Speed is depth: a layer at r moves
+     r px for every px the copy does, and size and brightness fall off with
+     it, so near layers are larger, brighter and faster and far ones tiny,
+     faint and nearly still — the cues that make a stack of layers read as
+     depth. A layer moves as one sheet, so its wiring is exact: each neuron is
+     wired to its nearest few in the same sheet. A few synapses bridge to the
+     next layer down; when one of those fires mid-scroll it swings, because
+     its two ends are travelling at different speeds. Each neuron is nudged a
      hair off its layer's depth too, so the sheets are not dead flat.
 
      A neuron at speed r has to be on screen somewhere in a band H + r·D tall
@@ -86,13 +92,14 @@
      neurons than you ever see at once. Built with headroom and rebuilt only
      when the page changes shape. */
   var LAYERS = [
-    { r: 0.2,  share: 0.27, size: 1.0, alpha: 0.5 },
-    { r: 0.3,  share: 0.23, size: 1.3, alpha: 0.6 },
-    { r: 0.41, share: 0.2,  size: 1.65, alpha: 0.72 },
-    { r: 0.53, share: 0.17, size: 2.1, alpha: 0.86 },
-    { r: 0.66, share: 0.13, size: 2.6, alpha: 1 }
+    { r: 0.07, share: 0.24, size: 0.75, alpha: 0.34 },
+    { r: 0.15, share: 0.2,  size: 1.0,  alpha: 0.46 },
+    { r: 0.26, share: 0.17, size: 1.35, alpha: 0.59 },
+    { r: 0.4,  share: 0.15, size: 1.8,  alpha: 0.73 },
+    { r: 0.56, share: 0.13, size: 2.4,  alpha: 0.87 },
+    { r: 0.74, share: 0.11, size: 3.1,  alpha: 1 }
   ];
-  var W = 1, H = 1, D = 1, Dgen = 0, Wgen = 0, dpr = 1, LMAX = 120;
+  var W = 1, H = 1, D = 1, Dgen = 0, Wgen = 0, dpr = 1;
   var N = 0, NX, NY, NR, NS, NC, NA, NL;      /* x, y at scroll 0, speed, radius, hue, alpha, layer */
   var EXC, EXT, REF, FA, FT;                  /* charge, its time, rest-until, flash amp, flash time */
   var E = 0, EA, EB, EG, EGT, EC, ET;         /* ends, glow amp, glow time, glow hue, depth */
@@ -103,9 +110,10 @@
     seed = 0x41584f4e;                          /* "AXON" */
     Wgen = W; Dgen = D * 1.12;
     var m = 40;
-    /* about one neuron per 5,000 px² of screen at any moment */
-    var V = clamp(W * H / 5000, 70, 320);
-    LMAX = clamp(Math.sqrt(W * H / (V * 0.2)) * 1.25, 80, 200);
+    /* about one neuron per 4,500 px² of screen at any moment */
+    var V = clamp(W * H / 4500, 80, 360);
+    /* a synapse may be up to about one and a half of its layer's spacing */
+    var LMAX = LAYERS.map(function (L) { return clamp(Math.sqrt(W * H / (V * L.share)) * 1.5, 70, 240); });
     var HUE = [0, 1, 1, 2, 2, 3, 0, 1, 2, 3];   /* action, structure, data, signal */
     var xs = [], ys = [], rs = [], ls = [], start = [];
     for (var l = 0; l < LAYERS.length; l++) {
@@ -121,7 +129,7 @@
           if (rand() > n / (rows * cols)) continue;
           xs.push(-m + (gx + 0.12 + rand() * 0.76) * cw);
           ys.push(-m + (gy + 0.12 + rand() * 0.76) * ch);
-          rs.push(L.r + (rand() - 0.5) * 0.02);
+          rs.push(L.r * (1 + (rand() - 0.5) * 0.04));
           ls.push(l);
         }
       }
@@ -155,9 +163,9 @@
         for (j = a0; j < a1; j++) {
           if (j === i) continue;
           var dx = NX[i] - NX[j], dy = NY[i] - NY[j];
-          if (dy > LMAX || dy < -LMAX) continue;
+          if (dy > LMAX[l] || dy < -LMAX[l]) continue;
           var d2 = dx * dx + dy * dy;
-          if (d2 > LMAX * LMAX) continue;
+          if (d2 > LMAX[l] * LMAX[l]) continue;
           if (bd.length < k || d2 < bd[bd.length - 1]) {
             var p = bd.length;
             while (p > 0 && bd[p - 1] > d2) p--;
@@ -175,7 +183,8 @@
       for (i = start[l]; i < start[l + 1]; i++) {
         if (rand() > 0.34) continue;
         var sc = (NY[i] - H / 2) / NR[i];        /* the scroll that puts i mid-screen */
-        var best = -1, bdist = (LMAX * 0.8) * (LMAX * 0.8);
+        var lim = Math.max(LMAX[l], LMAX[l + 1]) * 0.8;
+        var best = -1, bdist = lim * lim;
         for (j = b0; j < b1; j++) {
           var ddx = NX[i] - NX[j], ddy = (NY[i] - NR[i] * sc) - (NY[j] - NR[j] * sc);
           var dd = ddx * ddx + ddy * ddy;
@@ -200,7 +209,7 @@
      Read once per skin or theme change (getComputedStyle after an attribute
      write forces a style recalc), then eased towards, so a section change
      fades rather than cuts. */
-  var VARS = ['--c-primary', '--c-second', '--c-third', '--c-signal', '--syn-wire'];
+  var VARS = ['--c-primary', '--c-second', '--c-third', '--c-signal'];
   var probe = doc.createElement('canvas').getContext('2d');
   function rgb(str) {
     probe.fillStyle = '#000';
@@ -403,44 +412,19 @@
     }
   }
 
-  /* ---- drawing --------------------------------------------------------------- */
-  var STEPS = 12, ES = 60, eBuckets = [], nBuckets = [];
-  for (var b = 0; b < 2 * (ES + 1); b++) eBuckets.push([]);
-  for (b = 0; b < 4 * (STEPS + 1); b++) nBuckets.push([]);
+  /* ---- drawing ---------------------------------------------------------------
+     At rest only the neurons are drawn — no wiring at all. A synapse appears
+     only while it is active: drawn out behind its signal as the signal
+     travels, then fading once it has arrived. */
+  var STEPS = 12, nBuckets = [];
+  for (var b = 0; b < 4 * (STEPS + 1); b++) nBuckets.push([]);
 
   function draw(now, s) {
-    var A = col[5][0];
-    var AW = 0.2 * A, AN = 0.8 * A;
+    var A = col[4][0], AN = 0.85 * A;
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, W, H);
     var i, e, L, k;
-
-    /* the wiring at rest: faint ink, thinner and fainter the deeper it is */
-    for (k = 0; k < eBuckets.length; k++) eBuckets[k].length = 0;
-    for (e = 0; e < E; e++) {
-      var a = EA[e], c = EB[e], ya = ny(a, s), yc = ny(c, s);
-      if ((ya < -30 && yc < -30) || (ya > H + 30 && yc > H + 30)) continue;
-      var xa = NX[a], xc = NX[c], t = ET[e];
-      var sl = Math.sqrt((xa - xc) * (xa - xc) + (ya - yc) * (ya - yc));
-      var al = AW * (0.45 + 0.55 * t) * Math.min(clearing(xa, ya), clearing(xc, yc)) *
-               (1 - smooth(LMAX * 1.4, LMAX * 2.2, sl));
-      var lv = Math.round(clamp(al, 0, 1) * ES);
-      if (lv <= 0) continue;
-      eBuckets[(t > 0.5 ? ES + 1 : 0) + Math.min(ES, lv)].push(xa, ya, xc, yc);
-    }
-    ctx.strokeStyle = css(col[4], 1);
-    for (k = 0; k < eBuckets.length; k++) {
-      L = eBuckets[k];
-      if (!L.length) continue;
-      var near = k > ES;
-      ctx.lineWidth = near ? 1 : 0.7;
-      ctx.globalAlpha = (k - (near ? ES + 1 : 0)) / ES;
-      ctx.beginPath();
-      for (var q = 0; q < L.length; q += 4) { ctx.moveTo(L[q], L[q + 1]); ctx.lineTo(L[q + 2], L[q + 3]); }
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
 
     /* the neurons at rest */
     for (k = 0; k < nBuckets.length; k++) nBuckets[k].length = 0;
@@ -474,8 +458,8 @@
       var a2 = EA[e], c2 = EB[e], y1 = ny(a2, s), y2 = ny(c2, s);
       if ((y1 < -30 && y2 < -30) || (y1 > H + 30 && y2 > H + 30)) continue;
       var clr = Math.min(clearing(NX[a2], y1), clearing(NX[c2], y2));
-      ctx.strokeStyle = css(col[EC[e]], clamp(gl * clr, 0, 1));
-      ctx.lineWidth = 1.5 + ET[e] * 1.2;
+      ctx.strokeStyle = css(col[EC[e]], clamp(gl * clr * (0.55 + 0.45 * ET[e]), 0, 1));
+      ctx.lineWidth = 1 + ET[e] * 1.6;
       ctx.beginPath(); ctx.moveTo(NX[a2], y1); ctx.lineTo(NX[c2], y2); ctx.stroke();
     }
     for (k = 0; k < pulses.length; k++) {
@@ -486,11 +470,11 @@
       var ax = NX[p.a], ay = ny(p.a, s), bx = NX[p.b], by = ny(p.b, s);
       if ((ay < -30 && by < -30) || (ay > H + 30 && by > H + 30)) continue;
       var hx = ax + (bx - ax) * u, hy = ay + (by - ay) * u;
-      var cl = clearing(hx, hy), hc = NC[p.a];
-      ctx.strokeStyle = css(col[hc], clamp(p.amp * 0.95 * cl, 0, 1));
-      ctx.lineWidth = 1.6 + ET[p.e] * 1.2;
+      var cl = clearing(hx, hy), hc = NC[p.a], dp = 0.55 + 0.45 * ET[p.e];
+      ctx.strokeStyle = css(col[hc], clamp(p.amp * 0.95 * cl * dp, 0, 1));
+      ctx.lineWidth = 1.1 + ET[p.e] * 1.6;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
-      var hr = 6 + 9 * p.amp;
+      var hr = (5 + 9 * p.amp) * (0.6 + 0.6 * ET[p.e]);
       ctx.globalAlpha = clamp(p.amp * cl, 0, 1);
       ctx.drawImage(glow[hc], hx - hr, hy - hr, hr * 2, hr * 2);
       ctx.globalAlpha = 1;
@@ -514,7 +498,7 @@
   }
 
   /* ---- the loop: only when something has changed --------------------------- */
-  var scheduled = false, last = performance.now(), lastS = 0, settleUntil = 0;
+  var scheduled = false, last = performance.now(), lastS = reduced ? 0 : scrollPos(), settleUntil = 0;
   function kick() {
     if (scheduled) return;
     scheduled = true;
@@ -530,7 +514,9 @@
     if (ds) settleUntil = now + 900;
     easeColours(dt);
     readClearing();
-    if (!reduced) { excite(now, ds); step(now); }
+    /* A jump — the browser restoring the scroll on reload, an anchor — is not
+       motion past anything, so it charges nothing. */
+    if (!reduced) { excite(now, Math.abs(ds) > H * 0.6 ? 0 : ds); step(now); }
     var t0 = performance.now();
     var live = draw(now, s);
     frames++; drawMs += performance.now() - t0;
