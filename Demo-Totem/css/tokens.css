@@ -34,16 +34,16 @@
    4.5:1 against its own ground — and against its own panel on the skins that
    carry cards. There are no sub-4.5 pairs in this file.
 
-   One value per skin, syn, is not a colour: it is how strongly the neurons
-   behind the page (js/synapses.js, see .synapses in main.css) are drawn at
-   rest on that skin — a little more on the dark grounds and the floods,
+   One value per skin, syn, is not a colour: it is how strongly the field of
+   neurons behind the page (js/synapses.js, see .synapses in main.css) is
+   drawn on that skin — a little more on the dark grounds and the floods,
    where small marks have less contrast to spend.
    ========================================================================= */
 
 /* ---------------------------------------------------------------------------
    1. Skin colour tables. Raw values only; nothing consumes these directly.
-   Nine colours per skin, plus how the model (canvas) and the neurons behind
-   the page (syn) are drawn on it — everything else is derived in §3.
+   Nine colours per skin, plus how the model (canvas) and the field of
+   neurons behind the page (syn) are drawn on it — everything else is derived in §3.
 
    acc is the accent as a FILL — the call to action, the marker rule, the
    model. acc-ink is the same hue as TEXT. They differ because the fill orange

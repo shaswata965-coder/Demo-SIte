@@ -49,12 +49,13 @@ python3 -m http.server 8002 --directory Demo-Wealthsimple
   networks the wiring and the model's beads follow the cards as they move.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
-- Behind it all, a still, dense field of tiny coloured neurons in six depth
-  layers: near ones larger, brighter and a little faster, far ones specks
-  that barely move, so scrolling drifts you gently down through depth. At
-  rest it is only the neurons; synapses appear only when they fire —
-  wherever you scroll, point, click, tap or tab — rippling a few neurons out
-  and dying away. It keeps a clearing round the model.
+- Behind it all, a dense field of tiny coloured neurons at every depth,
+  drifting very slightly: as you scroll, near ones stream past and far ones
+  barely move, and the mouse shifts the point of view, so going down the
+  page is moving through the field. At rest it is only the neurons;
+  synapses appear only when they fire — wherever you scroll, point, click,
+  tap or tab — rippling a few neurons out and dying away. It keeps a
+  clearing round the model.
 
 ### demo-crafted
 

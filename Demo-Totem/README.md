@@ -32,7 +32,7 @@ css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
 js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/circuit.js         the circuit layer drawn around each panel of copy
-js/synapses.js        the neurons behind the page — see "The neurons behind the page"
+js/synapses.js        the field of neurons behind the page — see "The field of neurons"
 js/app.js             scroll → everything else
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
@@ -255,11 +255,11 @@ just its midpoint.
 
 Two parallax layers give the page depth. The pinned copy lifts 22px through
 its chapter; only the chapter you are in carries an offset — one style write a
-frame at most. And behind everything is real depth: a still structure of
-neurons in six layers, each sliding at its own speed as you scroll — see "The
-neurons behind the page". (There used to be a 30px dot grid there instead,
+frame at most. And behind everything is real depth: a dense field of neurons
+at every depth, each passing at its own speed as you scroll — see "The field of
+neurons". (There used to be a 30px dot grid there instead,
 drifting at 7%. It went with the panel's own grid, because two grids behind the
-copy read as graph paper; see "The rig". The neurons are a structure in depth
+copy read as graph paper; see "The rig". The neurons are a field in depth
 rather than a grid, and they stay out of the copy's way.)
 
 ## Section rhythm
@@ -604,50 +604,59 @@ Each of these costs fill area, which is the frame budget (see above). The
 trail in particular: four stacked dots and one thick stroke both read the same
 and both cost more than they look like they should.
 
-## The neurons behind the page
+## The field of neurons
 
-Behind the whole page is a still structure of small coloured neurons, and it
-fires wherever you touch the page. At rest it is only the neurons — no lines at
-all; a synapse appears only while it is active. `js/synapses.js` draws it on
-one fixed, viewport-sized canvas (`.synapses`) that takes no pointer events —
-it listens to the window, so it hears the page without getting in its way.
+Behind the whole page is a dense field of tiny coloured neurons, at every depth
+from far to near, and it fires wherever you touch the page. At rest it is only
+the neurons — no lines at all; a synapse appears only while it is active.
+`js/synapses.js` draws it on one fixed, viewport-sized canvas (`.synapses`)
+that takes no pointer events — it listens to the window, so it hears the page
+without getting in its way.
 
-**Still, and in depth.** Nothing in it moves on its own. The neurons sit in six
-layers at six depths, and scrolling carries the view straight down past them —
-slowly, so the structure only drifts while the page goes by. Speed is depth: a
-layer moves r px for every px the copy does, and its neurons' size and
-brightness fall off with it:
+**A field you move through.** Every neuron has a depth, and depth decides
+everything about it:
 
-| layer | speed | radius | strength |
-|---|---|---|---|
-| farthest | 0.02× | 0.375 px | 34% |
-| | 0.045× | 0.5 px | 46% |
-| | 0.075× | 0.675 px | 59% |
-| | 0.11× | 0.9 px | 73% |
-| | 0.15× | 1.2 px | 87% |
-| nearest | 0.2× | 1.55 px | 100% |
+| | farthest | nearest |
+|---|---|---|
+| speed against the copy as you scroll | 0.03× | 0.8× |
+| shift with the mouse, at the screen's edge | none | 22 px sideways, 12 px up and down |
+| radius | 0.3 px | 1.8 px |
+| strength | 8% | 100% |
+| idle drift | 0.35 px | 2 px |
 
-So near neurons are larger, brighter and faster and far ones specks that are
-all but still — the cues that make a stack of layers read as depth — and as you
-go down they slide gently past one another. Each neuron also runs up to 8%
-faster or slower than its layer, so the depth is continuous rather than six
-flat sheets. Scroll back up and it is exactly where it was. There are about one
-neuron per 1,800 px² of screen at any moment — some 720 on a 1440×900 window —
-laid out on a jittered grid per layer, so it is even without being regular, and
-seeded, so it is the same structure on every visit. The canvas renders at up to
-2x so the far specks stay crisp.
+So far neurons are faint specks that barely move and near ones small bright
+beads that stream past — going down the page is going down through the field,
+and moving the mouse shifts your point of view the same way. Depths are skewed
+towards the far end, so most of the field is faint and a few neurons stand out;
+each neuron's strength is also up to 20% off its depth's, so the field does not
+band into neat layers of brightness. There is about one neuron per 850 px² of
+screen — some 1,400 on a 1440×900 window — and the canvas renders at up to 2x so
+the far specks stay crisp.
 
-The wiring is there, just not drawn. Each neuron is wired to its nearest three
-in its own layer (hubs, about one in fourteen, to five), and about a third also
-reach one layer deeper. A synapse whose ends travel at different speeds swings
-when it fires mid-scroll.
+**Alive, but going nowhere.** Each neuron drifts very slightly on its own, a
+pixel or two on a slow loop of ten to twenty seconds, so the field breathes
+without travelling. The drift is slow enough that fifteen frames a second cannot
+be told from sixty, so at rest that is all it draws; it goes to the full rate
+only while you scroll, point, or something fires.
+
+**It never runs out.** At every depth the field is one screen tall and wraps: a
+neuron that leaves the top comes back in at the bottom, somewhere else across
+and in another hue, out of sight beyond the edge — so there is always a full
+field in view and no pattern to catch repeating. Where a neuron is depends only
+on the scroll (and its slow drift), so scrolling back up returns the same view.
+It is seeded, so it is the same field on every visit.
+
+**The wiring is found when it fires.** There is no fixed wiring to draw: a
+firing neuron signals two or three of its nearest neighbours at a similar depth,
+found at that moment among whatever is near. A coarse grid over the screen keeps
+that search, and the pointer's, from looking at every neuron.
 
 **It fires where you interact.** Every neuron is leaky integrate-and-fire:
 
 | | |
 |---|---|
 | **pointing** | the pointer moving past a neuron charges it, more the closer it passes |
-| **scrolling** | the page passing under a still pointer charges it the same way — counted at a third of the scroll plus the neuron's own drift, since the structure itself barely moves — so scrolling fires the neurons under where you are |
+| **scrolling** | the page passing under a still pointer charges it the same way — at the neuron's own speed, but never less than a third of the scroll, so the far field answers too — so scrolling fires the neurons under where you are |
 | **touch** | a finger dragging the page does both, and a flick keeps firing under where it lifted for as long as the page coasts |
 | **clicking, tapping** | the nearest few neurons fire outright, at full strength |
 | **keyboard** | whatever takes focus fires the neurons behind it; scrolling with no pointer fires a little below the middle of the screen |
@@ -659,9 +668,9 @@ brush of the pointer two, then dies away. A neuron rests 1.1 s after
 firing, which is what keeps the spread a ripple rather than a flood.
 
 **It keeps out of the way.** At rest there are no lines and the neurons are at
-most a few pixels across. Everything it draws — the neurons, the flashes, the
-signals and the lit synapses — is at three quarters strength (`OPACITY` in
-`js/synapses.js`). Firing is brief, and only where you are. Wherever the model
+most a few pixels across. The firing — the flashes, the signals and the lit
+synapses — is at three quarters strength (`OPACITY` in `js/synapses.js`), and
+fainter and thinner the deeper it is. Firing is brief, and only where you are. Wherever the model
 stands whole, a clearing opens round it (read from `__axon.field`), so nothing
 in the structure crosses the main asset; in the taken-apart sections, where the
 model has no disc, the clearing closes.
@@ -675,13 +684,12 @@ near ones, so the firing has depth too. On a ground where the model is drawn as 
 (`--canvas-mode: glow`) the firing is additive too. A section change eases the
 colours across rather than cutting them.
 
-**Cost: nothing at rest.** It draws only when something has changed — a scroll,
-a signal in flight, a colour easing — and is idle otherwise, so a still page
-costs no frames at all. A frame is under a couple of milliseconds of script:
-the resting neurons are batched into a few dozen paths by opacity and hue. A
-jump in the scroll — the browser restoring it on reload, an anchor — charges
-nothing, so it never sets off a burst. Reduced motion draws one still frame and does not fire.
-`__synapses.stats()` in the console reports the structure and the cost;
+**Cost.** At rest, fifteen frames a second for the drift; the full rate only
+while something moves. A frame is about two milliseconds of script: the
+neurons are batched into a few dozen paths by hue and strength. A jump in the
+scroll — the browser restoring it on reload, an anchor — charges nothing, so it
+never sets off a burst. Reduced motion draws one still frame and does not fire.
+`__synapses.stats()` in the console reports the field and the cost;
 `__synapses.fire(x, y)` fires it by hand.
 
 ## Performance
