@@ -613,37 +613,41 @@ one fixed, viewport-sized canvas (`.synapses`) that takes no pointer events —
 it listens to the window, so it hears the page without getting in its way.
 
 **Still, and in depth.** Nothing in it moves on its own. The neurons sit in six
-layers at six depths, and scrolling carries the view straight down past them.
-Speed is depth: a layer moves r px for every px the copy does, and its neurons'
-size and brightness fall off with it:
+layers at six depths, and scrolling carries the view straight down past them —
+slowly, so the structure only drifts while the page goes by. Speed is depth: a
+layer moves r px for every px the copy does, and its neurons' size and
+brightness fall off with it:
 
 | layer | speed | radius | strength |
 |---|---|---|---|
-| farthest | 0.07× | 0.75 px | 34% |
-| | 0.15× | 1 px | 46% |
-| | 0.26× | 1.35 px | 59% |
-| | 0.4× | 1.8 px | 73% |
-| | 0.56× | 2.4 px | 87% |
-| nearest | 0.74× | 3.1 px | 100% |
+| farthest | 0.02× | 0.375 px | 34% |
+| | 0.045× | 0.5 px | 46% |
+| | 0.075× | 0.675 px | 59% |
+| | 0.11× | 0.9 px | 73% |
+| | 0.15× | 1.2 px | 87% |
+| nearest | 0.2× | 1.55 px | 100% |
 
-So near layers are larger, brighter and faster and far ones tiny, faint and
-nearly still — the cues that make a stack of layers read as depth — and as you
-go down the layers visibly slide past one another. Scroll back up and it is
-exactly where it was. Each layer is laid out on a jittered grid, so it is even
-without being regular, and seeded, so it is the same structure on every visit.
+So near neurons are larger, brighter and faster and far ones specks that are
+all but still — the cues that make a stack of layers read as depth — and as you
+go down they slide gently past one another. Each neuron also runs up to 8%
+faster or slower than its layer, so the depth is continuous rather than six
+flat sheets. Scroll back up and it is exactly where it was. There are about one
+neuron per 1,800 px² of screen at any moment — some 720 on a 1440×900 window —
+laid out on a jittered grid per layer, so it is even without being regular, and
+seeded, so it is the same structure on every visit. The canvas renders at up to
+2x so the far specks stay crisp.
 
-The wiring is there, just not drawn. A layer moves as one sheet, so it is exact:
-each neuron is wired to its nearest three in the same sheet (hubs, about one in
-fourteen, to five), and about a third also reach one layer deeper. Those
-bridging synapses swing when they fire mid-scroll, because their two ends are
-travelling at different speeds.
+The wiring is there, just not drawn. Each neuron is wired to its nearest three
+in its own layer (hubs, about one in fourteen, to five), and about a third also
+reach one layer deeper. A synapse whose ends travel at different speeds swings
+when it fires mid-scroll.
 
 **It fires where you interact.** Every neuron is leaky integrate-and-fire:
 
 | | |
 |---|---|
 | **pointing** | the pointer moving past a neuron charges it, more the closer it passes |
-| **scrolling** | the structure sliding under a still pointer charges it the same way — so scrolling fires the neurons passing under where you are |
+| **scrolling** | the page passing under a still pointer charges it the same way — counted at a third of the scroll plus the neuron's own drift, since the structure itself barely moves — so scrolling fires the neurons under where you are |
 | **touch** | a finger dragging the page does both, and a flick keeps firing under where it lifted for as long as the page coasts |
 | **clicking, tapping** | the nearest few neurons fire outright, at full strength |
 | **keyboard** | whatever takes focus fires the neurons behind it; scrolling with no pointer fires a little below the middle of the screen |
@@ -654,8 +658,10 @@ neuron at 0.68 of the strength, so a click spreads four synapses out and a
 brush of the pointer two, then dies away. A neuron rests 1.1 s after
 firing, which is what keeps the spread a ripple rather than a flood.
 
-**It keeps out of the way.** At rest there are no lines and the neurons are a
-few pixels across. Firing is brief, and only where you are. Wherever the model
+**It keeps out of the way.** At rest there are no lines and the neurons are at
+most a few pixels across. Everything it draws — the neurons, the flashes, the
+signals and the lit synapses — is at three quarters strength (`OPACITY` in
+`js/synapses.js`). Firing is brief, and only where you are. Wherever the model
 stands whole, a clearing opens round it (read from `__axon.field`), so nothing
 in the structure crosses the main asset; in the taken-apart sections, where the
 model has no disc, the clearing closes.

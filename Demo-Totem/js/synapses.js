@@ -7,16 +7,19 @@
 
    Still means still: nothing in it moves on its own. The neurons sit in six
    layers at six depths, and scrolling carries the view straight down past
-   them — the nearest layer at about three quarters of the copy's speed, the
-   farthest at well under a tenth. Depth decides everything else too: the
-   nearer a layer, the larger and brighter its neurons, so the layers read as
-   near and far and slide past one another as you go down. Scroll back up
-   and it is exactly where it was.
+   them, slowly — the nearest at a fifth of the copy's speed, the farthest at
+   a fiftieth, each neuron a little faster or slower than its layer — so the
+   structure barely moves while the page goes by, and moves by depth. Depth
+   decides everything else too: the nearer a neuron, the larger and brighter
+   it is, so the layers read as near and far and slide gently past one
+   another as you go down. Scroll back up and it is exactly where it was.
 
    Interaction fires it. Each neuron is leaky integrate-and-fire: anything
    moving past it — the pointer, or the structure itself sliding under a
    still pointer while you scroll, or a finger dragging the page — charges
    it, the charge leaks away, and when it crosses threshold the neuron fires.
+   Scrolling counts as the page moving past the pointer at the copy's speed,
+   so it fires as readily as it did when the structure itself moved faster.
    A click or a tap fires the nearest few outright, harder. Keyboard focus
    fires the neurons behind whatever took it. A firing neuron flashes and
    sends a signal down each of its synapses; each one arriving fires the
@@ -74,30 +77,34 @@
   var RAD = coarse ? 120 : 95;      /* how near something has to pass to charge a neuron */
   var GAIN = 1 / 28;                /* charge per px of motion right over a neuron */
   var AMP_BRUSH = 0.5, AMP_TAP = 1, AMP_FOCUS = 0.8;
-  var MAX_PULSES = 700;
+  var MAX_PULSES = 900;
+  /* Everything — the neurons at rest, the flashes, the signals and the lit
+     synapses — is drawn at this fraction of its strength. */
+  var OPACITY = 0.75;
 
   /* ---- the structure -------------------------------------------------------
      Six layers of neurons at six depths. Speed is depth: a layer at r moves
-     r px for every px the copy does, and size and brightness fall off with
+     r px for every px the copy does — all of them slowly, so the structure
+     only drifts as the page goes by — and size and brightness fall off with
      it, so near layers are larger, brighter and faster and far ones tiny,
-     faint and nearly still — the cues that make a stack of layers read as
-     depth. A layer moves as one sheet, so its wiring is exact: each neuron is
-     wired to its nearest few in the same sheet. A few synapses bridge to the
-     next layer down; when one of those fires mid-scroll it swings, because
-     its two ends are travelling at different speeds. Each neuron is nudged a
-     hair off its layer's depth too, so the sheets are not dead flat.
+     faint and all but still: the cues that make a stack of layers read as
+     depth. Each neuron runs up to 8% faster or slower than its layer, so
+     depth is continuous rather than six flat sheets. Each neuron is wired to
+     its nearest few in its own layer, and a few synapses bridge to the next
+     layer down; a synapse whose ends travel at different speeds swings when
+     it fires mid-scroll.
 
      A neuron at speed r has to be on screen somewhere in a band H + r·D tall
      (D the scroll range) to cover the whole descent, so each layer holds more
      neurons than you ever see at once. Built with headroom and rebuilt only
      when the page changes shape. */
   var LAYERS = [
-    { r: 0.07, share: 0.24, size: 0.75, alpha: 0.34 },
-    { r: 0.15, share: 0.2,  size: 1.0,  alpha: 0.46 },
-    { r: 0.26, share: 0.17, size: 1.35, alpha: 0.59 },
-    { r: 0.4,  share: 0.15, size: 1.8,  alpha: 0.73 },
-    { r: 0.56, share: 0.13, size: 2.4,  alpha: 0.87 },
-    { r: 0.74, share: 0.11, size: 3.1,  alpha: 1 }
+    { r: 0.02,  share: 0.24, size: 0.375, alpha: 0.34 },
+    { r: 0.045, share: 0.2,  size: 0.5,   alpha: 0.46 },
+    { r: 0.075, share: 0.17, size: 0.675, alpha: 0.59 },
+    { r: 0.11,  share: 0.15, size: 0.9,   alpha: 0.73 },
+    { r: 0.15,  share: 0.13, size: 1.2,   alpha: 0.87 },
+    { r: 0.2,   share: 0.11, size: 1.55,  alpha: 1 }
   ];
   var W = 1, H = 1, D = 1, Dgen = 0, Wgen = 0, dpr = 1;
   var N = 0, NX, NY, NR, NS, NC, NA, NL;      /* x, y at scroll 0, speed, radius, hue, alpha, layer */
@@ -110,8 +117,8 @@
     seed = 0x41584f4e;                          /* "AXON" */
     Wgen = W; Dgen = D * 1.12;
     var m = 40;
-    /* about one neuron per 4,500 px² of screen at any moment */
-    var V = clamp(W * H / 4500, 80, 360);
+    /* about one neuron per 1,800 px² of screen at any moment */
+    var V = clamp(W * H / 1800, 170, 900);
     /* a synapse may be up to about one and a half of its layer's spacing */
     var LMAX = LAYERS.map(function (L) { return clamp(Math.sqrt(W * H / (V * L.share)) * 1.5, 70, 240); });
     var HUE = [0, 1, 1, 2, 2, 3, 0, 1, 2, 3];   /* action, structure, data, signal */
@@ -129,7 +136,7 @@
           if (rand() > n / (rows * cols)) continue;
           xs.push(-m + (gx + 0.12 + rand() * 0.76) * cw);
           ys.push(-m + (gy + 0.12 + rand() * 0.76) * ch);
-          rs.push(L.r * (1 + (rand() - 0.5) * 0.04));
+          rs.push(L.r * (1 + (rand() - 0.5) * 0.16));
           ls.push(l);
         }
       }
@@ -369,10 +376,12 @@
     burst(r.left + r.width / 2, r.top + r.height / 2, AMP_FOCUS);
   });
 
-  /* Charge every neuron near the pointer by how far it moved relative to the
-     pointer this frame — the pointer moving, or the structure sliding under
-     it as the page scrolls — and fire any that cross threshold. Charge leaks
-     with time, computed when next touched, so a still page needs no frames. */
+  /* Charge every neuron near the pointer by how far things moved past it this
+     frame — the pointer moving, or the page scrolling under it — and fire
+     any that cross threshold. The structure itself only drifts, so a scroll
+     counts as the page passing the pointer, at a third of the scroll plus the
+     neuron's own drift. Charge leaks with time, computed when next touched,
+     so a still page needs no frames. */
   function excite(now, ds) {
     var on = pOn && now < pUntil;
     var x = px, y = py, dpx = px - ppx, dpy = py - ppy;
@@ -391,7 +400,7 @@
       var dx = NX[i] - x, dy = yy - y, d2 = dx * dx + dy * dy;
       if (d2 > R2) continue;
       var f = 1 - Math.sqrt(d2) / RAD;
-      var rx = dpx, ry = dpy + NR[i] * ds;
+      var rx = dpx, ry = dpy + (0.33 + NR[i]) * ds;
       var add = Math.sqrt(rx * rx + ry * ry) * GAIN * f * f;
       if (add <= 0) continue;
       EXC[i] = EXC[i] * Math.exp(-(now - EXT[i]) / 1000 / LEAK_TAU) + add; EXT[i] = now;
@@ -420,7 +429,7 @@
   for (var b = 0; b < 4 * (STEPS + 1); b++) nBuckets.push([]);
 
   function draw(now, s) {
-    var A = col[4][0], AN = 0.85 * A;
+    var A = col[4][0], AN = 0.85 * A * OPACITY, K = OPACITY;
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, W, H);
@@ -458,8 +467,8 @@
       var a2 = EA[e], c2 = EB[e], y1 = ny(a2, s), y2 = ny(c2, s);
       if ((y1 < -30 && y2 < -30) || (y1 > H + 30 && y2 > H + 30)) continue;
       var clr = Math.min(clearing(NX[a2], y1), clearing(NX[c2], y2));
-      ctx.strokeStyle = css(col[EC[e]], clamp(gl * clr * (0.55 + 0.45 * ET[e]), 0, 1));
-      ctx.lineWidth = 1 + ET[e] * 1.6;
+      ctx.strokeStyle = css(col[EC[e]], clamp(gl * clr * (0.55 + 0.45 * ET[e]) * K, 0, 1));
+      ctx.lineWidth = 0.6 + ET[e] * 1;
       ctx.beginPath(); ctx.moveTo(NX[a2], y1); ctx.lineTo(NX[c2], y2); ctx.stroke();
     }
     for (k = 0; k < pulses.length; k++) {
@@ -471,11 +480,11 @@
       if ((ay < -30 && by < -30) || (ay > H + 30 && by > H + 30)) continue;
       var hx = ax + (bx - ax) * u, hy = ay + (by - ay) * u;
       var cl = clearing(hx, hy), hc = NC[p.a], dp = 0.55 + 0.45 * ET[p.e];
-      ctx.strokeStyle = css(col[hc], clamp(p.amp * 0.95 * cl * dp, 0, 1));
-      ctx.lineWidth = 1.1 + ET[p.e] * 1.6;
+      ctx.strokeStyle = css(col[hc], clamp(p.amp * 0.95 * cl * dp * K, 0, 1));
+      ctx.lineWidth = 0.7 + ET[p.e] * 1;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
-      var hr = (5 + 9 * p.amp) * (0.6 + 0.6 * ET[p.e]);
-      ctx.globalAlpha = clamp(p.amp * cl, 0, 1);
+      var hr = (3.5 + 6 * p.amp) * (0.6 + 0.6 * ET[p.e]);
+      ctx.globalAlpha = clamp(p.amp * cl * K, 0, 1);
       ctx.drawImage(glow[hc], hx - hr, hy - hr, hr * 2, hr * 2);
       ctx.globalAlpha = 1;
     }
@@ -487,10 +496,10 @@
       var fy = ny(i, s);
       if (fy < -40 || fy > H + 40) continue;
       var fx = NX[i], fc = clearing(fx, fy), rr = NS[i] * (6 + 9 * fl);
-      ctx.globalAlpha = clamp(fl * fc, 0, 1);
+      ctx.globalAlpha = clamp(fl * fc * K, 0, 1);
       ctx.drawImage(glow[NC[i]], fx - rr, fy - rr, rr * 2, rr * 2);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = css(col[NC[i]], clamp((AN + fl) * fc, 0, 1));
+      ctx.fillStyle = css(col[NC[i]], clamp((AN + fl * K) * fc, 0, 1));
       ctx.beginPath(); ctx.arc(fx, fy, NS[i] * (1 + 0.7 * fl), 0, 6.2832); ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -525,7 +534,9 @@
 
   function resize() {
     W = Math.max(1, innerWidth); H = Math.max(1, innerHeight);
-    var budget = Math.sqrt(3e6 / (W * H));
+    /* the neurons are sub-pixel at the far end, so density matters: up to
+       2x, inside a 4.5-megapixel budget (it draws only when something moves) */
+    var budget = Math.sqrt(4.5e6 / (W * H));
     dpr = clamp(Math.min(global.devicePixelRatio || 1, 2, budget), 1, 2);
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
