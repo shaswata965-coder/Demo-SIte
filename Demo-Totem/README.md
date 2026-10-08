@@ -32,7 +32,7 @@ css/main.css          layout, chapters, per-chapter aesthetic
 js/neural.js          the model: arrangements, edge families, rendering
 js/graph.js           the wiring of the taken-apart sections, and where the model goes
 js/circuit.js         the circuit layer drawn around each panel of copy
-js/space.js           the space behind the page — see "The space"
+js/synapses.js        the neurons behind the page — see "The neurons behind the page"
 js/app.js             scroll → everything else
 tools/make-embed.mjs  build an embed copy — see "Embedding" below
 ```
@@ -255,11 +255,12 @@ just its midpoint.
 
 Two parallax layers give the page depth. The pinned copy lifts 22px through
 its chapter; only the chapter you are in carries an offset — one style write a
-frame at most. And behind everything is real depth: the space, a 3D field the
-camera flies down and forward through as you scroll — see "The space". (There used to be a 30px dot
-grid there instead, drifting at 7%. It went with the panel's own grid, because
-two grids behind the copy read as graph paper; see "The rig". The space is a
-volume rather than a grid, and soft.)
+frame at most. And behind everything is real depth: a still 3D structure of
+neurons in five layers, each sliding at its own speed as you scroll — see "The
+neurons behind the page". (There used to be a 30px dot grid there instead,
+drifting at 7%. It went with the panel's own grid, because two grids behind the
+copy read as graph paper; see "The rig". The neurons are a structure in depth
+rather than a grid, and they stay out of the copy's way.)
 
 ## Section rhythm
 
@@ -292,7 +293,7 @@ knowing before you touch it:
 ```
 body background
   .band              z-index: -1   full-bleed, sized to the chapter
-  .space (canvas)    z-index: -1   fixed; after .doc in the markup, so over the bands
+  .synapses (canvas) z-index: -1   fixed; after .doc in the markup, so over the bands
   .stage (canvas)    z-index:  1
   .ch-body (copy)    z-index:  3
 ```
@@ -603,52 +604,63 @@ Each of these costs fill area, which is the frame budget (see above). The
 trail in particular: four stacked dots and one thick stroke both read the same
 and both cost more than they look like they should.
 
-## The space
+## The neurons behind the page
 
-Behind the whole page is a slow flight through space, after the way
-[totem.itsoffbrand.com](https://totem.itsoffbrand.com/) carries you through its
-scene while the content stays put. `js/space.js` draws it on one fixed,
-viewport-sized canvas (`.space`), from a seeded 3D volume in front of a camera:
+Behind the whole page is a still structure of small coloured neurons wired to
+their neighbours, and it fires wherever you touch the page. `js/synapses.js`
+draws it on one fixed, viewport-sized canvas (`.synapses`) that takes no
+pointer events — it listens to the window, so it hears the page without
+getting in its way.
+
+**Still, and in depth.** Nothing in it moves on its own. The neurons sit in five
+layers at five depths, like the layers of a cortex, and scrolling carries the
+view straight down past them: the nearest layer at two thirds of the copy's
+speed, the farthest at a fifth. So the page reads as descending a 3D structure,
+and it is exactly where it was when you scroll back up. A layer moves as one
+sheet, so its wiring is exact — each neuron to its nearest three in the same
+sheet (hubs, about one in fourteen, to five). About a third of the neurons also
+reach one layer deeper; those synapses swing as you pass them, which is what
+makes the structure 3D rather than a stack of flat pictures. Each layer is laid
+out on a jittered grid, so it is even without being regular, and seeded, so it
+is the same structure on every visit.
+
+**It fires where you interact.** Every neuron is leaky integrate-and-fire:
 
 | | |
 |---|---|
-| **dust** | the bulk of it — fine points, crisp far off and drawn as soft out-of-focus discs when they come close |
-| **neurons** | a sparser population with rings, each wired by a synapse to its nearest neighbours; a third of the synapses carry a signal |
-| **haze** | a few very large, faint glows far behind everything — the atmosphere, painted at a quarter resolution and stretched |
+| **pointing** | the pointer moving past a neuron charges it, more the closer it passes |
+| **scrolling** | the structure sliding under a still pointer charges it the same way — so scrolling fires the neurons passing under where you are |
+| **touch** | a finger dragging the page does both, and a flick keeps firing under where it lifted for as long as the page coasts |
+| **clicking, tapping** | the nearest few neurons fire outright, at full strength |
+| **keyboard** | whatever takes focus fires the neurons behind it; scrolling with no pointer fires a little below the middle of the screen |
 
-**Scroll is the flight.** Scrolling moves the camera down and forward through
-the volume, so near things rush past and far things barely move — real depth,
-not a picture sliding. The nearest field moves at half the copy's speed and the
-farthest at a twentieth; the descent is sized to the page, so that holds
-however long the page is. Positions are a pure function of the scroll, so
-scrolling back up flies you back to exactly the same view. On top of that the
-camera drifts forward on its own, slowly, so the space is alive when you stop.
-Depth and height both wrap, so the flight never runs out and every mote is
-somewhere you can see it.
+Charge leaks away (0.6 s); a neuron that crosses threshold flashes and sends a
+signal down each synapse at 520 px/s. Each signal that arrives fires the next
+neuron at 0.68 of the strength, so a click spreads four synapses out and a
+brush of the pointer two, then dies away. A neuron rests 1.1 s after
+firing, which is what keeps the spread a ripple rather than a flood.
 
-**It keeps out of the way.** Nothing in it is bright. The nearest marks — the
-big out-of-focus discs — are the faintest rather than the loudest. A synapse
-long enough to cross a paragraph fades out. And wherever the model stands
-whole, a clearing opens round it (read from `__axon.field`), so nothing in the
-space crosses the main asset; in the taken-apart sections, where the model has
-no disc, the clearing closes.
+**It keeps out of the way.** At rest the wiring is a faint ink line and the
+neurons are 1–4 px in radius. Firing is brief, and only where you are. Wherever the model
+stands whole, a clearing opens round it (read from `__axon.field`), so nothing
+in the structure crosses the main asset; in the taken-apart sections, where the
+model has no disc, the clearing closes.
 
-**It is drawn in the palette, by role**, the way the model is: dust in ink,
-neurons in structure, synapses in data, signals in signal, and the haze
-adding the accent — the light rising at the bottom of the page, through the
-close, is orange. The roles come from the root skin through `--sp-*` in
-`tokens.css` (lemon draws its synapses in its accent, because blue over yellow
-reads olive), at the skin's strength `--space-a`. A section change eases the
-colours across rather than cutting them. Dark grounds carry it best — there it
-is closest to the reference — and on the bright ones it is an airy haze with
-the field in colour.
+**Colour.** The neurons take the root skin's four hues as they are — action,
+structure, data, signal, the same assignment the model uses — and the wiring
+its ink (`--syn-wire`), at the skin's `--syn-a` in `tokens.css`. Only firing
+lights a synapse in its neuron's hue, so low-alpha colour never sits on a ground
+that would turn it muddy. On a ground where the model is drawn as light
+(`--canvas-mode: glow`) the firing is additive too. A section change eases the
+colours across rather than cutting them.
 
-**Cost.** One 2D canvas at no more than ~1.6 megapixels (1.5x density at
-most — it is soft, it does not need the model's), dust batched into a couple
-of dozen paths a frame, the haze repainted only when it has moved, and 30
-frames a second at rest, when only the drift moves. The same three device
-tiers as the model decide how much dust and how many neurons. Reduced motion
-draws one still frame.
+**Cost: nothing at rest.** It draws only when something has changed — a scroll,
+a signal in flight, a colour easing — and is idle otherwise, so a still page
+costs no frames at all. A frame is under a couple of milliseconds of script:
+the resting wiring and neurons are batched into a few dozen paths by opacity
+and hue. Reduced motion draws one still frame and does not fire.
+`__synapses.stats()` in the console reports the structure and the cost;
+`__synapses.fire(x, y)` fires it by hand.
 
 ## Performance
 

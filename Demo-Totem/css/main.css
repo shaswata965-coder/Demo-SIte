@@ -64,20 +64,23 @@ img, canvas { max-width: 100%; }
    z-index, which is what puts the copy above it. */
 .doc { position: relative; }
 
-/* --- the space -----------------------------------------------------------
-   A slow flight through a field of neurons behind the whole page, drawn by
-   js/space.js: dust that is crisp far off and soft close up, neurons wired
-   into constellations with signals on their synapses, and a few huge faint
-   glows of haze behind it all. Scroll moves the camera down and forward
-   through it, so near things pass quickly and far ones barely move; it
-   drifts forward on its own when you stop. Colours are the root skin's, by
-   role (--sp-* in tokens.css), at the skin's --space-a.
+/* --- the neurons behind the page --------------------------------------
+   A still structure of small coloured neurons wired to their neighbours,
+   drawn by js/synapses.js. They sit at different depths, and scrolling
+   carries the view straight down past them — near ones faster, far ones
+   slower — so the page reads as descending a 3D structure. Nothing in it
+   moves on its own: it fires where you interact — scrolling, pointing,
+   clicking, tapping, tabbing — and the signal spreads a few synapses out
+   and dies away. Colours are the root skin's four hues, the wiring its ink,
+   at the skin's --syn-a.
 
    Stacking: z-index -1 and *after* .doc in the markup, so it paints over the
    bands (also -1, earlier in the document) and under everything else — the
    model, the copy, the cards and the networks of the flooded sections. Like
-   the stage, it is fixed at viewport size and never scaled by CSS. */
-.space {
+   the stage, it is fixed at viewport size and never scaled by CSS, and it
+   takes no pointer events: it listens to the window instead, so it hears
+   the page without getting in its way. */
+.synapses {
   position: fixed; inset: 0; z-index: -1;
   display: block; width: 100%; height: 100%;
   pointer-events: none;

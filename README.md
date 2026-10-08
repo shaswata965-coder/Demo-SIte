@@ -49,11 +49,11 @@ python3 -m http.server 8002 --directory Demo-Wealthsimple
   networks the wiring and the model's beads follow the cards as they move.
 - Scroll turns and rewires the model through seven arrangements while the
   page's type, texture, colour and layout transform with it.
-- Behind it all, a slow flight through space after the reference: dust,
-  neuron constellations with signals on their synapses, and soft haze in
-  each section's colours. Scrolling flies the camera down and forward through
-  it, it drifts on its own when you stop, and it keeps a clearing round the
-  model.
+- Behind it all, a still 3D structure of small coloured neurons in five
+  layers that slide at their own speeds as you scroll, so the page reads as
+  descending it. It fires where you interact — scrolling, pointing,
+  clicking, tapping, tabbing — and the signal ripples a few synapses out and
+  dies away. It keeps a clearing round the model.
 
 ### demo-crafted
 
