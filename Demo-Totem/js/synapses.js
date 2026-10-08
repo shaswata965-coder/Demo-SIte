@@ -7,14 +7,15 @@
 
    It is a field you move through. Every neuron has a depth, and depth
    decides everything about it: how fast it passes when you scroll — the
-   farthest at a thirtieth of the copy's speed, the nearest at four fifths —
-   how large it is, and how solid. Far neurons are faint specks, near ones
-   small bright beads, so going down the page is going down through the
-   field: near things stream past, far ones barely move. Moving the mouse
-   shifts your point of view a little the same way, near neurons more than
-   far ones. And the field is alive without going anywhere: each neuron
-   drifts very slightly on its own, a pixel or two over ten or twenty
-   seconds.
+   farthest at a fiftieth of the copy's speed, the nearest at nearly its
+   full speed — how large it is, how solid, and how sharp. Far neurons are
+   faint specks that barely move, near ones bright beads that stream past,
+   and the very nearest are larger and soft, out of focus the way something
+   close to the eye is. Moving the mouse turns your point of view round a
+   point inside the field: far neurons swing with the pointer and near ones
+   against it, so the depth opens up as you move. And the field is alive
+   without going anywhere: each neuron drifts very slightly on its own, a
+   pixel or two over ten or twenty seconds.
 
    The field never runs out. At every depth it is one screen tall and
    wraps: a neuron that leaves the top comes back in at the bottom, somewhere
@@ -28,11 +29,13 @@
    when it crosses threshold the neuron fires. A click or a tap fires the
    nearest few outright, harder. Keyboard focus fires the neurons behind
    whatever took it. A firing neuron flashes and signals two or three of its
-   nearest neighbours at a similar depth — the wiring is found at the moment
-   of firing, among whatever is near — and each signal arriving fires the
-   next neuron a little weaker, so activity spreads a few neurons out from
-   where you touched the page and dies away. A neuron that has just fired
-   rests before it can fire again.
+   nearest neighbours — the wiring is found at the moment of firing, among
+   whatever is near, in front or behind — and each signal arriving fires the
+   next neuron a little weaker, so activity spreads slowly a few neurons out
+   from where you touched the page, through the depth of the field, and dies
+   away. A synapse is drawn in perspective: wider and brighter at its near
+   end, thinner and fainter where it reaches back. A neuron that has just
+   fired rests before it can fire again.
 
    It keeps out of the way. At rest there are no lines at all and the
    neurons are specks; the firing is brief and only where you are. Wherever
@@ -85,20 +88,25 @@
   /* ---- tuning ----------------------------------------------------------- */
   /* the field */
   var DENSITY = 850;                    /* px² of screen per neuron */
-  var R_FAR = 0.03, R_NEAR = 0.8;       /* scroll speed against the copy, farthest and nearest */
-  var Z_SKEW = 1.4;                     /* more far neurons than near ones */
-  var SIZE_FAR = 0.3, SIZE_NEAR = 1.8;  /* radius, px */
-  var ALPHA_FAR = 0.08, ALPHA_NEAR = 1.05, ALPHA_CURVE = 1.15;
-  var DRIFT_FAR = 0.35, DRIFT_NEAR = 2; /* px, how far the idle drift reaches */
-  var LOOK_X = 22, LOOK_Y = 12;         /* px the nearest neurons shift as the pointer crosses the screen */
+  var R_FAR = 0.02, R_NEAR = 0.95;      /* scroll speed against the copy, farthest and nearest */
+  var R_CURVE = 1.3;                    /* most of the field slow, the near end fast */
+  var Z_SKEW = 1.15;                    /* a little more far than near */
+  var SIZE_FAR = 0.3, SIZE_NEAR = 2.6;  /* radius, px */
+  var SIZE_CURVE = 1.9;                 /* only the nearest get large */
+  var ALPHA_FAR = 0.06, ALPHA_NEAR = 1, ALPHA_CURVE = 1.1;
+  var BOKEH_Z = 0.88;                   /* nearer than this, a neuron is out of focus */
+  var DRIFT_FAR = 0.35, DRIFT_NEAR = 2.5; /* px, how far the idle drift reaches */
+  var LOOK_X = 36, LOOK_Y = 20;         /* px the nearest neurons swing as the pointer reaches an edge */
+  var LOOK_PIVOT = 0.3;                 /* the depth the view turns round: behind it moves with the pointer */
   var IDLE_MS = 66;                     /* at rest, a frame every this many ms */
   /* firing */
   var DECAY = 0.68;                     /* each hop fires the next neuron this much weaker */
   var MIN_AMP = 0.17;                   /* below this a signal is not sent */
   var FAN = 3, BRANCH = 0.8;            /* signals per firing neuron, at most; chance of each */
-  var SPEED = 520;                      /* px a second along a synapse */
-  var REFRACT = 1100;                   /* ms a neuron rests after firing */
-  var EDGE_TAU = 0.5, FLASH_TAU = 0.42, LEAK_TAU = 0.6;   /* seconds */
+  var SPEED = 170;                      /* px a second along a synapse */
+  var HOP_MS = 70, HOP_JITTER = 110;    /* a neuron's pause before passing a signal on */
+  var REFRACT = 2600;                   /* ms a neuron rests after firing — longer than a ripple lasts */
+  var EDGE_TAU = 1, FLASH_TAU = 0.75, LEAK_TAU = 0.6;     /* seconds */
   var RAD = coarse ? 120 : 95;          /* how near something has to pass to charge a neuron */
   var GAIN = 1 / 28;                    /* charge per px of motion right over a neuron */
   var AMP_BRUSH = 0.5, AMP_TAP = 1, AMP_FOCUS = 0.8;
@@ -107,7 +115,7 @@
 
   /* ---- the field ----------------------------------------------------------- */
   var W = 1, H = 1, dpr = 1, MARGIN = 40, P = 1, N = 0;
-  var Z, ZL, RT, Y0, SZ, AL, DA, DW1, DW2, DP1, DP2;   /* per neuron, fixed */
+  var Z, LK, RT, Y0, SZ, AL, BK, DA, DW1, DW2, DP1, DP2;   /* per neuron, fixed */
   var CY, XB, HU, PX, PY;                              /* per neuron, per frame */
   var EXC, EXT, REF, FA, FT;                           /* charge, its time, rest-until, flash */
   var pulses = [], lit = [], flashN = [];
@@ -116,12 +124,12 @@
 
   function build() {
     seed = 0x41584f4e;                                 /* "AXON" */
-    MARGIN = 20 + LOOK_X + DRIFT_NEAR;
+    MARGIN = 20 + LOOK_X + DRIFT_NEAR + SIZE_NEAR * 3;
     P = H + 2 * MARGIN;
     N = Math.round(clamp(W * H / DENSITY, 300, 3200) * P / H);
     RSYN = clamp(Math.sqrt(DENSITY) * 3.4, 60, 130);
-    Z = new Float32Array(N); ZL = new Float32Array(N); RT = new Float32Array(N);
-    Y0 = new Float32Array(N); SZ = new Float32Array(N); AL = new Float32Array(N);
+    Z = new Float32Array(N); LK = new Float32Array(N); RT = new Float32Array(N);
+    Y0 = new Float32Array(N); SZ = new Float32Array(N); AL = new Float32Array(N); BK = new Uint8Array(N);
     DA = new Float32Array(N); DW1 = new Float32Array(N); DW2 = new Float32Array(N);
     DP1 = new Float32Array(N); DP2 = new Float32Array(N);
     CY = new Float64Array(N); XB = new Float32Array(N); HU = new Uint8Array(N);
@@ -130,11 +138,15 @@
     FA = new Float32Array(N); FT = new Float64Array(N);
     for (var i = 0; i < N; i++) {
       var z = Math.pow(rand(), Z_SKEW);                /* 0 farthest, 1 nearest */
-      Z[i] = z; ZL[i] = Math.pow(z, 1.2);
-      RT[i] = R_FAR + (R_NEAR - R_FAR) * z;
+      Z[i] = z;
+      /* how far it swings with the pointer: against it in front of the pivot,
+         with it behind */
+      LK[i] = (z - LOOK_PIVOT) / (1 - LOOK_PIVOT);
+      RT[i] = R_FAR + (R_NEAR - R_FAR) * Math.pow(z, R_CURVE);
       Y0[i] = rand() * P;
-      SZ[i] = (SIZE_FAR + (SIZE_NEAR - SIZE_FAR) * Math.pow(z, 1.3)) *
+      SZ[i] = (SIZE_FAR + (SIZE_NEAR - SIZE_FAR) * Math.pow(z, SIZE_CURVE)) *
               (rand() < 0.05 ? 1.35 : 1) * (0.85 + rand() * 0.3);
+      BK[i] = z > BOKEH_Z ? 1 : 0;
       /* some fainter and some more solid than their depth alone would say,
          so the field does not band into neat layers of brightness */
       AL[i] = (ALPHA_FAR + (ALPHA_NEAR - ALPHA_FAR) * Math.pow(z, ALPHA_CURVE)) * (0.8 + rand() * 0.4);
@@ -201,9 +213,14 @@
   }
   function css(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + a.toFixed(3) + ')'; }
 
-  /* A soft glow per hue, drawn once and scaled on use. */
-  var SPR = 64, glow = [];
-  for (var g = 0; g < 4; g++) { var cv = doc.createElement('canvas'); cv.width = cv.height = SPR; glow.push(cv); }
+  /* Per hue, drawn once and scaled on use: a soft glow for the firing, and an
+     out-of-focus disc for the nearest neurons — even across most of its
+     width, then a soft edge, the way a blurred point of light looks. */
+  var SPR = 64, glow = [], bokeh = [];
+  for (var g = 0; g < 8; g++) {
+    var cv = doc.createElement('canvas'); cv.width = cv.height = SPR;
+    (g < 4 ? glow : bokeh).push(cv);
+  }
   function paintSprites() {
     for (var c = 0; c < 4; c++) {
       var x = glow[c].getContext('2d'), r = SPR / 2;
@@ -212,6 +229,12 @@
       gr.addColorStop(0, css(col[c], 0.9)); gr.addColorStop(0.3, css(col[c], 0.42));
       gr.addColorStop(0.65, css(col[c], 0.1)); gr.addColorStop(1, css(col[c], 0));
       x.fillStyle = gr; x.fillRect(0, 0, SPR, SPR);
+      var y = bokeh[c].getContext('2d');
+      y.clearRect(0, 0, SPR, SPR);
+      var br = y.createRadialGradient(r, r, 0, r, r, r);
+      br.addColorStop(0, css(col[c], 1)); br.addColorStop(0.55, css(col[c], 0.85));
+      br.addColorStop(0.8, css(col[c], 0.35)); br.addColorStop(1, css(col[c], 0));
+      y.fillStyle = br; y.fillRect(0, 0, SPR, SPR);
     }
   }
   paintSprites();
@@ -237,8 +260,8 @@
       }
       var x = XB[i], y = yr - c * P - MARGIN;
       if (!reduced) {
-        x += DA[i] * Math.sin(t * DW1[i] + DP1[i]) - lx * LOOK_X * ZL[i];
-        y += DA[i] * Math.sin(t * DW2[i] + DP2[i]) - ly * LOOK_Y * ZL[i];
+        x += DA[i] * Math.sin(t * DW1[i] + DP1[i]) - lx * LOOK_X * LK[i];
+        y += DA[i] * Math.sin(t * DW2[i] + DP2[i]) - ly * LOOK_Y * LK[i];
       }
       PX[i] = x; PY[i] = y;
     }
@@ -301,11 +324,12 @@
     FA[i] = Math.max(FA[i] * Math.exp(-(now - FT[i]) / 1000 / FLASH_TAU), amp); FT[i] = now;
     var next = amp * DECAY;
     if (next < MIN_AMP || pulses.length >= MAX_PULSES) return;
-    /* its synapses: the nearest few at a similar depth, found now */
+    /* its synapses: the nearest few, found now — depth counts, but not so
+       much that a ripple cannot travel back into the field or out of it */
     var xi = PX[i], yi = PY[i], zi = Z[i], R2 = RSYN * RSYN, bj = [], bd = [];
     around(xi, yi, RSYN, function (j) {
       if (j === i || j === from) return;
-      var dx = PX[j] - xi, dy = PY[j] - yi, dz = (Z[j] - zi) * 160;
+      var dx = PX[j] - xi, dy = PY[j] - yi, dz = (Z[j] - zi) * 75;
       var d2 = dx * dx + dy * dy + dz * dz;
       if (d2 > R2 || d2 < 16) return;
       if (bd.length < 6 || d2 < bd[bd.length - 1]) {
@@ -320,8 +344,8 @@
       if (now < REF[j] || Math.random() > BRANCH) continue;
       sent++;
       pulses.push({ a: i, b: j, ca: CY[i], cb: CY[j], amp: next,
-                    t0: now + 12 + Math.random() * 40,
-                    dur: clamp(Math.sqrt(bd[q]) / SPEED * 1000, 60, 500) });
+                    t0: now + HOP_MS + Math.random() * HOP_JITTER,
+                    dur: clamp(Math.sqrt(bd[q]) / SPEED * 1000, 150, 1400) });
     }
   }
   /* A click, a tap, a focus: the nearest few neurons fire outright. */
@@ -418,8 +442,32 @@
   }
 
   /* ---- drawing --------------------------------------------------------------- */
-  var STEPS = 16, nBuckets = [];
+  var STEPS = 16, nBuckets = [], near = [];
   for (var b = 0; b < 4 * (STEPS + 1); b++) nBuckets.push([]);
+
+  /* A synapse in perspective: a tapered band, as wide and as strong at each
+     end as that end's depth allows, so a connection reaching back into the
+     field narrows and fades towards the far neuron. */
+  function depthWidth(z) { return 0.35 + 1.9 * Math.pow(z, 1.4); }
+  function depthAlpha(z) { return 0.25 + 0.75 * z; }
+  function taper(ax, ay, az, bx, by, bz, c, a) {
+    var dx = bx - ax, dy = by - ay, len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.5 || a <= 0.004) return;
+    var nx = -dy / len / 2, ny = dx / len / 2, wa = depthWidth(az), wb = depthWidth(bz);
+    if (Math.abs(az - bz) < 0.12) {
+      /* both ends at about the same depth: no fade to draw */
+      ctx.fillStyle = css(c, clamp(a * depthAlpha((az + bz) / 2), 0, 1));
+    } else {
+      var gr = ctx.createLinearGradient(ax, ay, bx, by);
+      gr.addColorStop(0, css(c, clamp(a * depthAlpha(az), 0, 1)));
+      gr.addColorStop(1, css(c, clamp(a * depthAlpha(bz), 0, 1)));
+      ctx.fillStyle = gr;
+    }
+    ctx.beginPath();
+    ctx.moveTo(ax + nx * wa, ay + ny * wa); ctx.lineTo(bx + nx * wb, by + ny * wb);
+    ctx.lineTo(bx - nx * wb, by - ny * wb); ctx.lineTo(ax - nx * wa, ay - ny * wa);
+    ctx.closePath(); ctx.fill();
+  }
 
   function draw(now) {
     var A = col[4][0], AN = 0.85 * A, K = OPACITY;
@@ -428,12 +476,16 @@
     ctx.clearRect(0, 0, W, H);
     var i, k, L;
 
-    /* the neurons — nothing else at rest */
+    /* the neurons — nothing else at rest. The far and middle ones are sharp
+       dots, batched by hue and strength; the nearest few are soft discs,
+       larger and a little fainter at their centre, out of focus. */
     for (k = 0; k < nBuckets.length; k++) nBuckets[k].length = 0;
+    near.length = 0;
     for (i = 0; i < N; i++) {
       var x = PX[i], y = PY[i];
-      if (y < -4 || y > H + 4 || x < -4 || x > W + 4) continue;
+      if (y < -12 || y > H + 12 || x < -12 || x > W + 12) continue;
       var na = AN * AL[i] * clearing(x, y);
+      if (BK[i]) { if (na > 0.01) near.push(i, na); continue; }
       var nl = Math.round(clamp(na, 0, 1) * STEPS);
       if (nl <= 0) continue;
       nBuckets[HU[i] * (STEPS + 1) + nl].push(x, y, SZ[i]);
@@ -447,6 +499,13 @@
       for (var q = 0; q < L.length; q += 3) { ctx.moveTo(L[q] + L[q + 2], L[q + 1]); ctx.arc(L[q], L[q + 1], L[q + 2], 0, 6.2832); }
       ctx.fill();
     }
+    for (k = 0; k < near.length; k += 2) {
+      i = near[k];
+      var br = SZ[i] * 2.3;
+      ctx.globalAlpha = clamp(near[k + 1] * 0.6, 0, 1);
+      ctx.drawImage(bokeh[HU[i]], PX[i] - br, PY[i] - br, br * 2, br * 2);
+    }
+    ctx.globalAlpha = 1;
 
     /* firing: lit synapses, signals in flight, flashing neurons — deeper ones
        fainter and thinner, so the firing has depth too */
@@ -457,11 +516,8 @@
       var gl = l.g * Math.exp(-(now - l.t) / 1000 / EDGE_TAU);
       if (gl < 0.02 || CY[l.a] !== l.ca || CY[l.b] !== l.cb) { lit[k] = lit[lit.length - 1]; lit.pop(); continue; }
       live = true;
-      var dz = (Z[l.a] + Z[l.b]) / 2;
       var clr = Math.min(clearing(PX[l.a], PY[l.a]), clearing(PX[l.b], PY[l.b]));
-      ctx.strokeStyle = css(col[l.hue], clamp(gl * clr * (0.4 + 0.6 * dz) * K, 0, 1));
-      ctx.lineWidth = 0.5 + dz * 1.1;
-      ctx.beginPath(); ctx.moveTo(PX[l.a], PY[l.a]); ctx.lineTo(PX[l.b], PY[l.b]); ctx.stroke();
+      taper(PX[l.a], PY[l.a], Z[l.a], PX[l.b], PY[l.b], Z[l.b], col[l.hue], gl * clr * K);
     }
     for (k = 0; k < pulses.length; k++) {
       var p = pulses[k];
@@ -469,12 +525,12 @@
       if (now < p.t0) continue;
       var u = clamp((now - p.t0) / p.dur, 0, 1);
       var ax = PX[p.a], ay = PY[p.a], hx = ax + (PX[p.b] - ax) * u, hy = ay + (PY[p.b] - ay) * u;
-      var pz = (Z[p.a] + Z[p.b]) / 2, cl = clearing(hx, hy), hc = HU[p.a];
-      ctx.strokeStyle = css(col[hc], clamp(p.amp * 0.95 * cl * (0.4 + 0.6 * pz) * K, 0, 1));
-      ctx.lineWidth = 0.6 + pz * 1.1;
-      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
-      var hr = (3 + 5.5 * p.amp) * (0.6 + 0.7 * pz);
-      ctx.globalAlpha = clamp(p.amp * cl * K, 0, 1);
+      var hz = Z[p.a] + (Z[p.b] - Z[p.a]) * u, cl = clearing(hx, hy), hc = HU[p.a];
+      taper(ax, ay, Z[p.a], hx, hy, hz, col[hc], p.amp * 0.95 * cl * K);
+      /* the signal's head shrinks and dims as it runs back into the field,
+         and grows as it comes forward */
+      var hr = (3 + 5.5 * p.amp) * (0.45 + 1.1 * hz);
+      ctx.globalAlpha = clamp(p.amp * cl * K * depthAlpha(hz), 0, 1);
       ctx.drawImage(glow[hc], hx - hr, hy - hr, hr * 2, hr * 2);
       ctx.globalAlpha = 1;
     }
@@ -488,9 +544,17 @@
       var fc = clearing(fx, fy), rr = SZ[i] * (6 + 9 * fl);
       ctx.globalAlpha = clamp(fl * fc * K, 0, 1);
       ctx.drawImage(glow[HU[i]], fx - rr, fy - rr, rr * 2, rr * 2);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = css(col[HU[i]], clamp((AN * AL[i] + fl * K) * fc, 0, 1));
-      ctx.beginPath(); ctx.arc(fx, fy, SZ[i] * (1 + 0.8 * fl), 0, 6.2832); ctx.fill();
+      var core = clamp((AN * AL[i] + fl * K) * fc, 0, 1);
+      if (BK[i]) {
+        var cr = SZ[i] * 2.3 * (1 + 0.4 * fl);
+        ctx.globalAlpha = core * 0.75;
+        ctx.drawImage(bokeh[HU[i]], fx - cr, fy - cr, cr * 2, cr * 2);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = css(col[HU[i]], core);
+        ctx.beginPath(); ctx.arc(fx, fy, SZ[i] * (1 + 0.8 * fl), 0, 6.2832); ctx.fill();
+      }
     }
     ctx.globalCompositeOperation = 'source-over';
     return live;
