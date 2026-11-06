@@ -136,19 +136,109 @@ Known gaps, deliberately left for now:
 - There is no email adapter, so a password-reset email is written to the server
   log rather than sent. Add one (e.g. `@payloadcms/email-resend`) before real
   editors rely on it.
-- Login throttling is per account, not per IP address. Put the admin behind the
-  host's WAF or an access proxy (Cloudflare Access, Vercel deployment
-  protection) for a public deployment.
+- Login throttling is per account, not per IP address. On Vercel, add the
+  firewall rate limit described under "Deploying to Vercel".
 
-## Deploying
+## Deploying to Vercel
 
-The SQLite file is fine on a single server with a disk. On a serverless host
-(Vercel, Netlify) the file system is thrown away, so point `DATABASE_URL` at a
-hosted libSQL database such as Turso (`libsql://…`, with `DATABASE_AUTH_TOKEN`):
-the same adapter, no code change. Set `NEXT_PUBLIC_SERVER_URL` to the public URL,
-and `PAYLOAD_SECRET` and `ADMIN_*` in the host's secret settings.
+The site needs a database that outlives a deploy, because Vercel throws its file
+system away. Use a hosted libSQL database from [Turso](https://turso.tech): it is
+the same SQLite adapter, so no code changes. Turso's free tier is enough.
 
-After changing a collection or global, create a migration and commit it:
+### 1. Create the database
+
+Install the [Turso CLI](https://docs.turso.tech/cli/installation) and sign in:
+
+```bash
+turso auth login
+```
+
+Create the database. Ideally put it in the same region as your Vercel
+functions, which default to Washington, D.C. (`iad1`).
+
+```bash
+turso db create larch
+```
+
+Print its URL (`libsql://larch-<you>.turso.io`):
+
+```bash
+turso db show --url larch
+```
+
+Create a token for it:
+
+```bash
+turso db tokens create larch
+```
+
+Make a secret for signing admin sessions:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+### 2. Import the project
+
+1. In Vercel, **Add New → Project**, and import `shaswata965-coder/Demo-SIte`.
+2. **Root Directory**: click Edit and choose `Demo-Wealthsimple-Next`.
+3. **Framework Preset**: Next.js (detected). Leave the build and install
+   commands as they are.
+4. **Environment Variables**: add these before the first deploy.
+
+| Name | Value |
+|---|---|
+| `PAYLOAD_SECRET` | the secret from step 1 |
+| `DATABASE_URL` | the `libsql://…` URL |
+| `DATABASE_AUTH_TOKEN` | the token |
+| `ADMIN_EMAIL` | the first admin's email |
+| `ADMIN_PASSWORD` | 12+ characters; only used while there is no account |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1`, so Vercel installs with the pnpm version pinned in `package.json` (10.28.0), which honours the 24-hour release delay and the install-script allow-list |
+
+5. Deploy.
+
+The build log should show pnpm 10.28.0 and Node 22. You should also see
+`Migrating: 20261106_112715_initial`, `Created the first admin` and
+`Seeding the Larch content` (on the first deploy only), and `○ /` in the
+route list. Node is pinned to 22 by `engines` in `package.json`, which
+overrides the project's Node setting.
+
+You don't need to set a site URL. The admin accepts its session cookie only
+from the project's production domain, its branch URLs and the deployment's own
+URL, which Vercel provides (`src/payload.config.ts`). To use the admin from
+another domain as well, set `NEXT_PUBLIC_SERVER_URL` to it.
+
+### 3. After the first deploy
+
+1. Open `https://<your-project>.vercel.app/admin`, sign in, and change the
+   password from your account page.
+2. In **Settings → Environment Variables**, delete `ADMIN_PASSWORD` and
+   `ADMIN_EMAIL`. They are only read when the database has no accounts.
+3. Scope `DATABASE_URL`, `DATABASE_AUTH_TOKEN` and `PAYLOAD_SECRET` to
+   **Production** only. Otherwise a preview build would run its migrations
+   against the live database, and preview edits would change the live site.
+   For previews, make a second database (`turso db create larch-preview`) and
+   add the same names scoped to **Preview**, with their own secret and
+   `ADMIN_*`. Or turn preview deployments off.
+4. **Domains**: add your domain. The admin follows it automatically.
+   Afterwards, use that domain (not `<project>.vercel.app`) for `/admin`, or
+   add the old address with `NEXT_PUBLIC_SERVER_URL`.
+5. **Firewall → Rate limiting**: add a rule for `/api/users/login`, for
+   example 10 requests a minute per IP. Payload's own lockout is per account;
+   this adds a limit per IP address. One rule is included on the Hobby plan.
+6. Keep **Deployment Protection** on for previews (the default).
+
+The Vercel Toolbar on preview deployments loads from `vercel.live`, which the
+site's content security policy blocks. Turn the toolbar off for the project if
+the console errors bother you; production is unaffected.
+
+### Day to day
+
+- Editing content needs no deploy: saving in `/admin` rebuilds the page in the
+  background.
+- Pushing to `main` deploys code.
+- After changing a collection or global, create a migration and commit it. The
+  next deploy applies it before the site starts.
 
 ```bash
 pnpm payload migrate:create describe-the-change
@@ -159,6 +249,11 @@ Then regenerate the types:
 ```bash
 pnpm generate:types
 ```
+
+### Elsewhere
+
+On any server with a disk (a VPS, Docker with a volume), the local SQLite file
+is fine: set the same variables, then `pnpm build` and `pnpm start`.
 
 ## Verified
 
