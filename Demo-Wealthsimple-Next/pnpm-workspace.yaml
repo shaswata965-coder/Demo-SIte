@@ -1,0 +1,8 @@
+# Supply-chain guard rails (see README, "Security").
+# Never resolve a version published less than 24 hours ago: most hijacked
+# releases are caught and pulled within that window.
+minimumReleaseAge: 1440
+# Only esbuild (used by the Payload CLI) may run an install script, which
+# checks its platform binary. Any other install script is skipped.
+onlyBuiltDependencies:
+  - esbuild

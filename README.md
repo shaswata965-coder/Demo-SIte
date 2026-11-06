@@ -17,15 +17,20 @@ looping product backgrounds and its headline reveals.
 | **[`Demo-Totem/`](Demo-Totem/)** | [totem.itsoffbrand.com](https://totem.itsoffbrand.com/) | AXON, a neural fintech consultancy. The original, and where the design decisions were made |
 | **[`demo-crafted/`](demo-crafted/)** | [2018.craftedbygc.com](https://2018.craftedbygc.com/) | AXON again: the same content, skins and generated assets, re-staged as a flight through depth |
 | **[`Demo-Wealthsimple/`](Demo-Wealthsimple/)** | [wealthsimple.com](https://www.wealthsimple.com/en-ca) | Larch, a fictional machine-learning company for finance. The reference's homepage structure, type and motion, with every section's picture remade for Larch |
+| **[`Demo-Wealthsimple-Next/`](Demo-Wealthsimple-Next/)** | the same | Larch ported to Next.js 16, every word editable in a Payload admin panel at `/admin` |
 
-All three are plain HTML, CSS and JS, with no build step and no dependencies.
-Each README explains how its demo works.
+The first three are plain HTML, CSS and JS, with no build step and no
+dependencies. Each README explains how its demo works.
 
 ```sh
 python3 -m http.server 8000 --directory Demo-Totem
 python3 -m http.server 8001 --directory demo-crafted
 python3 -m http.server 8002 --directory Demo-Wealthsimple
 ```
+
+`Demo-Wealthsimple-Next/` needs Node and pnpm and a `.env`; its
+[README](Demo-Wealthsimple-Next/README.md) has the steps. It runs on a server,
+so it isn't part of the GitHub Pages site.
 
 ### Demo-Totem
 
@@ -67,7 +72,7 @@ Cards open in place, and a dial jumps between rooms. Its
 [README](demo-crafted/README.md) maps each part of the pattern to how it is
 built here.
 
-### Demo-Wealthsimple
+### Demo-Wealthsimple and Demo-Wealthsimple-Next
 
 - Larch, a fictional company that builds and runs machine-learning models for
   banks, lenders and asset managers. The page follows the reference's
@@ -110,9 +115,17 @@ built here.
 
 ## Stack, in short
 
-**Next.js 15 + React Three Fiber + GSAP/ScrollTrigger + Lenis + Tailwind v4 +
-Sanity, on Vercel.** Reasoning in [docs/01-STACK.md](docs/01-STACK.md).
-`Demo-Totem/` is written so each file maps onto one piece of that — see
+The Wealthsimple-style design is the one going ahead, as
+[`Demo-Wealthsimple-Next/`](Demo-Wealthsimple-Next/): **Next.js 16 with
+Payload 3** as the CMS, running inside the same app, with its admin at `/admin`.
+The page's motion is the static demo's own CSS, SVG and canvas, so it needs no
+3D or animation library. Payload stands in for Sanity because the admin lives in
+the repo and runs without an outside account; its README covers the security
+choices and how to deploy it.
+
+[docs/01-STACK.md](docs/01-STACK.md) is the earlier plan for the 3D direction
+(Next.js 15, React Three Fiber, GSAP, Lenis, Tailwind v4 and Sanity). `Demo-Totem/`
+is written so each file maps onto one piece of that; see
 [Porting](Demo-Totem/README.md#porting-to-nextjs--react).
 
 ## History
