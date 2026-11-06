@@ -1,5 +1,7 @@
 import type { Payload } from 'payload'
 
+import type { Product } from '../payload-types'
+
 /* First start: fill an empty database with the page as it stands in
    Demo-Wealthsimple/index.html, and create the first admin. Each part runs
    only when its table is empty, so a restart never overwrites an edit. */
@@ -140,7 +142,7 @@ export async function seed(payload: Payload): Promise<void> {
   if (totalDocs > 0) return
 
   payload.logger.info('Seeding the Larch content.')
-  const ids: Record<string, number | string> = {}
+  const ids: Record<string, Product['id']> = {}
   for (const p of PRODUCTS) {
     const doc = await payload.create({
       collection: 'products',
@@ -153,8 +155,8 @@ export async function seed(payload: Payload): Promise<void> {
     slug: 'home',
     data: {
       ...HOME,
-      productsBeforeAbout: BEFORE_ABOUT.map((s) => ids[s] as number),
-      productsAfterAbout: AFTER_ABOUT.map((s) => ids[s] as number),
+      productsBeforeAbout: BEFORE_ABOUT.map((s) => ids[s]),
+      productsAfterAbout: AFTER_ABOUT.map((s) => ids[s]),
     },
     context: ctx,
   })

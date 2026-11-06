@@ -15,7 +15,7 @@
     "generate:types": "cross-env NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--no-deprecation payload generate:types"
   },
   "dependencies": {
-    "@payloadcms/db-sqlite": "3.93.0",
+    "@payloadcms/db-mongodb": "3.93.0",
     "@payloadcms/next": "3.93.0",
     "@payloadcms/ui": "3.93.0",
     "cross-env": "10.1.0",

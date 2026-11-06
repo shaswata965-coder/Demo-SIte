@@ -1,4 +1,4 @@
-import { sqliteAdapter } from '@payloadcms/db-sqlite'
+import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -8,13 +8,19 @@ import { Users } from './cms/collections/Users'
 import { Home } from './cms/globals/Home'
 import { Site } from './cms/globals/Site'
 import { seed } from './cms/seed'
-import { migrations } from './migrations'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const secret = process.env.PAYLOAD_SECRET ?? ''
 if (secret.length < 32) {
   throw new Error('PAYLOAD_SECRET must be at least 32 random characters. See .env.example.')
+}
+
+/* MongoDB: a local server in development, MongoDB Atlas in production.
+   MONGODB_URI is the name Vercel's MongoDB Atlas integration sets. */
+const databaseURL = process.env.DATABASE_URL || process.env.MONGODB_URI
+if (!databaseURL?.startsWith('mongodb')) {
+  throw new Error('DATABASE_URL must be a MongoDB connection string (mongodb:// or mongodb+srv://). See .env.example.')
 }
 
 /* The origins this app is served from. The admin's session cookie is only
@@ -45,14 +51,11 @@ export default buildConfig({
   },
   collections: [Products, Users],
   globals: [Home, Site],
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URL || 'file:./larch.db',
-      authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
-    },
-    /* Development syncs the schema automatically; production only ever
-       applies the committed migrations in src/migrations. */
-    prodMigrations: migrations,
+  db: mongooseAdapter({
+    url: databaseURL,
+    /* Each serverless instance keeps its own pool; a small one keeps many
+       instances under Atlas's connection limit (500 on the free tier). */
+    connectOptions: { maxPoolSize: 10 },
   }),
   /* Smallest surface that still runs the admin: no GraphQL endpoint or
      playground, cookies accepted only from this site, no cross-origin API. */

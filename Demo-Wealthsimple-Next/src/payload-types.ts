@@ -84,7 +84,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {
@@ -130,7 +130,7 @@ export interface UserAuthOperations {
  * via the `definition` "products".
  */
 export interface Product {
-  id: number;
+  id: string;
   /**
    * One word, set huge in the product menu: "Credit".
    */
@@ -180,7 +180,7 @@ export interface Product {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   name?: string | null;
   role: 'admin' | 'editor';
   updatedAt: string;
@@ -208,7 +208,7 @@ export interface User {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
+  id: string;
   key: string;
   data:
     | {
@@ -225,20 +225,20 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: string;
   document?:
     | ({
         relationTo: 'products';
-        value: number | Product;
+        value: string | Product;
       } | null)
     | ({
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -248,10 +248,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: string;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   key?: string | null;
   value?:
@@ -271,7 +271,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
+  id: string;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -372,7 +372,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  * via the `definition` "home".
  */
 export interface Home {
-  id: number;
+  id: string;
   hero: {
     eyebrow: string;
     /**
@@ -388,8 +388,8 @@ export interface Home {
     thanksMessage: string;
     invalidMessage: string;
   };
-  productsBeforeAbout?: (number | Product)[] | null;
-  productsAfterAbout?: (number | Product)[] | null;
+  productsBeforeAbout?: (string | Product)[] | null;
+  productsAfterAbout?: (string | Product)[] | null;
   about: {
     heading: string;
     /**
@@ -430,7 +430,7 @@ export interface Home {
  * via the `definition` "site".
  */
 export interface Site {
-  id: number;
+  id: string;
   seo: {
     title: string;
     description: string;

@@ -15,7 +15,7 @@ export const getContent = cache(async () => {
     payload.find({ collection: 'products', sort: 'menuOrder', limit: 100, depth: 0, pagination: false }),
   ])
 
-  const placed = (list: (number | Product)[] | null | undefined) =>
+  const placed = (list: (Product['id'] | Product)[] | null | undefined) =>
     (list ?? []).filter((p): p is Product => typeof p === 'object' && p !== null)
   const before = placed(home.productsBeforeAbout)
   const after = placed(home.productsAfterAbout)
